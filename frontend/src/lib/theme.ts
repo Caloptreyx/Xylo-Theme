@@ -21,8 +21,8 @@ export const SURFACES = ['glass', 'solid', 'outline'] as const;
 export type Surface = (typeof SURFACES)[number];
 export const SHADOWS = ['none', 'soft', 'deep'] as const;
 export type Shadow = (typeof SHADOWS)[number];
-/** Desktop sidebar: an inset glass panel, flush against the edge, or core's own card. */
-export const SIDEBARS = ['floating', 'docked', 'classic'] as const;
+/** Navigation: Xylo's icon rail and context panel (elements/shell), or core's sidebar floating or flush. */
+export const SIDEBARS = ['rail', 'floating', 'docked'] as const;
 export type Sidebar = (typeof SIDEBARS)[number];
 export const BUTTON_STYLES = ['gradient', 'solid', 'soft', 'outline'] as const;
 export type ButtonStyle = (typeof BUTTON_STYLES)[number];
@@ -144,7 +144,7 @@ const AURORA: PresetLook = {
   shadow: 'soft',
   radius: 16,
   controlRadius: 10,
-  sidebar: 'floating',
+  sidebar: 'rail',
   buttonStyle: 'gradient',
   navStyle: 'pill',
   glow: 55,
@@ -204,7 +204,7 @@ export const PRESETS: Preset[] = [
       shadow: 'deep',
       radius: 20,
       controlRadius: 12,
-      sidebar: 'floating',
+      sidebar: 'rail',
       buttonStyle: 'gradient',
       navStyle: 'glow',
       glow: 70,
@@ -236,7 +236,7 @@ export const PRESETS: Preset[] = [
       shadow: 'soft',
       radius: 14,
       controlRadius: 10,
-      sidebar: 'floating',
+      sidebar: 'rail',
       buttonStyle: 'gradient',
       navStyle: 'pill',
       glow: 50,
@@ -268,7 +268,7 @@ export const PRESETS: Preset[] = [
       shadow: 'soft',
       radius: 16,
       controlRadius: 10,
-      sidebar: 'floating',
+      sidebar: 'rail',
       buttonStyle: 'gradient',
       navStyle: 'bar',
       glow: 45,
@@ -300,7 +300,7 @@ export const PRESETS: Preset[] = [
       shadow: 'deep',
       radius: 18,
       controlRadius: 12,
-      sidebar: 'floating',
+      sidebar: 'rail',
       buttonStyle: 'gradient',
       navStyle: 'glow',
       glow: 60,
@@ -332,7 +332,7 @@ export const PRESETS: Preset[] = [
       shadow: 'none',
       radius: 10,
       controlRadius: 8,
-      sidebar: 'docked',
+      sidebar: 'rail',
       buttonStyle: 'solid',
       navStyle: 'subtle',
       glow: 0,
@@ -364,7 +364,7 @@ export const PRESETS: Preset[] = [
       shadow: 'none',
       radius: 12,
       controlRadius: 8,
-      sidebar: 'docked',
+      sidebar: 'rail',
       buttonStyle: 'solid',
       navStyle: 'bar',
       glow: 0,
@@ -396,7 +396,7 @@ export const PRESETS: Preset[] = [
       shadow: 'soft',
       radius: 14,
       controlRadius: 10,
-      sidebar: 'floating',
+      sidebar: 'rail',
       buttonStyle: 'soft',
       navStyle: 'subtle',
       glow: 15,
@@ -634,6 +634,13 @@ function surfaceVars(t: XyloTheme, s: { surface: string; text: string; backgroun
     ['--xylo-card', card],
     ['--xylo-card-solid', s.surface],
     ['--xylo-overlay', t.surfaceStyle === 'glass' ? alpha(raised, 0.9) : raised],
+    // the rail layout's content canvas: halfway between page and card, translucent unless the surfaces are solid
+    [
+      '--xylo-canvas',
+      t.surfaceStyle === 'solid'
+        ? mix(s.surface, s.background, 0.55)
+        : alpha(mix(s.surface, s.background, 0.55), dark ? 0.6 : 0.7),
+    ],
     ['--xylo-hairline', alpha(s.text, t.surfaceStyle === 'outline' ? border * 1.5 : border)],
     ['--xylo-sheen', alpha('#ffffff', dark ? 0.035 + glow * 0.03 : 0.6)],
     ['--xylo-shadow-color', dark ? 'rgba(0, 0, 0, 0.55)' : alpha(mix(t.accent, '#1a1a2e', 0.15), 0.14)],

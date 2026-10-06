@@ -418,6 +418,195 @@ html[data-xylo-nav="subtle"] #sidebar-content a > .mantine-Button-root.active {
   color: var(--mantine-color-bright);
 }
 
+/* ---------- the rail layout (elements/shell/Shell.tsx) ---------- */
+
+/* the rail and panel sit on the backdrop; the page is a raised canvas beside them */
+html[data-xylo] :is(.xylo-shell, .xylo-topbar) ~ :is(#dashboard-root, #server-root, #admin-root) {
+  margin: 10px 10px 10px 0;
+  min-height: calc(100vh - 20px);
+  border: 1px solid var(--xylo-hairline);
+  border-radius: calc(var(--xylo-radius) + 6px);
+  background-color: var(--xylo-canvas);
+  box-shadow:
+    var(--xylo-shadow),
+    inset 0 1px 0 var(--xylo-sheen);
+  /* clip keeps the sticky page headers inside the rounded corners without making the canvas a scroller */
+  overflow: clip;
+}
+
+@container page (width < 64rem) {
+  html[data-xylo] .xylo-topbar ~ :is(#dashboard-root, #server-root, #admin-root) {
+    margin: 0 8px 8px;
+    min-height: calc(100vh - 3.5rem - 8px);
+  }
+}
+
+html[data-xylo] .xylo-topbar {
+  background-color: color-mix(in srgb, var(--mantine-color-body) 55%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+}
+
+html[data-xylo] .xylo-drawer {
+  background-color: var(--xylo-overlay);
+}
+
+html[data-xylo] .xylo-panel {
+  width: 256px;
+  transition: width 300ms var(--xylo-ease);
+}
+
+html[data-xylo] .xylo-panel[data-collapsed] {
+  width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-xylo] .xylo-panel {
+    transition: none;
+  }
+}
+
+/* core's server block and account card read as part of the panel, not cards floating on it */
+html[data-xylo] .xylo-panel .mantine-Card-root {
+  background-color: color-mix(in srgb, var(--mantine-color-text) 4%, transparent);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html[data-xylo] .xylo-rail-servers {
+  scrollbar-width: none;
+}
+
+html[data-xylo] .xylo-rail-sep {
+  width: 28px;
+  height: 2px;
+  margin: 2px 0;
+  border-radius: 2px;
+  background-color: color-mix(in srgb, var(--mantine-color-text) 12%, transparent);
+}
+
+/* a square that rounds less when hovered or current, Discord style, with a pill on the rail's edge */
+html[data-xylo] .xylo-rail-btn {
+  position: relative;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background-color: color-mix(in srgb, var(--mantine-color-text) 6%, transparent);
+  color: var(--mantine-color-dimmed);
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition:
+    border-radius 240ms var(--xylo-ease),
+    background-color 200ms ease,
+    color 200ms ease,
+    box-shadow 240ms ease,
+    transform 140ms var(--xylo-ease);
+}
+
+html[data-xylo] .xylo-rail-btn::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  width: 4px;
+  height: 0;
+  border-radius: 0 4px 4px 0;
+  background-color: var(--mantine-color-text);
+  transform: translateY(-50%);
+  transition: height 240ms var(--xylo-ease);
+}
+
+@media (hover: hover) {
+  html[data-xylo] .xylo-rail-btn:hover {
+    border-radius: 14px;
+    background-color: color-mix(in srgb, var(--mantine-color-text) 11%, transparent);
+    color: var(--mantine-color-text);
+  }
+
+  html[data-xylo] .xylo-rail-btn:hover::before {
+    height: 12px;
+  }
+}
+
+html[data-xylo] .xylo-rail-btn:active {
+  transform: scale(0.94);
+}
+
+html[data-xylo] .xylo-rail-btn[data-active] {
+  border-radius: 14px;
+  background: var(--xylo-gradient);
+  color: var(--xylo-accent-ink);
+  box-shadow: 0 8px 22px -10px var(--xylo-glow-color);
+}
+
+html[data-xylo] .xylo-rail-btn[data-active]::before {
+  height: 28px;
+}
+
+/* server tiles keep their own colour; the current one gets a ring instead of the gradient */
+html[data-xylo] .xylo-rail-server[data-active] {
+  box-shadow:
+    0 0 0 2px var(--mantine-color-body),
+    0 0 0 4px var(--xylo-accent);
+}
+
+html[data-xylo] .xylo-rail-avatar,
+html[data-xylo] .xylo-rail-avatar[data-active] {
+  background: none;
+  box-shadow: none;
+}
+
+html[data-xylo] .xylo-rail-avatar[data-active] .mantine-Avatar-root {
+  box-shadow: 0 0 0 2px var(--xylo-accent);
+}
+
+/* ---------- page chrome ---------- */
+
+/* sub pages (core's SubNavigation and other tab rows) as a segmented pill bar instead of underlined tabs */
+html[data-xylo] :is(#dashboard-root, #server-root, #admin-root) .mantine-Tabs-list:not([data-orientation="vertical"]) {
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-radius: calc(var(--xylo-control-radius) + 4px);
+  background-color: color-mix(in srgb, var(--mantine-color-text) 5%, transparent);
+}
+
+html[data-xylo]
+  :is(#dashboard-root, #server-root, #admin-root)
+  .mantine-Tabs-list:not([data-orientation="vertical"])::before {
+  display: none;
+}
+
+html[data-xylo]
+  :is(#dashboard-root, #server-root, #admin-root)
+  .mantine-Tabs-list:not([data-orientation="vertical"])
+  .mantine-Tabs-tab {
+  margin: 0;
+  border: 0;
+  border-radius: var(--xylo-control-radius);
+  color: var(--mantine-color-dimmed);
+  white-space: nowrap;
+}
+
+html[data-xylo]
+  :is(#dashboard-root, #server-root, #admin-root)
+  .mantine-Tabs-list:not([data-orientation="vertical"])
+  .mantine-Tabs-tab[data-active] {
+  background-color: var(--xylo-card-solid);
+  color: var(--mantine-color-text);
+  box-shadow:
+    0 1px 2px var(--xylo-shadow-color),
+    inset 0 1px 0 var(--xylo-sheen);
+}
+
 /* ---------- buttons ---------- */
 
 html[data-xylo] :is(.mantine-Button-root, .mantine-ActionIcon-root) {

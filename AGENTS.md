@@ -19,6 +19,7 @@ frontend/src/lib/core.ts          every core (`@/`) import, in one place
 frontend/src/app.css              static CSS keyed off html's data-xylo-* attributes, fonts
 frontend/src/pages/ThemeEditor.tsx  Xylo Studio
 frontend/src/elements/editor/     sections (one per editor tab), controls, mocks (the option drawings)
+frontend/src/elements/shell/      the rail layout: Shell.tsx (rail, context panel, phone top bar and drawer), nav.ts
 frontend/src/elements/Greeting.tsx  the greeting above the servers list
 frontend/src/translations.ts      every user facing string (English)
 tests/theme.test.ts               node:test cases for lib/theme.ts and lib/color.ts (not shipped)
@@ -51,6 +52,26 @@ rewritten only when they change, so the editor repaints its preview live without
 included. Colours must be `#rrggbb`, numbers are clamped, choices are allow listed, `backgroundImage` must pass
 `SAFE_URL` (http(s) or root relative, no quotes, parens, semicolons, braces, backslashes or spaces), unknown
 fields are dropped. Never put a raw value into CSS or an attribute without it.
+
+## The rail layout
+
+`sidebar: 'rail'` (the default) is a `Sidebar.addRenderInterceptor` (index.ts): `Shell` returns core's element for
+the other layouts and on `/oobe` (the setup wizard's sidebar lists its steps), and otherwise renders its own
+navigation from the props core gave the Sidebar.
+
+- The rail: app icon, search (core's quick actions store, `setOpen`), Home and Admin (`isAdmin`), the user's first
+  8 servers (`getServers(1)`, react-query, tiles coloured from a hash of the name), the panel toggle
+  (`xylo:panel` in localStorage) and the account avatar. Home is not lit on `/account` pages; the avatar is.
+- The context panel (`id='sidebar-content'`, so app.css's link styles apply) lists `panelNodes(header, children)`:
+  core's header and menu flattened (Mint's `flatten`), in core's order, wrappers kept (`ServerCan`, `AdminCan`),
+  minus what the rail covers (the logo `NavLink`, `QuickActionsTrigger`, links to `/` and `/admin`) and the plain
+  dividers that leaves stranded. Core's footer (server switcher, account menu) stays at its bottom. Nodes are
+  matched by component identity, so a core rename shows up as a duplicate, never a missing link.
+- Below lg (a `page` container query, like core's) a sticky top bar replaces it; its menu opens rail and panel in a
+  Mantine Drawer, closed on navigation and when quick actions open, as core's drawer is.
+- app.css makes the router's content column (`.xylo-shell ~ #…-root` or `.xylo-topbar ~ …`, so virtual windows
+  without a sidebar are untouched) a rounded canvas (`--xylo-canvas`) with `overflow: clip`, which rounds the
+  sticky page headers without making it a scroller. Page tabs (core's SubNavigation and others) become a pill bar.
 
 ## The editor
 

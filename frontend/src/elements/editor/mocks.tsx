@@ -119,7 +119,37 @@ export function SurfaceMock({ look, surface }: { look: Look; surface: Surface })
 }
 
 export function SidebarMock({ look, sidebar }: { look: Look; sidebar: Sidebar }) {
-  const inset = sidebar === 'docked' ? 0 : sidebar === 'floating' ? 6 : 4;
+  const edge = `1px solid ${alpha(look.text, 0.12)}`;
+  const lines = (
+    <>
+      <div className='h-1.5 w-3/4 rounded-sm' style={{ background: alpha(look.text, 0.3) }} />
+      <div className='h-1.5 w-2/3 rounded-sm' style={{ background: alpha(look.text, 0.18) }} />
+      <div className='h-1.5 w-1/2 rounded-sm' style={{ background: alpha(look.text, 0.18) }} />
+    </>
+  );
+  if (sidebar === 'rail') {
+    return frame(
+      look,
+      'aurora',
+      <>
+        {/* the rail, its first square current */}
+        <div className='absolute top-1.5 bottom-1.5 left-1 flex flex-col items-center gap-1'>
+          {(['current', 'b', 'c', 'd'] as const).map((square) => (
+            <div
+              key={square}
+              className='size-2.5 rounded-[3px]'
+              style={{ background: square === 'current' ? gradient(look) : alpha(look.text, 0.18) }}
+            />
+          ))}
+        </div>
+        <div className='absolute top-2 bottom-2 flex flex-col gap-1' style={{ left: 18, width: '22%' }}>
+          {lines}
+        </div>
+        {card(look, { inset: '6% 5% 6% 44%', background: alpha(mix(look.surface, look.background, 0.55), 0.8) })}
+      </>,
+    );
+  }
+  const inset = sidebar === 'docked' ? 0 : 6;
   return frame(
     look,
     'aurora',
@@ -131,15 +161,14 @@ export function SidebarMock({ look, sidebar }: { look: Look; sidebar: Sidebar })
           top: inset,
           bottom: inset,
           width: '30%',
-          borderRadius: sidebar === 'docked' ? 0 : sidebar === 'floating' ? 8 : 4,
-          background: alpha(look.surface, sidebar === 'classic' ? 1 : 0.7),
-          border: sidebar === 'docked' ? undefined : `1px solid ${alpha(look.text, 0.12)}`,
-          borderRight: `1px solid ${alpha(look.text, 0.12)}`,
+          borderRadius: sidebar === 'docked' ? 0 : 8,
+          background: alpha(look.surface, 0.7),
+          border: sidebar === 'docked' ? undefined : edge,
+          borderRight: edge,
         }}
       >
         <div className='h-1.5 rounded-sm' style={{ background: gradient(look) }} />
-        <div className='h-1.5 w-3/4 rounded-sm' style={{ background: alpha(look.text, 0.2) }} />
-        <div className='h-1.5 w-2/3 rounded-sm' style={{ background: alpha(look.text, 0.2) }} />
+        {lines}
       </div>
       {card(look, { inset: '18% 8% 18% 42%' })}
     </>,

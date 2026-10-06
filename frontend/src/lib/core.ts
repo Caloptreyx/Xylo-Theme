@@ -5,16 +5,23 @@
 
 export { axiosInstance, httpErrorToHuman } from '@/api/axios.ts';
 export { default as getServers } from '@/api/server/getServers.ts';
+export { default as AppIcon } from '@/elements/AppIcon.tsx';
 export { default as ActionIcon } from '@/elements/buttons/ActionIcon.tsx';
 export { default as Button } from '@/elements/buttons/Button.tsx';
+export { default as Avatar } from '@/elements/data-display/Avatar.tsx';
 export { default as Switch } from '@/elements/input/Switch.tsx';
 export { default as TextInput } from '@/elements/input/TextInput.tsx';
 export { default as SegmentedControl } from '@/elements/layout/SegmentedControl.tsx';
 export { default as ConfirmationModal } from '@/elements/modals/ConfirmationModal.tsx';
+export { default as Sidebar } from '@/elements/navigation/Sidebar.tsx';
 export { default as Menu } from '@/elements/overlays/Menu.tsx';
 export { default as Tooltip } from '@/elements/overlays/Tooltip.tsx';
+export { default as QuickActionsTrigger } from '@/elements/quickActions/QuickActionsTrigger.tsx';
+export { isAdmin } from '@/lib/auth/permissions.ts';
 export { useKeyboardShortcuts } from '@/plugins/quick-actions/useKeyboardShortcuts.ts';
 export { useBlocker } from '@/plugins/useBlocker.ts';
 export { useAdminCan } from '@/plugins/usePermissions.ts';
 export { useAuth } from '@/providers/AuthProvider.tsx';
 export { useToast } from '@/providers/ToastProvider.tsx';
+export { useGlobalStore } from '@/stores/global.ts';
+export { useQuickActionsStore } from '@/stores/quickActions.ts';

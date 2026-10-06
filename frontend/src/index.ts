@@ -3,6 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { createElement, lazy } from 'react';
 import { Extension, type ExtensionContext } from 'shared';
 import Greeting from './elements/Greeting.tsx';
+import Shell from './elements/shell/Shell.tsx';
+import { Sidebar } from './lib/core.ts';
 import { THEME_UPDATE_PERMISSION } from './lib/permissions.ts';
 import { applyCachedTheme, listenForPreview, loadTheme } from './lib/store.ts';
 import ThemeEditor, { LOGIN_PREVIEW_PATH } from './pages/ThemeEditor.tsx';
@@ -27,6 +29,9 @@ class DevCaloptreyxXyloExtension extends Extension {
     ctx.extensionRegistry.pages.dashboard.home
       .enterContainerAll((container) => container.prependComponent(Greeting))
       .enterContainerGrouped((container) => container.prependComponent(Greeting));
+
+    // `sidebar: 'rail'` (the default) swaps core's sidebar for Xylo's rail and panel; the other layouts keep core's
+    Sidebar.addRenderInterceptor((element, props) => createElement(Shell, { ...props, element }));
 
     // auth routes redirect signed in users, so the editor previews core's real login page here instead
     ctx.extensionRegistry.routes.addGlobalRoute({

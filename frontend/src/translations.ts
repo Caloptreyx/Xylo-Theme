@@ -6,6 +6,17 @@ const translations = defineTranslations({
     nav: {
       editor: 'Xylo Studio',
     },
+    shell: {
+      menu: 'Menu',
+      search: 'Search',
+      home: 'Home',
+      admin: 'Admin',
+      account: 'Account',
+      homeTitle: 'Dashboard',
+      adminTitle: 'Administration',
+      collapse: 'Hide the side panel',
+      expand: 'Show the side panel',
+    },
     greeting: {
       morning: 'Good morning, {name}',
       afternoon: 'Good afternoon, {name}',
@@ -160,10 +171,10 @@ const translations = defineTranslations({
       corners: 'Corners',
     },
     layout: {
-      sidebar: 'Sidebar',
+      sidebar: 'Navigation',
+      rail: 'Rail',
       floating: 'Floating',
       docked: 'Docked',
-      classic: 'Classic',
       nav: 'Current page link',
       pill: 'Pill',
       glow: 'Glow',

@@ -90,12 +90,19 @@ describe('presets', () => {
   });
 
   test('a preset replaces the look and keeps the site fields', () => {
-    const site = normalizeTheme({ ...DEFAULT_THEME, greeting: false, backgroundImage: '/bg.png', success: '#00ff00', uiScale: 110 });
+    const site = normalizeTheme({
+      ...DEFAULT_THEME,
+      sidebar: 'docked',
+      greeting: false,
+      backgroundImage: '/bg.png',
+      success: '#00ff00',
+      uiScale: 110,
+    });
     const mono = PRESETS.find((preset) => preset.id === 'mono');
     assert.ok(mono);
     const applied = applyPreset(site, mono.look);
     assert.equal(applied.accent, mono.look.accent);
-    assert.equal(applied.sidebar, 'docked');
+    assert.equal(applied.sidebar, 'rail');
     assert.equal(applied.greeting, false);
     assert.equal(applied.backgroundImage, '/bg.png');
     assert.equal(applied.success, '#00ff00');

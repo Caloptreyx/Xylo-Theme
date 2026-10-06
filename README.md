@@ -1,8 +1,11 @@
 # Xylo Theme
 
-A modern overhaul of the [Calagopus](https://calagopus.com) panel: glass surfaces over a slowly drifting aurora
-backdrop, gradient accents, a floating sidebar, smooth page transitions, and **Xylo Studio**, a live theme editor
+A remake of the [Calagopus](https://calagopus.com) panel's look: core's sidebar is replaced by an icon rail (areas
+and your servers) beside a collapsible context panel, pages sit on a raised canvas over a slowly drifting aurora
+backdrop, with glass surfaces, gradient accents, smooth page transitions, and **Xylo Studio**, a live theme editor
 that repaints a preview of the real panel as you change things.
+
+On a phone the rail and panel open from a glass top bar.
 
 Needs panel **1.2.0 or newer**.
 
@@ -15,8 +18,8 @@ Needs panel **1.2.0 or newer**.
 - **Backdrop**: aurora, spotlight, mesh or solid, with intensity, slow drift, and a grid, dot or grain texture;
   or your own background image.
 - **Surfaces**: glass (opacity and blur), solid or outline cards, edge strength, shadows, corner radii.
-- **Layout**: floating, docked or classic sidebar; pill, glow, bar or subtle current link; gradient, solid, soft or
-  outline buttons; glow strength; density and interface size.
+- **Layout**: the rail (default) or core's sidebar, floating or docked; pill, glow, bar or subtle current link;
+  gradient, solid, soft or outline buttons; glow strength; density and interface size.
 - **Type**: Inter, Plus Jakarta Sans, Space Grotesk, Outfit, system or the panel's font, separately for headings;
   heading weight; gradient page titles; JetBrains Mono for code.
 - **Motion**: full, subtle or none (reduced motion is always respected); rise, fade or zoom page transitions;

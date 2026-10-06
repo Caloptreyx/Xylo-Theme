@@ -2,7 +2,7 @@
 name = "dev_caloptreyx_xylo"
 description = "A modern glass theme for Calagopus Panel with a live theme editor."
 authors = ["Caloptreyx"]
-version = "0.1.0"
+version = "0.2.0"
 edition = { workspace = true }
 
 [dependencies]
