@@ -1,9 +1,10 @@
 # Xylo Theme
 
 A remake of the [Calagopus](https://calagopus.com) panel's look: core's sidebar is replaced by an icon rail (areas,
-and your servers with your server groups as Discord style folders) beside a collapsible context panel, pages sit on
-a raised canvas over a slowly drifting aurora backdrop, with glass surfaces, gradient accents, smooth page
-transitions, and **Xylo Studio**, a live theme editor that repaints a preview of the real panel as you change things.
+and your servers with your server groups as Discord style folders: drag a server onto another to group them)
+beside a collapsible context panel, pages sit on a raised canvas over a slowly drifting aurora backdrop, with glass
+surfaces, gradient accents, smooth page transitions, and **Xylo Studio**, a live theme editor that repaints a preview
+of the real panel as you change things.
 
 On a phone the rail and panel open from a glass top bar.
 

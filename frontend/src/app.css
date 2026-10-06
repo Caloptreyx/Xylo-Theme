@@ -692,6 +692,51 @@ html[data-xylo] .xylo-rail-folder-head {
   }
 }
 
+/*
+ * Drag and drop in the rail: the picked up tile dims and a copy follows the pointer; a server or folder that would
+ * take it grows a ring; the free space tints while the server can leave its folder there.
+ */
+html[data-xylo] .xylo-rail {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html[data-xylo] .xylo-rail-drag {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  /* a long press drags, so the phone's link preview must not open */
+  -webkit-touch-callout: none;
+}
+
+html[data-xylo] .xylo-rail-drag[data-dragging] {
+  opacity: 0.35;
+}
+
+html[data-xylo] .xylo-rail-drag[data-drop] .xylo-rail-btn {
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 2px var(--mantine-color-body),
+    0 0 0 4px var(--xylo-accent);
+  transform: scale(1.08);
+}
+
+html[data-xylo] .xylo-rail-folder-open[data-drop] {
+  background-color: color-mix(in srgb, var(--xylo-accent) 16%, transparent);
+  box-shadow: inset 0 0 0 2px var(--xylo-accent);
+}
+
+html[data-xylo] .xylo-rail-servers[data-drop] {
+  border-radius: 16px;
+  background-color: color-mix(in srgb, var(--xylo-accent) 8%, transparent);
+}
+
+html[data-xylo] .xylo-rail-ghost {
+  border-radius: 14px;
+  box-shadow: 0 14px 30px -10px rgb(0 0 0 / 0.55);
+  cursor: grabbing;
+}
+
 html[data-xylo] .xylo-rail-avatar,
 html[data-xylo] .xylo-rail-avatar[data-active] {
   background: none;

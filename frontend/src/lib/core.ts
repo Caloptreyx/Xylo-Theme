@@ -4,8 +4,11 @@
  */
 
 export { axiosInstance, httpErrorToHuman } from '@/api/axios.ts';
+export { default as createServerGroup } from '@/api/me/servers/groups/createServerGroup.ts';
+export { default as deleteServerGroup } from '@/api/me/servers/groups/deleteServerGroup.ts';
 export { default as getServerGroupServers } from '@/api/me/servers/groups/getServerGroupServers.ts';
 export { default as getServerGroups } from '@/api/me/servers/groups/getServerGroups.ts';
+export { default as updateServerGroup } from '@/api/me/servers/groups/updateServerGroup.ts';
 export { default as getServers } from '@/api/server/getServers.ts';
 export { default as AppIcon } from '@/elements/AppIcon.tsx';
 export { default as ActionIcon } from '@/elements/buttons/ActionIcon.tsx';
@@ -15,6 +18,7 @@ export { default as Switch } from '@/elements/input/Switch.tsx';
 export { default as TextInput } from '@/elements/input/TextInput.tsx';
 export { default as SegmentedControl } from '@/elements/layout/SegmentedControl.tsx';
 export { default as ConfirmationModal } from '@/elements/modals/ConfirmationModal.tsx';
+export { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 export { default as Sidebar } from '@/elements/navigation/Sidebar.tsx';
 export { default as Menu } from '@/elements/overlays/Menu.tsx';
 export { default as Tooltip } from '@/elements/overlays/Tooltip.tsx';

@@ -19,8 +19,8 @@ frontend/src/lib/core.ts          every core (`@/`) import, in one place
 frontend/src/app.css              static CSS keyed off html's data-xylo-* attributes, fonts
 frontend/src/pages/ThemeEditor.tsx  Xylo Studio
 frontend/src/elements/editor/     sections (one per editor tab), controls, mocks (the option drawings)
-frontend/src/elements/shell/      the rail layout: Shell.tsx (rail, folders, context panel, phone top bar and drawer),
-                                  nav.ts (core's sidebar nodes), folders.ts (pure folder helpers)
+frontend/src/elements/shell/      the rail layout: Shell.tsx (context panel, phone top bar and drawer), Rail.tsx (the
+                                  rail, folders, drag and drop), nav.ts (core's sidebar nodes), folders.ts (pure rules)
 frontend/src/elements/Greeting.tsx  the greeting above the servers list
 frontend/src/translations.ts      every user facing string (English)
 tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, shell/folders.ts (not shipped)
@@ -64,12 +64,18 @@ navigation from the props core gave the Sidebar.
   groups as folders, then up to 8 servers in no group (`getServers(1)` minus every group's `serverOrder`; tiles
   coloured from a hash of the name), the panel toggle (`xylo:panel` in localStorage) and the account avatar. Home is
   not lit on `/account` pages; the avatar is.
-- Folders are core's own server groups (made on the dashboard's Grouped Servers tab), Discord style: closed, a
+- Folders are core's own server groups (also made on the dashboard's Grouped Servers tab), Discord style: closed, a
   rounded square previewing the first four tiles and ringed while one of its servers is open; open (`xylo:folders`
   in localStorage, uuids), the folder head and its servers on a tinted pill. The rail fetches the groups into core's
   `useUserStore().serverGroups`, which the dashboard edits in place, so renames, reorders, moves and new groups show
   at once; each folder's servers are fetched under `[...queryKeys.user.servers.all(), groupUuid, …]`, the prefix
-  core's drag and drop invalidates. Empty groups are hidden. Managing groups stays on the dashboard.
+  core's drag and drop invalidates. Empty groups are hidden.
+- Drag and drop (`@dnd-kit/core`, a direct panel dependency; mouse after 6px, touch after a 250ms press): a server
+  onto a loose one creates a group of the two ("New group"), onto a folder moves it in, onto the free space takes it
+  out; a group emptied that way is deleted, as Discord drops an empty folder. `dropAction()` in folders.ts decides
+  (and refuses a full group or a duplicate, as core does); `useGroupEdits` writes core's store first, then the API,
+  and reloads the groups on failure. A drag swallows the click that ends it. Right click on a folder: Rename (2 to
+  31 characters, core's limit) and Ungroup (deletes the group, confirmed). Folders themselves are not reordered here.
 - The context panel (`id='sidebar-content'`, so app.css's link styles apply) lists `panelNodes(header, children)`:
   core's header and menu flattened (Mint's `flatten`), in core's order, wrappers kept (`ServerCan`, `AdminCan`),
   minus what the rail covers (the logo `NavLink`, `QuickActionsTrigger`, links to `/` and `/admin`) and the plain
