@@ -49,17 +49,27 @@ function railCovers(node: ReactNode): boolean {
   return node.type === Sidebar.Link && (node.props.to === '/' || node.props.to === '/admin');
 }
 
+/** The context panel's content: core's header, pinned above the scroll, and its menu. */
+export type PanelNodes = { head: ReactNode[]; menu: ReactNode[] };
+
 /**
  * What the context panel lists: core's header (the server block on server pages) and menu, in core's order, with
  * its wrappers (ServerCan, AdminCan) intact, minus what the rail covers. Plain rules left leading, trailing or
- * doubled by that are dropped; labelled ones title a section and stay. Spacer divs don't count as content.
+ * doubled by that are dropped; labelled ones title a section and stay. Spacer divs don't count as content. As in
+ * core's sidebar, the header stays pinned above the scrolling menu; `head` is empty when nothing of it is left.
  */
-export function panelNodes(header: ReactNode, children: ReactNode): ReactNode[] {
-  const kept = [...flatten(header, 'h/'), ...flatten(children, 'c/')].filter((node) => !railCovers(node));
+export function panelNodes(header: ReactNode, children: ReactNode): PanelNodes {
+  const fromHeader = flatten(header, 'h/').filter((node) => !railCovers(node));
+  const kept = [...fromHeader, ...flatten(children, 'c/').filter((node) => !railCovers(node))];
   const content = (node: ReactNode) => isValidElement(node) && node.type !== 'div';
-  return kept.filter((node, i) => {
+  const shown = kept.map((node, i) => {
     if (!isDivider(node) || node.props.label) return true;
     const next = kept.slice(i + 1).find(content);
     return kept.slice(0, i).some((n) => content(n) && !isDivider(n)) && next !== undefined && !isDivider(next);
   });
+  const head = fromHeader.filter((_, i) => shown[i]);
+  return {
+    head: head.some(content) ? head : [],
+    menu: kept.slice(fromHeader.length).filter((_, i) => shown[fromHeader.length + i]),
+  };
 }

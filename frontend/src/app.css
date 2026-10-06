@@ -424,6 +424,7 @@ html[data-xylo-nav="subtle"] #sidebar-content a > .mantine-Button-root.active {
 html[data-xylo] :is(.xylo-shell, .xylo-topbar) ~ :is(#dashboard-root, #server-root, #admin-root) {
   margin: 10px 10px 10px 0;
   min-height: calc(100vh - 20px);
+  min-height: calc(100dvh - 20px);
   border: 1px solid var(--xylo-hairline);
   border-radius: calc(var(--xylo-radius) + 6px);
   background-color: var(--xylo-canvas);
@@ -438,6 +439,8 @@ html[data-xylo] :is(.xylo-shell, .xylo-topbar) ~ :is(#dashboard-root, #server-ro
   html[data-xylo] .xylo-topbar ~ :is(#dashboard-root, #server-root, #admin-root) {
     margin: 0 8px 8px;
     min-height: calc(100vh - 3.5rem - 8px);
+    /* the visible height, not the one behind a phone browser's toolbar */
+    min-height: calc(100dvh - 3.5rem - 8px);
   }
 }
 
@@ -447,8 +450,22 @@ html[data-xylo] .xylo-topbar {
   backdrop-filter: blur(16px) saturate(150%);
 }
 
-html[data-xylo] .xylo-drawer {
+/* the drawer slides from the screen's edge: only its open side is rounded and bordered, and the panel fills it
+   (doubled class to outrank the overlay rule below) */
+html[data-xylo] .xylo-drawer.xylo-drawer {
+  border-width: 0 1px 0 0;
+  border-radius: 0 calc(var(--xylo-radius) + 10px) calc(var(--xylo-radius) + 10px) 0;
   background-color: var(--xylo-overlay);
+}
+
+html[data-xylo] .xylo-drawer .xylo-panel {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+html[data-xylo] .xylo-drawer .xylo-panel > div {
+  width: 100%;
 }
 
 html[data-xylo] .xylo-panel {
@@ -476,6 +493,65 @@ html[data-xylo] .xylo-panel .mantine-Card-root {
 
 html[data-xylo] .xylo-rail-servers {
   scrollbar-width: none;
+}
+
+html[data-xylo] .xylo-panel-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--mantine-color-text) 18%, transparent) transparent;
+}
+
+/*
+ * The panel's links and the rail's servers fade out at an edge only while there is more to scroll that way. Scroll
+ * driven, so where it isn't supported (or nothing scrolls, which leaves the timeline inactive) nothing fades.
+ */
+@property --xylo-fade-top {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --xylo-fade-bottom {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes xylo-scroll-fade {
+  0% {
+    --xylo-fade-top: 0px;
+    --xylo-fade-bottom: 28px;
+  }
+  8% {
+    --xylo-fade-top: 28px;
+  }
+  92% {
+    --xylo-fade-bottom: 28px;
+  }
+  100% {
+    --xylo-fade-top: 28px;
+    --xylo-fade-bottom: 0px;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  html[data-xylo] :is(.xylo-panel-scroll, .xylo-rail-servers) {
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 var(--xylo-fade-top),
+      #000 calc(100% - var(--xylo-fade-bottom)),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 var(--xylo-fade-top),
+      #000 calc(100% - var(--xylo-fade-bottom)),
+      transparent
+    );
+    animation: xylo-scroll-fade linear both;
+    animation-timeline: scroll(self);
+  }
 }
 
 html[data-xylo] .xylo-rail-sep {
@@ -534,6 +610,17 @@ html[data-xylo] .xylo-rail-btn::before {
 
 html[data-xylo] .xylo-rail-btn:active {
   transform: scale(0.94);
+}
+
+html[data-xylo] .xylo-rail-btn:focus-visible {
+  outline: 2px solid var(--xylo-accent);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  html[data-xylo] :is(.xylo-rail-server, .xylo-rail-folder):hover {
+    filter: brightness(1.12);
+  }
 }
 
 html[data-xylo] .xylo-rail-btn[data-active] {

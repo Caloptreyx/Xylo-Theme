@@ -73,10 +73,14 @@ navigation from the props core gave the Sidebar.
 - The context panel (`id='sidebar-content'`, so app.css's link styles apply) lists `panelNodes(header, children)`:
   core's header and menu flattened (Mint's `flatten`), in core's order, wrappers kept (`ServerCan`, `AdminCan`),
   minus what the rail covers (the logo `NavLink`, `QuickActionsTrigger`, links to `/` and `/admin`) and the plain
-  dividers that leaves stranded. Core's footer (server switcher, account menu) stays at its bottom. Nodes are
-  matched by component identity, so a core rename shows up as a duplicate, never a missing link.
-- Below lg (a `page` container query, like core's) a sticky top bar replaces it; its menu opens rail and panel in a
-  Mantine Drawer, closed on navigation and when quick actions open, as core's drawer is.
+  dividers that leaves stranded. What is left of core's header (the server block) is pinned above the scrolling
+  menu, as in core's sidebar; core's footer (server switcher, account menu) stays at its bottom. Nodes are
+  matched by component identity, so a core rename shows up as a duplicate, never a missing link. The menu and the
+  rail's servers fade at an edge while there is more to scroll that way (a scroll driven animation of two
+  registered properties, so browsers without it, and lists that don't scroll, show no fade).
+- Below lg (a `page` container query, like core's) a sticky top bar (menu, app, search) replaces it; its menu opens
+  rail and panel in a Mantine Drawer (`min(340px, 100vw - 3rem)`, the panel filling what the rail leaves), closed
+  on navigation and when quick actions open, as core's drawer is.
 - app.css makes the router's content column (`.xylo-shell ~ #…-root` or `.xylo-topbar ~ …`, so virtual windows
   without a sidebar are untouched) a rounded canvas (`--xylo-canvas`) with `overflow: clip`, which rounds the
   sticky page headers without making it a scroller. Page tabs (core's SubNavigation and others) become a pill bar.

@@ -41,7 +41,7 @@ import {
   type RailGroup,
   type RailServer,
 } from './folders.ts';
-import { type Area, areaOf, panelNodes, type SidebarProps } from './nav.ts';
+import { type Area, areaOf, type PanelNodes, panelNodes, type SidebarProps } from './nav.ts';
 
 /** The fields of core's server list entries the rail reads. */
 type Server = RailServer & { uuidShort: string; isSuspended: boolean };
@@ -70,6 +70,7 @@ function RailShell({ header, footer, children }: SidebarProps) {
   const { pathname } = useLocation();
   const app = useGlobalStore((state) => state.settings.app);
   const quickActionsOpen = useQuickActionsStore((state) => state.open);
+  const setQuickActionsOpen = useQuickActionsStore((state) => state.setOpen);
   const [drawer, setDrawer] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -121,14 +122,23 @@ function RailShell({ header, footer, children }: SidebarProps) {
           <span className='truncate text-sm font-semibold'>{app.name}</span>
         </Link>
         <div className='flex-1' />
-        <SearchButton />
+        <ActionIcon
+          variant='subtle'
+          color='gray'
+          size='lg'
+          aria-label={t('shell.search', {})}
+          onClick={() => setQuickActionsOpen(true)}
+        >
+          <FontAwesomeIcon icon={faMagnifyingGlass} />
+        </ActionIcon>
       </div>
 
       <Drawer
         opened={drawer}
         onClose={() => setDrawer(false)}
         withCloseButton={false}
-        size={336}
+        // leaves a strip of the page to tap out on, however narrow the phone
+        size='min(340px, calc(100vw - 3rem))'
         padding={0}
         classNames={{ content: 'xylo-drawer' }}
         styles={{ body: { height: '100%' } }}
@@ -146,16 +156,6 @@ function AppMark() {
   const app = useGlobalStore((state) => state.settings.app);
   const light = useComputedColorScheme('dark') === 'light';
   return <img src={(light && app.iconLight) || app.icon} alt={app.name} className='size-9 shrink-0 object-contain' />;
-}
-
-function SearchButton() {
-  const { t } = useExtTranslations();
-  const setOpen = useQuickActionsStore((state) => state.setOpen);
-  return (
-    <RailButton label={t('shell.search', {})} onClick={() => setOpen(true)}>
-      <FontAwesomeIcon icon={faMagnifyingGlass} />
-    </RailButton>
-  );
 }
 
 /** One rail entry: a square that rounds less when hovered or current, with core's tooltip naming it. */
@@ -302,6 +302,7 @@ function Rail({ area, collapsed, onToggle }: { area: Area; collapsed?: boolean; 
   const { user } = useAuth();
   const groups = useUserStore((state) => state.serverGroups);
   const setServerGroups = useUserStore((state) => state.setServerGroups);
+  const setQuickActionsOpen = useQuickActionsStore((state) => state.setOpen);
   const signedIn = !!user && !user.suspended;
   const servers = useQuery({
     queryKey: ['xylo', 'rail-servers', user?.uuid],
@@ -349,7 +350,9 @@ function Rail({ area, collapsed, onToggle }: { area: Area; collapsed?: boolean; 
       <Link to='/' className='mb-1 grid size-11 place-items-center' aria-label={t('shell.home', {})}>
         <AppMark />
       </Link>
-      <SearchButton />
+      <RailButton label={t('shell.search', {})} onClick={() => setQuickActionsOpen(true)}>
+        <FontAwesomeIcon icon={faMagnifyingGlass} />
+      </RailButton>
       {AREAS.filter((entry) => !entry.admin || isAdmin(user)).map((entry) => (
         <RailButton
           key={entry.area}
@@ -409,7 +412,7 @@ function Panel({
   collapsed,
 }: {
   area: Area;
-  nodes: ReactNode[];
+  nodes: PanelNodes;
   footer: ReactNode;
   collapsed: boolean;
 }) {
@@ -428,7 +431,8 @@ function Panel({
             {t(area === 'admin' ? 'shell.adminTitle' : 'shell.homeTitle', {})}
           </h2>
         )}
-        <div className='flex min-h-0 flex-1 flex-col overflow-y-auto'>{nodes}</div>
+        {nodes.head.length > 0 && <div className='shrink-0'>{nodes.head}</div>}
+        <div className='xylo-panel-scroll flex min-h-0 flex-1 flex-col overflow-y-auto'>{nodes.menu}</div>
         {footer && <div className='shrink-0 pt-2'>{footer}</div>}
       </div>
     </aside>
