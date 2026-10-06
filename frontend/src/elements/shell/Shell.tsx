@@ -2,6 +2,7 @@ import {
   faAnglesLeft,
   faAnglesRight,
   faBars,
+  faFolderOpen,
   faHouse,
   faMagnifyingGlass,
   faShieldHalved,
@@ -9,28 +10,48 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Drawer, useComputedColorScheme } from '@mantine/core';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { type CSSProperties, type ReactElement, type ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { hsl } from '../../lib/color.ts';
 import {
   ActionIcon,
   Avatar,
+  getServerGroupServers,
+  getServerGroups,
   getServers,
   isAdmin,
+  queryKeys,
   Tooltip,
   useAuth,
   useGlobalStore,
   useQuickActionsStore,
+  useUserStore,
 } from '../../lib/core.ts';
 import { useXyloTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
+import {
+  FOLDER_PREVIEW,
+  FOLDERS_KEY,
+  hueOf,
+  initialsOf,
+  looseServers,
+  orderGroupServers,
+  parseOpenFolders,
+  type RailGroup,
+  type RailServer,
+} from './folders.ts';
 import { type Area, areaOf, panelNodes, type SidebarProps } from './nav.ts';
+
+/** The fields of core's server list entries the rail reads. */
+type Server = RailServer & { uuidShort: string; isSuspended: boolean };
 
 /** The panel's collapsed state, per browser. */
 const PANEL_KEY = 'xylo:panel';
-/** How many of the user's servers the rail lists; the rest are a search or the servers page away. */
+/** How many loose servers (in no group) the rail lists; the rest are a search or the servers page away. */
 const RAIL_SERVERS = 8;
+/** Core's cap on a server group's size (MAX_SERVERS_PER_GROUP), so one page holds a whole folder. */
+const GROUP_SERVERS = 100;
 
 /**
  * `sidebar: 'rail'` replaces core's sidebar on the dashboard, server and admin pages: an icon rail of areas and
@@ -142,6 +163,7 @@ function RailButton({
   label,
   to,
   active = false,
+  expanded,
   onClick,
   className = '',
   style,
@@ -150,6 +172,7 @@ function RailButton({
   label: string;
   to?: string;
   active?: boolean;
+  expanded?: boolean;
   onClick?: () => void;
   className?: string;
   style?: CSSProperties;
@@ -168,7 +191,7 @@ function RailButton({
           {children}
         </Link>
       ) : (
-        <button type='button' onClick={onClick} {...shared}>
+        <button type='button' onClick={onClick} aria-expanded={expanded} {...shared}>
           {children}
         </button>
       )}
@@ -178,19 +201,94 @@ function RailButton({
 
 /** A server's tile: its initials on a gradient whose hue comes from its name, so each one is recognisable. */
 function serverTile(name: string) {
-  let hash = 0;
-  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
-  const hue = Math.abs(hash) % 360;
-  const initials = name
-    .split(/[\s_-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0].toUpperCase())
-    .join('');
+  const hue = hueOf(name);
   return {
-    initials: initials || '?',
+    initials: initialsOf(name),
     background: `linear-gradient(135deg,${hsl(hue, 70, 55)},${hsl(hue + 45, 75, 42)})`,
   };
+}
+
+function ServerButton({ server, current }: { server: Server; current: string | null }) {
+  const tile = serverTile(server.name);
+  return (
+    <RailButton
+      label={server.name}
+      to={`/server/${server.uuidShort}`}
+      // core's routes take a server's short or full uuid
+      active={current === server.uuidShort || current === server.uuid}
+      className={`xylo-rail-server${server.isSuspended ? ' opacity-50' : ''}`}
+      style={{ background: tile.background }}
+    >
+      <span className='text-sm font-semibold text-white'>{tile.initials}</span>
+    </RailButton>
+  );
+}
+
+/**
+ * One of core's server groups as a Discord style folder: closed, a tile previewing its first servers, lit while the
+ * page shows one of them; open, its servers on a tinted pill under the folder's head. Empty groups are left out.
+ */
+function RailFolder({
+  group,
+  open,
+  current,
+  onToggle,
+}: {
+  group: RailGroup;
+  open: boolean;
+  current: string | null;
+  onToggle: () => void;
+}) {
+  const query = useQuery({
+    // under core's key for the group, so the dashboard's moves (which invalidate it) refresh the folder too; the
+    // members in the key fetch it again when a server is added or removed
+    queryKey: [...queryKeys.user.servers.all(), group.uuid, 'xylo-rail', [...group.serverOrder].sort().join(',')],
+    queryFn: () => getServerGroupServers(group.uuid, 1, undefined, GROUP_SERVERS),
+    enabled: group.serverOrder.length > 0,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+  });
+  const servers = orderGroupServers(query.data?.data ?? [], group.serverOrder);
+  if (group.serverOrder.length === 0 || (query.data && servers.length === 0)) return null;
+
+  const color = hsl(hueOf(group.name), 65, 58);
+  if (!open) {
+    return (
+      <RailButton
+        label={group.name}
+        onClick={onToggle}
+        expanded={false}
+        active={servers.some((server) => current === server.uuidShort || current === server.uuid)}
+        className='xylo-rail-folder'
+        style={{ background: `color-mix(in srgb, ${color} 28%, transparent)` }}
+      >
+        {servers.length > 0 ? (
+          <span className='xylo-rail-folder-grid'>
+            {servers.slice(0, FOLDER_PREVIEW).map((server) => {
+              const tile = serverTile(server.name);
+              return (
+                <span key={server.uuid} style={{ background: tile.background }}>
+                  {tile.initials[0]}
+                </span>
+              );
+            })}
+          </span>
+        ) : (
+          <FontAwesomeIcon icon={faFolderOpen} style={{ color }} />
+        )}
+      </RailButton>
+    );
+  }
+  return (
+    <div className='xylo-rail-folder-open'>
+      <RailButton label={group.name} onClick={onToggle} expanded className='xylo-rail-folder-head'>
+        <FontAwesomeIcon icon={faFolderOpen} style={{ color }} />
+      </RailButton>
+      {servers.map((server) => (
+        <ServerButton key={server.uuid} server={server} current={current} />
+      ))}
+    </div>
+  );
 }
 
 const AREAS: { area: Area; to: string; icon: IconDefinition; label: 'shell.home' | 'shell.admin'; admin: boolean }[] = [
@@ -202,12 +300,46 @@ function Rail({ area, collapsed, onToggle }: { area: Area; collapsed?: boolean; 
   const { t } = useExtTranslations();
   const { pathname } = useLocation();
   const { user } = useAuth();
+  const groups = useUserStore((state) => state.serverGroups);
+  const setServerGroups = useUserStore((state) => state.setServerGroups);
+  const signedIn = !!user && !user.suspended;
   const servers = useQuery({
     queryKey: ['xylo', 'rail-servers', user?.uuid],
     queryFn: () => getServers(1),
-    enabled: !!user && !user.suspended,
+    enabled: signedIn,
     staleTime: 60_000,
   });
+  const groupsQuery = useQuery({
+    queryKey: ['xylo', 'rail-groups', user?.uuid],
+    // into core's store, which the dashboard's grouped tab edits in place: a new, renamed, reordered or deleted
+    // group shows in the rail at once
+    queryFn: async () => {
+      const result = await getServerGroups();
+      setServerGroups(result);
+      return result;
+    },
+    enabled: signedIn,
+    staleTime: 60_000,
+  });
+  const [openFolders, setOpenFolders] = useState(() => {
+    try {
+      return parseOpenFolders(localStorage.getItem(FOLDERS_KEY));
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleFolder = (uuid: string) => {
+    const next = openFolders.includes(uuid) ? openFolders.filter((open) => open !== uuid) : [...openFolders, uuid];
+    setOpenFolders(next);
+    try {
+      localStorage.setItem(FOLDERS_KEY, JSON.stringify(next));
+    } catch {
+      // storage blocked: the state lasts until the next load
+    }
+  };
+
+  const current = area === 'server' ? (pathname.split('/')[2] ?? null) : null;
 
   return (
     <nav
@@ -232,23 +364,23 @@ function Rail({ area, collapsed, onToggle }: { area: Area; collapsed?: boolean; 
 
       <div className='xylo-rail-sep' />
 
-      <div className='xylo-rail-servers flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto py-1'>
-        {servers.data?.data.slice(0, RAIL_SERVERS).map((server) => {
-          const tile = serverTile(server.name);
-          const path = `/server/${server.uuidShort}`;
-          return (
-            <RailButton
-              key={server.uuid}
-              label={server.name}
-              to={path}
-              active={pathname === path || pathname.startsWith(`${path}/`)}
-              className={`xylo-rail-server${server.isSuspended ? ' opacity-50' : ''}`}
-              style={{ background: tile.background }}
-            >
-              <span className='text-sm font-semibold text-white'>{tile.initials}</span>
-            </RailButton>
-          );
-        })}
+      <div className='xylo-rail-servers flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-y-auto py-1'>
+        {[...groups]
+          .sort((a, b) => a.order - b.order)
+          .map((group) => (
+            <RailFolder
+              key={group.uuid}
+              group={group}
+              open={openFolders.includes(group.uuid)}
+              current={current}
+              onToggle={() => toggleFolder(group.uuid)}
+            />
+          ))}
+        {/* until the groups load, a grouped server can't be told from a loose one */}
+        {groupsQuery.status !== 'pending' &&
+          looseServers(servers.data?.data ?? [], groups, RAIL_SERVERS).map((server) => (
+            <ServerButton key={server.uuid} server={server} current={current} />
+          ))}
       </div>
 
       {onToggle && (

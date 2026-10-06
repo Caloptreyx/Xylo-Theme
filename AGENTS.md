@@ -19,10 +19,11 @@ frontend/src/lib/core.ts          every core (`@/`) import, in one place
 frontend/src/app.css              static CSS keyed off html's data-xylo-* attributes, fonts
 frontend/src/pages/ThemeEditor.tsx  Xylo Studio
 frontend/src/elements/editor/     sections (one per editor tab), controls, mocks (the option drawings)
-frontend/src/elements/shell/      the rail layout: Shell.tsx (rail, context panel, phone top bar and drawer), nav.ts
+frontend/src/elements/shell/      the rail layout: Shell.tsx (rail, folders, context panel, phone top bar and drawer),
+                                  nav.ts (core's sidebar nodes), folders.ts (pure folder helpers)
 frontend/src/elements/Greeting.tsx  the greeting above the servers list
 frontend/src/translations.ts      every user facing string (English)
-tests/theme.test.ts               node:test cases for lib/theme.ts and lib/color.ts (not shipped)
+tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, shell/folders.ts (not shipped)
 scripts/package.py                builds dist/dev_caloptreyx_xylo.c7s.zip
 ```
 
@@ -59,9 +60,16 @@ fields are dropped. Never put a raw value into CSS or an attribute without it.
 the other layouts and on `/oobe` (the setup wizard's sidebar lists its steps), and otherwise renders its own
 navigation from the props core gave the Sidebar.
 
-- The rail: app icon, search (core's quick actions store, `setOpen`), Home and Admin (`isAdmin`), the user's first
-  8 servers (`getServers(1)`, react-query, tiles coloured from a hash of the name), the panel toggle
-  (`xylo:panel` in localStorage) and the account avatar. Home is not lit on `/account` pages; the avatar is.
+- The rail: app icon, search (core's quick actions store, `setOpen`), Home and Admin (`isAdmin`), the user's server
+  groups as folders, then up to 8 servers in no group (`getServers(1)` minus every group's `serverOrder`; tiles
+  coloured from a hash of the name), the panel toggle (`xylo:panel` in localStorage) and the account avatar. Home is
+  not lit on `/account` pages; the avatar is.
+- Folders are core's own server groups (made on the dashboard's Grouped Servers tab), Discord style: closed, a
+  rounded square previewing the first four tiles and ringed while one of its servers is open; open (`xylo:folders`
+  in localStorage, uuids), the folder head and its servers on a tinted pill. The rail fetches the groups into core's
+  `useUserStore().serverGroups`, which the dashboard edits in place, so renames, reorders, moves and new groups show
+  at once; each folder's servers are fetched under `[...queryKeys.user.servers.all(), groupUuid, …]`, the prefix
+  core's drag and drop invalidates. Empty groups are hidden. Managing groups stays on the dashboard.
 - The context panel (`id='sidebar-content'`, so app.css's link styles apply) lists `panelNodes(header, children)`:
   core's header and menu flattened (Mint's `flatten`), in core's order, wrappers kept (`ServerCan`, `AdminCan`),
   minus what the rail covers (the logo `NavLink`, `QuickActionsTrigger`, links to `/` and `/admin`) and the plain

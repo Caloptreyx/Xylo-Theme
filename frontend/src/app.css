@@ -547,11 +547,62 @@ html[data-xylo] .xylo-rail-btn[data-active]::before {
   height: 28px;
 }
 
-/* server tiles keep their own colour; the current one gets a ring instead of the gradient */
-html[data-xylo] .xylo-rail-server[data-active] {
+/* server tiles and folders keep their own colour; the current one gets a ring instead of the gradient */
+html[data-xylo] :is(.xylo-rail-server, .xylo-rail-folder)[data-active] {
   box-shadow:
     0 0 0 2px var(--mantine-color-body),
     0 0 0 4px var(--xylo-accent);
+}
+
+/* a closed folder (one of core's server groups) is a rounded square previewing its first four servers, Discord style */
+html[data-xylo] .xylo-rail-folder {
+  border-radius: 14px;
+}
+
+html[data-xylo] .xylo-rail-folder-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 15px);
+  grid-auto-rows: 15px;
+  gap: 3px;
+}
+
+html[data-xylo] .xylo-rail-folder-grid > span {
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* an open folder: its head and servers on one tinted pill */
+html[data-xylo] .xylo-rail-folder-open {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-radius: 22px;
+  background-color: color-mix(in srgb, var(--mantine-color-text) 7%, transparent);
+}
+
+html[data-xylo] .xylo-rail-folder-head {
+  background-color: transparent;
+}
+
+@keyframes xylo-folder-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-xylo]:not([data-xylo-motion="none"]) .xylo-rail-folder-open {
+    animation: xylo-folder-open 200ms var(--xylo-ease);
+  }
 }
 
 html[data-xylo] .xylo-rail-avatar,
