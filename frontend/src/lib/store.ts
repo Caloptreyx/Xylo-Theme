@@ -27,6 +27,8 @@ function subscribe(listener: () => void) {
 
 /** The theme on screen, a draft included while the editor previews one; re-renders when it changes. */
 export const useXyloTheme = () => useSyncExternalStore(subscribe, () => current);
+/** The theme on screen, for code that runs outside a component (route names and filters); no re-render. */
+export const currentTheme = () => current;
 
 /**
  * Writes only what changed: a new stylesheet restyles the whole page, so a repaint with the same theme (the fetch

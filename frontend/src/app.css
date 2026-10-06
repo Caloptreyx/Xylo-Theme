@@ -1110,16 +1110,16 @@ html[data-xylo-titles="gradient"] .xylo-greeting-title {
   }
 }
 
-/* ---------- the servers page (elements/home) ---------- */
+/* ---------- figures: a stat strip and usage bars (the server overview) ---------- */
 
-/* the stat strip: one card split by hairlines, not four equal cards */
-html[data-xylo] .xylo-home-stats {
+/* the stat strip: one card split by hairlines, not a card per figure */
+html[data-xylo] .xylo-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   padding: 0;
 }
 
-html[data-xylo] .xylo-home-stat {
+html[data-xylo] .xylo-stat {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1127,33 +1127,33 @@ html[data-xylo] .xylo-home-stat {
   padding: 16px 20px 18px;
 }
 
-html[data-xylo] .xylo-home-stat:nth-child(even) {
+html[data-xylo] .xylo-stat:nth-child(even) {
   border-left: 1px solid var(--xylo-hairline);
 }
 
-html[data-xylo] .xylo-home-stat:nth-child(n + 3) {
+html[data-xylo] .xylo-stat:nth-child(n + 3) {
   border-top: 1px solid var(--xylo-hairline);
 }
 
 @media (min-width: 64rem) {
-  html[data-xylo] .xylo-home-stats {
+  html[data-xylo] .xylo-stats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  html[data-xylo] .xylo-home-stat:not(:first-child) {
+  html[data-xylo] .xylo-stat:not(:first-child) {
     border-left: 1px solid var(--xylo-hairline);
   }
 
-  html[data-xylo] .xylo-home-stat:nth-child(n + 3) {
+  html[data-xylo] .xylo-stat:nth-child(n + 3) {
     border-top: 0;
   }
 }
 
-html[data-xylo] .xylo-home-stat .xylo-meter-track {
+html[data-xylo] .xylo-stat .xylo-meter-track {
   margin-top: 8px;
 }
 
-/* a usage bar: the accent gradient, turning amber then red as it fills, as core colours usage */
+/* a usage bar: the accent, turning amber then red as it fills, as core colours usage */
 html[data-xylo] .xylo-meter {
   display: flex;
   flex-direction: column;
@@ -1182,6 +1182,113 @@ html[data-xylo] .xylo-meter[data-level="warn"] .xylo-meter-fill {
 html[data-xylo] .xylo-meter[data-level="danger"] .xylo-meter-fill {
   background: var(--mantine-color-red-filled);
 }
+
+/* ---------- the server overview (elements/server) ---------- */
+
+html[data-xylo] .xylo-ov-grid {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  html[data-xylo] .xylo-ov-grid {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+html[data-xylo] .xylo-ov-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px 20px;
+}
+
+html[data-xylo] .xylo-ov-link {
+  color: var(--xylo-accent);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+@media (hover: hover) {
+  html[data-xylo] .xylo-ov-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+/* the activity list and the at-a-glance rows: hairlines between rows, none around them */
+html[data-xylo] .xylo-ov-activity {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+html[data-xylo] .xylo-ov-activity > li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+}
+
+html[data-xylo] :is(.xylo-ov-activity > li, .xylo-ov-glance) + :is(li, .xylo-ov-glance) {
+  border-top: 1px solid var(--xylo-hairline);
+}
+
+html[data-xylo] .xylo-ov-glance {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -8px;
+  padding: 10px 8px;
+  border-radius: var(--xylo-control-radius, 8px);
+  transition: background-color 160ms ease;
+}
+
+@media (hover: hover) {
+  html[data-xylo] a.xylo-ov-glance:hover {
+    background-color: color-mix(in srgb, var(--mantine-color-text) 5%, transparent);
+  }
+}
+
+html[data-xylo] .xylo-ov-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* a value to copy: monospace, outlined, the whole row is the button */
+html[data-xylo] .xylo-ov-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--xylo-hairline);
+  border-radius: var(--xylo-control-radius, 8px);
+  background-color: color-mix(in srgb, var(--mantine-color-text) 3%, transparent);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.8125rem;
+  text-align: left;
+  transition: border-color 160ms ease;
+}
+
+@media (hover: hover) {
+  html[data-xylo] .xylo-ov-copy:hover {
+    border-color: color-mix(in srgb, var(--xylo-accent) 45%, var(--xylo-hairline));
+  }
+}
+
+html[data-xylo] .xylo-ov-copy:active {
+  transform: scale(0.99);
+}
+
+/* ---------- the servers page (elements/home) ---------- */
 
 /* the toolbar's chips: status filters with counts, then one per server group in its folder colour */
 html[data-xylo] .xylo-chips {
@@ -1274,7 +1381,6 @@ html[data-xylo] .xylo-home-card {
   flex-direction: column;
   gap: 14px;
   min-width: 0;
-  min-height: 15rem;
   padding: 16px;
 }
 
@@ -1444,16 +1550,6 @@ html[data-xylo] .xylo-home-address {
 html[data-xylo] .xylo-home-address[data-empty] {
   font-family: inherit;
   color: var(--mantine-color-dimmed);
-}
-
-html[data-xylo] .xylo-home-meters {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-html[data-xylo] .xylo-home-card[data-phase="offline"] .xylo-home-meters {
-  opacity: 0.6;
 }
 
 html[data-xylo] .xylo-home-empty {

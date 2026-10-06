@@ -6,7 +6,6 @@ import {
   AccountContentContainer,
   BulkActionBar,
   Button,
-  bytesToString,
   Card,
   type CoreServer,
   getServers,
@@ -23,17 +22,7 @@ import { useGroupServers, useLoadServerGroups } from '../../lib/groups.ts';
 import { useXyloTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { folderColor } from '../shell/folders.ts';
-import {
-  percentOf,
-  SORTS,
-  type Sort,
-  STATUS_FILTERS,
-  type StatusFilter,
-  statusCounts,
-  summarize,
-  type Total,
-  visibleServers,
-} from './home.ts';
+import { SORTS, type Sort, STATUS_FILTERS, type StatusFilter, statusCounts, visibleServers } from './home.ts';
 import ServerCard from './ServerCard.tsx';
 
 type ContainerProps = ComponentProps<typeof AccountContentContainer>;
@@ -74,32 +63,6 @@ async function loadServers(others: boolean): Promise<{ servers: CoreServer[]; to
     Array.from({ length: Math.max(0, pages - 1) }, (_, i) => getServers(i + 2, undefined, others)),
   );
   return { servers: [first, ...rest].flatMap((page) => page.data), total: first.total };
-}
-
-/** A stat strip tile: a label, a big value, what it is out of, and a bar when there is a limit. */
-function Stat({
-  label,
-  value,
-  detail,
-  percent,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-  percent?: number | null;
-}) {
-  return (
-    <div className='xylo-home-stat'>
-      <span className='text-sm text-(--mantine-color-dimmed)'>{label}</span>
-      <span className='text-2xl font-semibold tabular-nums tracking-tight'>{value}</span>
-      <span className='truncate text-xs text-(--mantine-color-dimmed)'>{detail}</span>
-      {percent !== undefined && (
-        <div className='xylo-meter-track'>
-          <div className='xylo-meter-fill' style={{ width: `${percent ?? 0}%` }} />
-        </div>
-      )}
-    </div>
-  );
 }
 
 function Chip({
@@ -192,7 +155,6 @@ export default function Home() {
 
   const shown = visibleServers(pool, usage, { query, status, sort });
   const counts = statusCounts(pool, usage, query);
-  const totals = summarize(pool, usage);
   const filtered = query.trim() !== '' || status !== 'all' || group !== null;
   const shownUuids = shown.map((server) => server.uuid);
   const allShownSelected = shownUuids.length > 0 && shownUuids.every((uuid) => selected.includes(uuid));
@@ -212,39 +174,9 @@ export default function Home() {
     setStatus('all');
     setGroupUuid(null);
   };
-  // "of" the limit, or "no limit" when a server in the sum has none
-  const ofLimit = (total: Total, format: (value: number) => string) =>
-    total.limit === null ? t('home.unlimited', {}) : t('home.of', { total: format(total.limit) });
 
   return (
     <div className='xylo-home flex flex-col gap-5'>
-      <Card className='xylo-home-stats'>
-        <Stat
-          label={t('home.online', {})}
-          value={`${totals.online}`}
-          detail={t('home.of', { total: `${totals.total}` })}
-          percent={percentOf(totals.online, totals.total)}
-        />
-        <Stat
-          label={t('home.cpuLive', {})}
-          value={`${totals.cpu.used.toFixed(1)}%`}
-          detail={ofLimit(totals.cpu, (value) => `${value}%`)}
-          percent={percentOf(totals.cpu.used, totals.cpu.limit)}
-        />
-        <Stat
-          label={t('home.memoryLive', {})}
-          value={bytesToString(totals.memory.used, 1)}
-          detail={ofLimit(totals.memory, (value) => bytesToString(value, 1))}
-          percent={percentOf(totals.memory.used, totals.memory.limit)}
-        />
-        <Stat
-          label={t('home.disk', {})}
-          value={bytesToString(totals.disk.used, 1)}
-          detail={ofLimit(totals.disk, (value) => bytesToString(value, 1))}
-          percent={percentOf(totals.disk.used, totals.disk.limit)}
-        />
-      </Card>
-
       <div className='flex flex-col gap-3'>
         <div className='flex flex-wrap items-center gap-3'>
           <h2 className='mr-auto text-xl font-semibold tracking-tight'>

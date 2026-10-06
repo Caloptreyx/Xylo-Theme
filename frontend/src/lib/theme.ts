@@ -92,6 +92,8 @@ export interface XyloTheme {
   greeting: boolean;
   /** Xylo's servers page (elements/home): live stats, filters and power controls in place of core's list. */
   homePage: boolean;
+  /** Xylo's server overview (elements/server) as the page a server opens on; the console moves to `/terminal`. */
+  serverOverview: boolean;
 }
 
 /**
@@ -209,6 +211,7 @@ export const DEFAULT_THEME: XyloTheme = {
   hoverLift: true,
   greeting: true,
   homePage: true,
+  serverOverview: true,
 };
 
 export type PresetId =
@@ -527,6 +530,7 @@ export function normalizeTheme(raw: unknown, d: XyloTheme = DEFAULT_THEME): Xylo
     hoverLift: flag(r.hoverLift, d.hoverLift),
     greeting: flag(r.greeting, d.greeting),
     homePage: flag(r.homePage, d.homePage),
+    serverOverview: flag(r.serverOverview, d.serverOverview),
   };
 }
 

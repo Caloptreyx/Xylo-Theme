@@ -464,6 +464,12 @@ export function LayoutSection({ valid, set }: SectionProps) {
           checked={valid.homePage}
           onChange={(homePage) => set({ homePage })}
         />
+        <ToggleField
+          label={t('layout.serverOverview', {})}
+          description={t('layout.serverOverviewHint', {})}
+          checked={valid.serverOverview}
+          onChange={(serverOverview) => set({ serverOverview })}
+        />
       </Group>
 
       <Group title={t('layout.nav', {})}>

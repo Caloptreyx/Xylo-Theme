@@ -23,10 +23,11 @@ frontend/src/elements/editor/     sections (one per editor tab), controls, mocks
 frontend/src/elements/shell/      the rail layout: Shell.tsx (context panel, phone top bar and drawer), Rail.tsx (the
                                   rail, folders, drag and drop), nav.ts (core's sidebar nodes), folders.ts (pure rules)
 frontend/src/elements/home/       the servers page: Home.tsx (page, HomeSwitch), ServerCard.tsx, home.ts (pure rules)
+frontend/src/elements/server/     the server overview: Overview.tsx (page, ServerHome), overview.ts (pure helpers)
 frontend/src/elements/Greeting.tsx  the greeting above the servers list
 frontend/src/translations.ts      every user facing string (English)
-tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, shell/folders.ts, home/home.ts
-                                  (not shipped)
+tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, shell/folders.ts, home/home.ts,
+                                  server/overview.ts (not shipped)
 scripts/package.py                builds dist/dev_caloptreyx_xylo.c7s.zip
 ```
 
@@ -120,16 +121,34 @@ its first page; that is the cost of not owning the route.
 
 - Data: every server the user lists, up to 10 pages of core's 26 (`loadServers`, a note says when there are more);
   an admin's "other users' servers" switch is core's own setting (`useServerListShowOthers`). A group chip shows that
-  group through `useGroupServers` (lib/groups.ts, the rail's query and cache). Live usage is core's store
-  (`serverResourceUsage`); the page subscribes to every node its servers live on while it is open.
+  group through `useGroupServers` (lib/groups.ts, the rail's query and cache). Live state is core's store
+  (`serverResourceUsage`); the page subscribes to every node its servers live on while it is open. No resource
+  usage on this page, by request: that lives on the server overview.
 - home.ts: `phaseOf` (suspended, failed, installing, restoring, transferring outrank the power state; no usage reads
-  offline), the status filters and their counts, the sorts (`xylo:home-sort`), and `summarize` for the stat strip
-  (CPU and memory over running servers, disk over all; a 0 limit anywhere makes that total unlimited).
+  offline), the status filters and their counts, and the sorts (`xylo:home-sort`).
 - ServerCard: the name is the link, stretched over the card (`::after`), so the controls above it (`.xylo-home-raise`)
   stay real buttons. Power buttons follow core's rules: the server's permissions plus the role's, nothing while
   installing, restoring, transferring, suspended or in node maintenance; kill only while stopping, confirmed. Power
   goes through core's `useBulkPowerActions` (its toasts), add to group through core's `ServerAddGroupModal`. The
   tile turns into a check box; any selection brings up core's `BulkActionBar`.
+
+## The server overview
+
+`serverOverview` (on by default) makes Xylo's overview the page a server opens on. A server route interceptor in
+index.ts replaces core's console route at `/` with one route whose element is `ServerHome` (the overview, or core's
+console when the setting is off, read with the theme hook so Studio switches it live) and whose name and icon are
+getters on `currentTheme()` (resolved when the sidebar renders), and adds core's console again at `/terminal`,
+filtered to when the overview is on. `/console/popout` keeps no named parent, so it stays reachable. An egg with a
+custom sidebar order (egg configurations) lists routes by path: `/` there shows as Overview, and Console appears only
+once the admin adds `/terminal` to that order (core's editor lists it, since it runs the interceptors too).
+
+- Data: the server, its power state and its live stats are core's server store (`useServerStore`, fed by the
+  server's websocket). Activity, backups, schedules and allocations are fetched under core's query keys plus
+  `'xylo-overview'`, so core's own pages' changes refresh them; each needs its page's permission (`useServerCan`)
+  and its part is left out without it. Databases are not fetched (core's list includes passwords).
+- Power is core's own `ServerPowerControls` (websocket, kill confirmation, other extensions' power buttons).
+- overview.ts: `eventLabel` (`server:power.start` reads "Power start"), `timeAgo`, `percentOf`/`levelOf` for the
+  bars, `newest`.
 
 ## The editor
 

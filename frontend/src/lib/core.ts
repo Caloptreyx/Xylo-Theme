@@ -4,12 +4,15 @@
  */
 
 import type { z } from 'zod';
+import type { serverActivitySchema } from '@/lib/schemas/server/activity.ts';
 import type { serverResourceUsageSchema, serverSchema } from '@/lib/schemas/server/server.ts';
 
 /** A server as core's server lists return it. */
 export type CoreServer = z.infer<typeof serverSchema>;
 /** A server's live resource usage, as core's store keeps it (`serverResourceUsage`). */
 export type CoreServerUsage = z.infer<typeof serverResourceUsageSchema>;
+/** One entry of a server's activity log. */
+export type CoreServerActivity = z.infer<typeof serverActivitySchema>;
 
 export { axiosInstance, httpErrorToHuman } from '@/api/axios.ts';
 export { default as createServerGroup } from '@/api/me/servers/groups/createServerGroup.ts';
@@ -18,12 +21,17 @@ export { default as getServerGroupServers } from '@/api/me/servers/groups/getSer
 export { default as getServerGroups } from '@/api/me/servers/groups/getServerGroups.ts';
 export { default as updateServerGroup } from '@/api/me/servers/groups/updateServerGroup.ts';
 export { default as updateServerGroupsOrder } from '@/api/me/servers/groups/updateServerGroupsOrder.ts';
+export { default as getAllocations } from '@/api/server/allocations/getAllocations.ts';
+export { default as getBackups } from '@/api/server/backups/getBackups.ts';
+export { default as getServerActivity } from '@/api/server/getServerActivity.ts';
 export { default as getServers } from '@/api/server/getServers.ts';
+export { default as getSchedules } from '@/api/server/schedules/getSchedules.ts';
 export { default as AppIcon } from '@/elements/AppIcon.tsx';
 export { default as ActionIcon } from '@/elements/buttons/ActionIcon.tsx';
 export { default as Button } from '@/elements/buttons/Button.tsx';
 export { default as CopyOnClick } from '@/elements/CopyOnClick.tsx';
 export { default as AccountContentContainer } from '@/elements/containers/AccountContentContainer.tsx';
+export { default as ServerContentContainer } from '@/elements/containers/ServerContentContainer.tsx';
 export { default as Avatar } from '@/elements/data-display/Avatar.tsx';
 export { default as Card } from '@/elements/data-display/Card.tsx';
 export { default as Switch } from '@/elements/input/Switch.tsx';
@@ -41,13 +49,15 @@ export { formatMilliseconds } from '@/lib/format/time.ts';
 export { queryKeys } from '@/lib/queryKeys.ts';
 export { default as BulkActionBar } from '@/pages/dashboard/home/BulkActionBar.tsx';
 export { default as ServerAddGroupModal } from '@/pages/dashboard/home/modals/ServerAddGroupModal.tsx';
+export { default as ServerPowerControls } from '@/pages/server/console/stats/ServerPowerControls.tsx';
 export { useKeyboardShortcuts } from '@/plugins/quick-actions/useKeyboardShortcuts.ts';
 export { useBulkPowerActions } from '@/plugins/server/useBulkPowerActions.ts';
 export { useServerListShowOthers } from '@/plugins/server/useServerListShowOthers.ts';
 export { useBlocker } from '@/plugins/useBlocker.ts';
-export { useAdminCan } from '@/plugins/usePermissions.ts';
+export { useAdminCan, useServerCan } from '@/plugins/usePermissions.ts';
 export { useAuth } from '@/providers/AuthProvider.tsx';
 export { useToast } from '@/providers/ToastProvider.tsx';
 export { useGlobalStore } from '@/stores/global.ts';
 export { useQuickActionsStore } from '@/stores/quickActions.ts';
+export { useServerStore } from '@/stores/server.ts';
 export { useUserStore } from '@/stores/user.ts';

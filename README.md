@@ -24,9 +24,11 @@ Needs panel **1.2.0 or newer**.
 - **Surfaces**: glass (opacity and blur), solid or outline cards, edge strength, shadows, corner radii.
 - **Layout**: the rail (default) or core's sidebar, floating or docked; pill, glow, bar or subtle current link;
   gradient, solid, soft or outline buttons; glow strength; density and interface size.
-- **Servers page**: live totals (servers online, CPU, memory, disk), search, status and group filters, sorting,
-  and cards with live usage bars, a copyable address and power controls; select several for bulk power actions.
-  Can be switched back to the panel's own list.
+- **Servers page**: search, status and group filters, sorting, and cards with status, uptime, a copyable address
+  and power controls; select several for bulk power actions. Can be switched back to the panel's own list.
+- **Server overview**: a server opens on its status, live CPU, memory, disk and network, recent activity, how to
+  connect (address, SFTP, ID) and its backups, schedules and addresses at a glance; the console is the next link.
+  Can be switched off in Studio.
 - **Type**: Geist, Inter, Plus Jakarta Sans, Space Grotesk, Outfit, system or the panel's font, separately for
   headings; heading weight; gradient page titles (the greeting follows them); Geist Mono or JetBrains Mono for code.
 - **Motion**: full, subtle or none (reduced motion is always respected); rise, fade or zoom page transitions;

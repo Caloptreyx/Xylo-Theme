@@ -1,13 +1,14 @@
-import { faPalette } from '@fortawesome/free-solid-svg-icons';
+import { faGauge, faPalette } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { createElement, lazy } from 'react';
 import { Extension, type ExtensionContext } from 'shared';
 import Greeting from './elements/Greeting.tsx';
 import { HomeSwitch } from './elements/home/Home.tsx';
+import { ServerHome } from './elements/server/Overview.tsx';
 import Shell from './elements/shell/Shell.tsx';
 import { AccountContentContainer, Sidebar } from './lib/core.ts';
 import { THEME_UPDATE_PERMISSION } from './lib/permissions.ts';
-import { applyCachedTheme, listenForPreview, loadTheme } from './lib/store.ts';
+import { applyCachedTheme, currentTheme, listenForPreview, loadTheme } from './lib/store.ts';
 import ThemeEditor, { LOGIN_PREVIEW_PATH } from './pages/ThemeEditor.tsx';
 import { getExtTranslations } from './translations.ts';
 
@@ -41,6 +42,40 @@ class DevCaloptreyxXyloExtension extends Extension {
 
     // `sidebar: 'rail'` (the default) swaps core's sidebar for Xylo's rail and panel; the other layouts keep core's
     Sidebar.addRenderInterceptor((element, props) => createElement(Shell, { ...props, element }));
+
+    // `serverOverview` (on by default): a server opens on Xylo's overview (elements/server) at `/`, and core's console
+    // moves to `/terminal`, the next link. One route keeps `/` whichever is on, its name and icon read the theme when
+    // the sidebar renders and its element when it mounts, so Studio's switch needs no reload. Core's console keeps
+    // its own `/console/popout`, which `/terminal` does not own, so an egg's custom sidebar order leaves it reachable.
+    ctx.extensionRegistry.routes.addServerRouteInterceptor((routes) => {
+      const index = routes.findIndex((route) => route.path === '/');
+      if (index === -1) return;
+      const consoleRoute = routes[index];
+      const Console = consoleRoute.element;
+      const overview = () => currentTheme().serverOverview;
+      const consoleName = consoleRoute.name;
+      const consoleIcon = consoleRoute.icon;
+      routes.splice(
+        index,
+        1,
+        {
+          ...consoleRoute,
+          name: () =>
+            overview()
+              ? getExtTranslations().t('overview.title', {})
+              : typeof consoleName === 'function'
+                ? consoleName()
+                : (consoleName ?? ''),
+          get icon() {
+            return overview() ? faGauge : consoleIcon;
+          },
+          element: function XyloServerHome() {
+            return createElement(ServerHome, { Console });
+          },
+        },
+        { ...consoleRoute, path: '/terminal', filter: () => overview() && (consoleRoute.filter?.() ?? true) },
+      );
+    });
 
     // auth routes redirect signed in users, so the editor previews core's real login page here instead
     ctx.extensionRegistry.routes.addGlobalRoute({
