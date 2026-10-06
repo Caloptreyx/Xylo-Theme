@@ -71,11 +71,17 @@ navigation from the props core gave the Sidebar.
   at once; each folder's servers are fetched under `[...queryKeys.user.servers.all(), groupUuid, …]`, the prefix
   core's drag and drop invalidates. Empty groups are hidden.
 - Drag and drop (`@dnd-kit/core`, a direct panel dependency; mouse after 6px, touch after a 250ms press): a server
-  onto a loose one creates a group of the two ("New group"), onto a folder moves it in, onto the free space takes it
-  out; a group emptied that way is deleted, as Discord drops an empty folder. `dropAction()` in folders.ts decides
-  (and refuses a full group or a duplicate, as core does); `useGroupEdits` writes core's store first, then the API,
-  and reloads the groups on failure. A drag swallows the click that ends it. Right click on a folder: Rename (2 to
-  31 characters, core's limit) and Ungroup (deletes the group, confirmed). Folders themselves are not reordered here.
+  onto a loose one creates a group of the two ("New group", put after the other folders), onto a folder appends it,
+  onto the upper or lower half of a server in an open folder takes that place (a reorder within the folder, or a
+  move from elsewhere), onto the free space takes it out; a group emptied that way is deleted, as Discord drops an
+  empty folder. A folder (closed, or an open one by its head) dropped on another's upper or lower half reorders the
+  folders (`updateServerGroupsOrder`). `dropPart()`/`dropAction()` in folders.ts decide from the target and the
+  pointer's place on it, refusing no-ops, a full group or a duplicate as core does; the collision check prefers a
+  server over the folder around it over the free space, and a dragged folder only sees folders. A ring marks "onto",
+  a bar in the gap marks a place. `useGroupEdits` writes core's store first, then the API, and reloads the groups
+  on failure. A drag swallows the click that ends it. A folder's menu (Rename, 2 to 31 characters as core allows;
+  Ungroup, confirmed) opens on right click, or when a finger holds a folder and lets go without moving (iOS sends
+  no contextmenu).
 - The context panel (`id='sidebar-content'`, so app.css's link styles apply) lists `panelNodes(header, children)`:
   core's header and menu flattened (Mint's `flatten`), in core's order, wrappers kept (`ServerCan`, `AdminCan`),
   minus what the rail covers (the logo `NavLink`, `QuickActionsTrigger`, links to `/` and `/admin`) and the plain

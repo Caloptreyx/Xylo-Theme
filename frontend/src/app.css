@@ -694,7 +694,8 @@ html[data-xylo] .xylo-rail-folder-head {
 
 /*
  * Drag and drop in the rail: the picked up tile dims and a copy follows the pointer; a server or folder that would
- * take it grows a ring; the free space tints while the server can leave its folder there.
+ * take it grows a ring; a place in a list (servers in an open folder, the folders) shows as a bar in the gap; the
+ * free space tints while the server can leave its folder there.
  */
 html[data-xylo] .xylo-rail {
   -webkit-user-select: none;
@@ -702,6 +703,7 @@ html[data-xylo] .xylo-rail {
 }
 
 html[data-xylo] .xylo-rail-drag {
+  position: relative;
   display: flex;
   flex-shrink: 0;
   justify-content: center;
@@ -713,7 +715,7 @@ html[data-xylo] .xylo-rail-drag[data-dragging] {
   opacity: 0.35;
 }
 
-html[data-xylo] .xylo-rail-drag[data-drop] .xylo-rail-btn {
+html[data-xylo] .xylo-rail-drag[data-drop="onto"] .xylo-rail-btn {
   border-radius: 14px;
   box-shadow:
     0 0 0 2px var(--mantine-color-body),
@@ -721,12 +723,37 @@ html[data-xylo] .xylo-rail-drag[data-drop] .xylo-rail-btn {
   transform: scale(1.08);
 }
 
-html[data-xylo] .xylo-rail-folder-open[data-drop] {
+html[data-xylo] .xylo-rail-folder-open {
+  position: relative;
+}
+
+html[data-xylo] .xylo-rail-folder-open[data-drop="onto"] {
   background-color: color-mix(in srgb, var(--xylo-accent) 16%, transparent);
   box-shadow: inset 0 0 0 2px var(--xylo-accent);
 }
 
-html[data-xylo] .xylo-rail-servers[data-drop] {
+/* the bar sits in the 8px gap above or below the target */
+html[data-xylo] :is(.xylo-rail-drag, .xylo-rail-folder-open):is([data-drop="before"], [data-drop="after"])::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--xylo-gradient);
+  box-shadow: 0 0 10px var(--xylo-glow-color);
+  pointer-events: none;
+}
+
+html[data-xylo] :is(.xylo-rail-drag, .xylo-rail-folder-open)[data-drop="before"]::after {
+  top: -5.5px;
+}
+
+html[data-xylo] :is(.xylo-rail-drag, .xylo-rail-folder-open)[data-drop="after"]::after {
+  bottom: -5.5px;
+}
+
+html[data-xylo] .xylo-rail-servers[data-drop="onto"] {
   border-radius: 16px;
   background-color: color-mix(in srgb, var(--xylo-accent) 8%, transparent);
 }

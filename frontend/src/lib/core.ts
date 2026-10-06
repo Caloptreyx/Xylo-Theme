@@ -9,6 +9,7 @@ export { default as deleteServerGroup } from '@/api/me/servers/groups/deleteServ
 export { default as getServerGroupServers } from '@/api/me/servers/groups/getServerGroupServers.ts';
 export { default as getServerGroups } from '@/api/me/servers/groups/getServerGroups.ts';
 export { default as updateServerGroup } from '@/api/me/servers/groups/updateServerGroup.ts';
+export { default as updateServerGroupsOrder } from '@/api/me/servers/groups/updateServerGroupsOrder.ts';
 export { default as getServers } from '@/api/server/getServers.ts';
 export { default as AppIcon } from '@/elements/AppIcon.tsx';
 export { default as ActionIcon } from '@/elements/buttons/ActionIcon.tsx';

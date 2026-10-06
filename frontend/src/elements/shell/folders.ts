@@ -14,36 +14,90 @@ export const FOLDER_PREVIEW = 4;
 /** Core's cap on a server group's size (MAX_SERVERS_PER_GROUP). */
 export const GROUP_MAX = 100;
 
-/** A server picked up in the rail: loose (`from` null) or out of a folder. */
-export type RailDrag = { serverUuid: string; from: string | null };
-/** Where it can land: on a loose server, on a folder (or a server in an open one), or on the rail's free space. */
+/** Something picked up in the rail: a server (loose, `from` null, or out of a folder) or a whole folder. */
+export type RailDrag =
+  | { kind: 'server'; serverUuid: string; from: string | null }
+  | { kind: 'folder'; groupUuid: string };
+/**
+ * Where it can land: a loose server, a server in an open folder (`member`), a folder (closed, or an open one's head
+ * and padding), or the rail's free space.
+ */
 export type RailDropTarget =
   | { kind: 'server'; serverUuid: string }
+  | { kind: 'member'; groupUuid: string; serverUuid: string }
   | { kind: 'folder'; groupUuid: string }
   | { kind: 'loose' };
+/** Which part of the target the pointer is over: its upper or lower half (a place in a list), or the target itself. */
+export type DropPart = 'before' | 'after' | 'onto';
 /**
- * What a drop does, Discord style: onto a loose server, the two make a new folder; onto a folder, the server moves
- * into it; onto free space, it leaves its folder. A server leaving a folder is taken out of `from`.
+ * What a drop does, Discord style. `create`: the two servers make a new folder. `move`: `to` gets `serverOrder`
+ * (null `to`: the server leaves its folder), and a server leaving `from` for another place is taken out of it.
+ * `groups`: the folders' new order.
  */
 export type RailDropAction =
-  | { kind: 'create'; serverOrder: [string, string]; from: string | null }
-  | { kind: 'move'; from: string | null; to: string | null };
+  | { kind: 'create'; serverOrder: [string, string]; serverUuid: string; from: string | null }
+  | { kind: 'move'; serverUuid: string; from: string | null; to: string | null; serverOrder: string[] }
+  | { kind: 'groups'; order: string[] };
 
-/** The drop's action, or null where it would do nothing or core would refuse it (a full folder, a duplicate). */
+/**
+ * The part of a target at `ratio` (0 at its top, 1 at its bottom). Only lists take a place: the servers in an open
+ * folder for a server, the folders for a folder; anywhere else a drop lands on the target as a whole.
+ */
+export function dropPart(drag: RailDrag, target: RailDropTarget, ratio: number): DropPart {
+  const ordered = drag.kind === 'server' ? target.kind === 'member' : target.kind === 'folder';
+  if (!ordered) return 'onto';
+  return ratio < 0.5 ? 'before' : 'after';
+}
+
+/** `list` with `item` moved (or added) next to `anchor`; null when `anchor` isn't in it or nothing would move. */
+function placeNextTo(list: readonly string[], item: string, anchor: string, part: 'before' | 'after') {
+  const placed = list.filter((uuid) => uuid !== item);
+  const at = placed.indexOf(anchor);
+  if (at === -1) return null;
+  placed.splice(part === 'after' ? at + 1 : at, 0, item);
+  return placed.some((uuid, i) => uuid !== list[i]) || placed.length !== list.length ? placed : null;
+}
+
+/** The drop's action, or null where it would change nothing or core would refuse it (a full folder, a duplicate). */
 export function dropAction(
   drag: RailDrag,
   target: RailDropTarget,
+  part: DropPart,
   groups: readonly RailGroup[],
 ): RailDropAction | null {
-  if (target.kind === 'server') {
-    if (target.serverUuid === drag.serverUuid) return null;
-    return { kind: 'create', serverOrder: [target.serverUuid, drag.serverUuid], from: drag.from };
+  if (drag.kind === 'folder') {
+    if (target.kind !== 'folder' || part === 'onto' || target.groupUuid === drag.groupUuid) return null;
+    // the order the rail shows: by `order`, ties in the order core listed them
+    const current = [...groups].sort((a, b) => a.order - b.order).map((group) => group.uuid);
+    const order = placeNextTo(current, drag.groupUuid, target.groupUuid, part);
+    return order && { kind: 'groups', order };
   }
-  if (target.kind === 'loose') return drag.from === null ? null : { kind: 'move', from: drag.from, to: null };
+
+  const { serverUuid, from } = drag;
+  if (target.kind === 'server') {
+    if (target.serverUuid === serverUuid) return null;
+    return { kind: 'create', serverOrder: [target.serverUuid, serverUuid], serverUuid, from };
+  }
+  if (target.kind === 'loose') {
+    return from === null ? null : { kind: 'move', serverUuid, from, to: null, serverOrder: [] };
+  }
+
   const group = groups.find((g) => g.uuid === target.groupUuid);
-  if (!group || group.uuid === drag.from) return null;
-  if (group.serverOrder.includes(drag.serverUuid) || group.serverOrder.length >= GROUP_MAX) return null;
-  return { kind: 'move', from: drag.from, to: group.uuid };
+  if (!group) return null;
+  // another folder takes the server only if it hasn't got it and has room
+  if (group.uuid !== from && (group.serverOrder.includes(serverUuid) || group.serverOrder.length >= GROUP_MAX)) {
+    return null;
+  }
+  let serverOrder: string[] | null;
+  if (target.kind === 'member' && part !== 'onto') {
+    if (target.serverUuid === serverUuid) return null;
+    serverOrder = placeNextTo(group.serverOrder, serverUuid, target.serverUuid, part);
+  } else {
+    // onto the folder itself: to its end; a server already in it stays where it is
+    serverOrder = group.uuid === from ? null : [...group.serverOrder, serverUuid];
+  }
+  if (!serverOrder) return null;
+  return { kind: 'move', serverUuid, from, to: group.uuid, serverOrder };
 }
 
 /**
