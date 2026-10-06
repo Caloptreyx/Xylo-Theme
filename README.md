@@ -21,6 +21,9 @@ Needs panel **1.2.0 or newer**.
 - **Surfaces**: glass (opacity and blur), solid or outline cards, edge strength, shadows, corner radii.
 - **Layout**: the rail (default) or core's sidebar, floating or docked; pill, glow, bar or subtle current link;
   gradient, solid, soft or outline buttons; glow strength; density and interface size.
+- **Servers page**: live totals (servers online, CPU, memory, disk), search, status and group filters, sorting,
+  and cards with live usage bars, a copyable address and power controls; select several for bulk power actions.
+  Can be switched back to the panel's own list.
 - **Type**: Inter, Plus Jakarta Sans, Space Grotesk, Outfit, system or the panel's font, separately for headings;
   heading weight; gradient page titles; JetBrains Mono for code.
 - **Motion**: full, subtle or none (reduced motion is always respected); rise, fade or zoom page transitions;

@@ -27,7 +27,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useComputedColorScheme } from '@mantine/core';
-import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type CSSProperties, createContext, type ReactNode, useContext, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router';
@@ -38,15 +38,12 @@ import {
   ConfirmationModal,
   createServerGroup,
   deleteServerGroup,
-  getServerGroupServers,
-  getServerGroups,
   getServers,
   httpErrorToHuman,
   isAdmin,
   Menu,
   Modal,
   ModalFooter,
-  queryKeys,
   TextInput,
   Tooltip,
   updateServerGroup,
@@ -57,6 +54,7 @@ import {
   useToast,
   useUserStore,
 } from '../../lib/core.ts';
+import { useGroupServers, useLoadServerGroups } from '../../lib/groups.ts';
 import { useExtTranslations } from '../../translations.ts';
 import {
   type DropPart,
@@ -64,17 +62,15 @@ import {
   dropPart,
   FOLDER_PREVIEW,
   FOLDERS_KEY,
-  GROUP_MAX,
   hueOf,
-  initialsOf,
   looseServers,
-  orderGroupServers,
   parseOpenFolders,
   type RailDrag,
   type RailDropAction,
   type RailDropTarget,
   type RailGroup,
   type RailServer,
+  serverTile,
 } from './folders.ts';
 import type { Area } from './nav.ts';
 
@@ -137,15 +133,6 @@ function RailButton({
       )}
     </Tooltip>
   );
-}
-
-/** A server's tile: its initials on a gradient whose hue comes from its name, so each one is recognisable. */
-function serverTile(name: string) {
-  const hue = hueOf(name);
-  return {
-    initials: initialsOf(name),
-    background: `linear-gradient(135deg,${hsl(hue, 70, 55)},${hsl(hue + 45, 75, 42)})`,
-  };
 }
 
 /** The target under the pointer and the part of it, while a drop there would do something. */
@@ -295,17 +282,8 @@ function RailFolder({
   const drop = useRailDrop(`folder:${group.uuid}`, { kind: 'folder', groupUuid: group.uuid });
   const data: DragData = { drag: { kind: 'folder', groupUuid: group.uuid }, name: group.name };
   const drag = useDraggable({ id: `folder:${group.uuid}`, data });
-  const query = useQuery({
-    // under core's key for the group, so the dashboard's moves (which invalidate it) refresh the folder too; the
-    // members in the key fetch it again when a server is added or removed
-    queryKey: [...queryKeys.user.servers.all(), group.uuid, 'xylo-rail', [...group.serverOrder].sort().join(',')],
-    queryFn: () => getServerGroupServers(group.uuid, 1, undefined, GROUP_MAX),
-    enabled: group.serverOrder.length > 0,
-    placeholderData: keepPreviousData,
-    staleTime: 60_000,
-  });
-  const servers = orderGroupServers(query.data?.data ?? [], group.serverOrder);
-  if (group.serverOrder.length === 0 || (query.data && servers.length === 0)) return null;
+  const { servers, loaded } = useGroupServers(group);
+  if (group.serverOrder.length === 0 || (loaded && servers.length === 0)) return null;
 
   const color = folderColor(group.name);
   const folder = open ? (
@@ -523,7 +501,7 @@ function swallowNextClick() {
 function RailServers({ current, signedIn }: { current: string | null; signedIn: boolean }) {
   const { user } = useAuth();
   const groups = useUserStore((state) => state.serverGroups);
-  const setServerGroups = useUserStore((state) => state.setServerGroups);
+  const groupsLoaded = useLoadServerGroups();
   const edits = useGroupEdits();
   const [dragging, setDragging] = useState<DragData | null>(null);
   const [hover, setHover] = useState<Hover>(null);
@@ -535,18 +513,6 @@ function RailServers({ current, signedIn }: { current: string | null; signedIn: 
   const servers = useQuery({
     queryKey: ['xylo', 'rail-servers', user?.uuid],
     queryFn: () => getServers(1),
-    enabled: signedIn,
-    staleTime: 60_000,
-  });
-  const groupsQuery = useQuery({
-    queryKey: ['xylo', 'rail-groups', user?.uuid],
-    // into core's store, which the dashboard's grouped tab edits in place: a new, renamed, reordered or deleted
-    // group shows in the rail at once
-    queryFn: async () => {
-      const result = await getServerGroups();
-      setServerGroups(result);
-      return result;
-    },
     enabled: signedIn,
     staleTime: 60_000,
   });
@@ -628,7 +594,7 @@ function RailServers({ current, signedIn }: { current: string | null; signedIn: 
               />
             ))}
           {/* until the groups load, a grouped server can't be told from a loose one */}
-          {groupsQuery.status !== 'pending' &&
+          {groupsLoaded &&
             looseServers(servers.data?.data ?? [], groups, RAIL_SERVERS).map((server) => (
               <ServerButton key={server.uuid} server={server} current={current} from={null} />
             ))}

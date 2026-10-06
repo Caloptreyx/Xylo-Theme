@@ -11,19 +11,22 @@ backend/src/lib.rs                Extension impl: routers, permissions, settings
 backend/src/settings.rs           one opaque setting, `theme` (the editor's JSON, empty for the default look)
 backend/src/routes.rs             GET /xylo/theme (public, `{ theme, version }`, ETag, 304) and the admin PUT
 backend/src/permissions.rs        the `xylo-theme.update` admin permission; the PUT takes it or settings.update
-frontend/src/index.ts             entry: applies the theme, greeting, login preview route, admin route
+frontend/src/index.ts             entry: applies the theme, greeting, servers page, login preview route, admin route
 frontend/src/lib/theme.ts         the theme model, presets, normalizeTheme(), buildCss(), themeAttributes()
 frontend/src/lib/color.ts         hex colour maths (mix, contrast, shades, hsl, toHexColor)
 frontend/src/lib/store.ts         paints the theme, caches it, the editor's preview bridge, useXyloTheme()
 frontend/src/lib/core.ts          every core (`@/`) import, in one place
+frontend/src/lib/groups.ts        the server group queries the rail and the servers page share
 frontend/src/app.css              static CSS keyed off html's data-xylo-* attributes, fonts
 frontend/src/pages/ThemeEditor.tsx  Xylo Studio
 frontend/src/elements/editor/     sections (one per editor tab), controls, mocks (the option drawings)
 frontend/src/elements/shell/      the rail layout: Shell.tsx (context panel, phone top bar and drawer), Rail.tsx (the
                                   rail, folders, drag and drop), nav.ts (core's sidebar nodes), folders.ts (pure rules)
+frontend/src/elements/home/       the servers page: Home.tsx (page, HomeSwitch), ServerCard.tsx, home.ts (pure rules)
 frontend/src/elements/Greeting.tsx  the greeting above the servers list
 frontend/src/translations.ts      every user facing string (English)
-tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, shell/folders.ts (not shipped)
+tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, shell/folders.ts, home/home.ts
+                                  (not shipped)
 scripts/package.py                builds dist/dev_caloptreyx_xylo.c7s.zip
 ```
 
@@ -96,6 +99,29 @@ navigation from the props core gave the Sidebar.
 - app.css makes the router's content column (`.xylo-shell ~ #…-root` or `.xylo-topbar ~ …`, so virtual windows
   without a sidebar are untouched) a rounded canvas (`--xylo-canvas`) with `overflow: clip`, which rounds the
   sticky page headers without making it a scroller. Page tabs (core's SubNavigation and others) become a pill bar.
+
+## The servers page
+
+`homePage` (on by default) replaces core's two server lists (`/` and `/grouped`, or `/all` when grouped is the
+start page) with one page. Core's routes are not interceptable, but both lists render `AccountContentContainer`
+(hookable) with their own registries: the render interceptor in index.ts matches those registries
+(`window.extensionContext…pages.dashboard.home.containerAll`/`containerGrouped`, read at render time) and
+`HomeSwitch` clones core's element with `hideTitleComponent` and Xylo's page as its children, so the page title,
+padding and every extension's slots (the greeting among them) stay. Core's list component still mounts and fetches
+its first page; that is the cost of not owning the route.
+
+- Data: every server the user lists, up to 10 pages of core's 26 (`loadServers`, a note says when there are more);
+  an admin's "other users' servers" switch is core's own setting (`useServerListShowOthers`). A group chip shows that
+  group through `useGroupServers` (lib/groups.ts, the rail's query and cache). Live usage is core's store
+  (`serverResourceUsage`); the page subscribes to every node its servers live on while it is open.
+- home.ts: `phaseOf` (suspended, failed, installing, restoring, transferring outrank the power state; no usage reads
+  offline), the status filters and their counts, the sorts (`xylo:home-sort`), and `summarize` for the stat strip
+  (CPU and memory over running servers, disk over all; a 0 limit anywhere makes that total unlimited).
+- ServerCard: the name is the link, stretched over the card (`::after`), so the controls above it (`.xylo-home-raise`)
+  stay real buttons. Power buttons follow core's rules: the server's permissions plus the role's, nothing while
+  installing, restoring, transferring, suspended or in node maintenance; kill only while stopping, confirmed. Power
+  goes through core's `useBulkPowerActions` (its toasts), add to group through core's `ServerAddGroupModal`. The
+  tile turns into a check box; any selection brings up core's `BulkActionBar`.
 
 ## The editor
 

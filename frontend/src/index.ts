@@ -3,8 +3,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { createElement, lazy } from 'react';
 import { Extension, type ExtensionContext } from 'shared';
 import Greeting from './elements/Greeting.tsx';
+import { HomeSwitch } from './elements/home/Home.tsx';
 import Shell from './elements/shell/Shell.tsx';
-import { Sidebar } from './lib/core.ts';
+import { AccountContentContainer, Sidebar } from './lib/core.ts';
 import { THEME_UPDATE_PERMISSION } from './lib/permissions.ts';
 import { applyCachedTheme, listenForPreview, loadTheme } from './lib/store.ts';
 import ThemeEditor, { LOGIN_PREVIEW_PATH } from './pages/ThemeEditor.tsx';
@@ -29,6 +30,14 @@ class DevCaloptreyxXyloExtension extends Extension {
     ctx.extensionRegistry.pages.dashboard.home
       .enterContainerAll((container) => container.prependComponent(Greeting))
       .enterContainerGrouped((container) => container.prependComponent(Greeting));
+
+    // `homePage` (on by default): core's two server lists become Xylo's servers page (elements/home); the registries
+    // are compared at render time, where core passes the merged ones
+    AccountContentContainer.addRenderInterceptor((element, props) => {
+      const home = window.extensionContext.extensionRegistry.pages.dashboard.home;
+      if (props.registry !== home.containerAll && props.registry !== home.containerGrouped) return element;
+      return createElement(HomeSwitch, { ...props, element });
+    });
 
     // `sidebar: 'rail'` (the default) swaps core's sidebar for Xylo's rail and panel; the other layouts keep core's
     Sidebar.addRenderInterceptor((element, props) => createElement(Shell, { ...props, element }));

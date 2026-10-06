@@ -1065,3 +1065,361 @@ html[data-xylo-titles="gradient"] :is(#dashboard-root, #server-root, #admin-root
     animation: xylo-zoom 1100ms var(--xylo-ease, ease-out) infinite;
   }
 }
+
+/* ---------- the servers page (elements/home) ---------- */
+
+html[data-xylo] .xylo-home-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 64rem) {
+  html[data-xylo] .xylo-home-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+html[data-xylo] .xylo-home-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px 16px;
+}
+
+html[data-xylo] .xylo-home-stat .xylo-meter-track {
+  margin-top: 6px;
+}
+
+/* a usage bar: the accent gradient, turning amber then red as it fills, as core colours usage */
+html[data-xylo] .xylo-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+html[data-xylo] .xylo-meter-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 6px;
+  background-color: color-mix(in srgb, var(--mantine-color-text) 9%, transparent);
+}
+
+html[data-xylo] .xylo-meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--xylo-gradient);
+  transition: width 600ms var(--xylo-ease);
+}
+
+html[data-xylo] .xylo-meter[data-level="warn"] .xylo-meter-fill {
+  background: var(--mantine-color-yellow-filled);
+}
+
+html[data-xylo] .xylo-meter[data-level="danger"] .xylo-meter-fill {
+  background: var(--mantine-color-red-filled);
+}
+
+/* the toolbar's chips: status filters with counts, then one per server group in its folder colour */
+html[data-xylo] .xylo-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+html[data-xylo] .xylo-chip {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--xylo-hairline);
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--mantine-color-text) 4%, transparent);
+  color: color-mix(in srgb, var(--mantine-color-text) 80%, transparent);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+@media (hover: hover) {
+  html[data-xylo] .xylo-chip:hover {
+    background-color: color-mix(in srgb, var(--mantine-color-text) 9%, transparent);
+    color: var(--mantine-color-text);
+  }
+}
+
+html[data-xylo] .xylo-chip:focus-visible {
+  outline: 2px solid var(--xylo-accent);
+  outline-offset: 2px;
+}
+
+html[data-xylo] .xylo-chip[data-active] {
+  border-color: transparent;
+  background: var(--xylo-gradient);
+  color: var(--xylo-accent-ink);
+}
+
+html[data-xylo] .xylo-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+html[data-xylo] .xylo-chip-count {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+html[data-xylo] .xylo-chips-sep {
+  flex-shrink: 0;
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background-color: var(--xylo-hairline);
+}
+
+html[data-xylo] .xylo-home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: 14px;
+}
+
+/* a server card: the name's link stretches over it, the controls sit above that */
+html[data-xylo] .xylo-home-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  min-height: 15rem;
+  padding: 16px;
+}
+
+html[data-xylo] .xylo-home-card[data-selected] {
+  border-color: var(--xylo-accent);
+  box-shadow:
+    0 0 0 1px var(--xylo-accent),
+    var(--xylo-shadow);
+}
+
+html[data-xylo] .xylo-home-card-link {
+  display: block;
+  overflow: hidden;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-xylo] .xylo-home-card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+html[data-xylo] .xylo-home-card-link:focus-visible {
+  outline: none;
+}
+
+html[data-xylo] .xylo-home-card-link:focus-visible::after {
+  outline: 2px solid var(--xylo-accent);
+  outline-offset: -2px;
+}
+
+html[data-xylo] .xylo-home-raise {
+  position: relative;
+  z-index: 1;
+}
+
+/* the server's tile, as in the rail; it turns into a check box while selecting or hovered */
+html[data-xylo] .xylo-home-tile {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+html[data-xylo] .xylo-home-tile > * {
+  grid-area: 1 / 1;
+}
+
+html[data-xylo] .xylo-home-tile-check {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background-color: rgb(0 0 0 / 0.45);
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+html[data-xylo] .xylo-home-tile:is([data-selecting], :focus-visible) .xylo-home-tile-check {
+  opacity: 1;
+  background-color: rgb(0 0 0 / 0.3);
+  color: rgb(255 255 255 / 0.35);
+}
+
+@media (hover: hover) {
+  html[data-xylo] .xylo-home-tile:hover .xylo-home-tile-check {
+    opacity: 1;
+  }
+}
+
+html[data-xylo] .xylo-home-tile[aria-pressed="true"] .xylo-home-tile-check {
+  opacity: 1;
+  background: var(--xylo-gradient);
+  color: var(--xylo-accent-ink);
+}
+
+/* status: a dot in the server's state colour (Xylo's status colours), pulsing while it runs */
+html[data-xylo] .xylo-status {
+  --xylo-status: var(--color-server-status-offline, var(--mantine-color-red-filled));
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--xylo-status) 14%, transparent);
+  color: color-mix(in srgb, var(--xylo-status) 75%, var(--mantine-color-text));
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+html[data-xylo] .xylo-status[data-phase="running"] {
+  --xylo-status: var(--color-server-status-running, var(--mantine-color-green-filled));
+}
+
+html[data-xylo] .xylo-status:is([data-phase="starting"], [data-phase="stopping"]) {
+  --xylo-status: var(--color-server-status-starting, var(--mantine-color-yellow-filled));
+}
+
+html[data-xylo] .xylo-status:is([data-phase="installing"], [data-phase="restoring"], [data-phase="transferring"]) {
+  --xylo-status: var(--mantine-color-blue-filled);
+}
+
+html[data-xylo] .xylo-status:is([data-phase="failed"], [data-phase="suspended"]) {
+  --xylo-status: var(--mantine-color-red-filled);
+}
+
+html[data-xylo] .xylo-status[data-phase="offline"] {
+  --xylo-status: var(--mantine-color-dimmed);
+}
+
+html[data-xylo] .xylo-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--xylo-status);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-xylo]:not([data-xylo-motion="none"]) .xylo-status[data-phase="running"] .xylo-status-dot {
+    animation: xylo-pulse 2.4s ease-out infinite;
+  }
+
+  html[data-xylo]:not([data-xylo-motion="none"]) .xylo-skeleton {
+    animation: xylo-shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes xylo-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--xylo-status) 60%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+@keyframes xylo-shimmer {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+html[data-xylo] .xylo-home-address {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 5px 10px;
+  border: 1px solid var(--xylo-hairline);
+  border-radius: var(--xylo-control-radius, 8px);
+  background-color: color-mix(in srgb, var(--mantine-color-text) 4%, transparent);
+  color: color-mix(in srgb, var(--mantine-color-text) 80%, transparent);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.75rem;
+}
+
+@media (hover: hover) {
+  html[data-xylo] button.xylo-home-address:hover {
+    border-color: color-mix(in srgb, var(--xylo-accent) 45%, var(--xylo-hairline));
+    color: var(--mantine-color-text);
+  }
+}
+
+html[data-xylo] .xylo-home-address[data-empty] {
+  font-family: inherit;
+  color: var(--mantine-color-dimmed);
+}
+
+html[data-xylo] .xylo-home-meters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+html[data-xylo] .xylo-home-card[data-phase="offline"] .xylo-home-meters {
+  opacity: 0.6;
+}
+
+html[data-xylo] .xylo-home-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+html[data-xylo] .xylo-home-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 6px;
+  border-radius: 16px;
+  background: var(--xylo-gradient);
+  color: var(--xylo-accent-ink);
+  font-size: 1.25rem;
+}

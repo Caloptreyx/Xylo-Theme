@@ -90,11 +90,14 @@ export interface XyloTheme {
   hoverLift: boolean;
   /** A greeting with the user's name above the servers list. */
   greeting: boolean;
+  /** Xylo's servers page (elements/home): live stats, filters and power controls in place of core's list. */
+  homePage: boolean;
 }
 
 /**
  * What a preset sets: the whole look. Status colours, light mode overrides, density, scale, the code font, motion
- * and the content fields (greeting, background image) stay the draft's, since they are about the site, not the style.
+ * and the content fields (greeting, servers page, background image) stay the draft's, since they are about the site,
+ * not the style.
  */
 export type PresetLook = Pick<
   XyloTheme,
@@ -171,6 +174,7 @@ export const DEFAULT_THEME: XyloTheme = {
   motion: 'full',
   hoverLift: true,
   greeting: true,
+  homePage: true,
 };
 
 export type PresetId = 'aurora' | 'nebula' | 'lagoon' | 'verdant' | 'ember' | 'graphite' | 'mono' | 'sandstone';
@@ -478,6 +482,7 @@ export function normalizeTheme(raw: unknown, d: XyloTheme = DEFAULT_THEME): Xylo
     pageTransition: choice(r.pageTransition, TRANSITIONS, d.pageTransition),
     hoverLift: flag(r.hoverLift, d.hoverLift),
     greeting: flag(r.greeting, d.greeting),
+    homePage: flag(r.homePage, d.homePage),
   };
 }
 

@@ -94,6 +94,7 @@ describe('presets', () => {
       ...DEFAULT_THEME,
       sidebar: 'docked',
       greeting: false,
+      homePage: false,
       backgroundImage: '/bg.png',
       success: '#00ff00',
       uiScale: 110,
@@ -104,6 +105,7 @@ describe('presets', () => {
     assert.equal(applied.accent, mono.look.accent);
     assert.equal(applied.sidebar, 'rail');
     assert.equal(applied.greeting, false);
+    assert.equal(applied.homePage, false);
     assert.equal(applied.backgroundImage, '/bg.png');
     assert.equal(applied.success, '#00ff00');
     assert.equal(applied.uiScale, 110);

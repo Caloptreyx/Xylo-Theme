@@ -1,3 +1,5 @@
+import { hsl } from '../../lib/color.ts';
+
 /**
  * The rail's server folders: core's server groups (made on the dashboard's grouped tab), shown the way Discord shows
  * server folders. Pure, so the tests can run it without the panel.
@@ -137,6 +139,15 @@ export function initialsOf(name: string): string {
     .map((word) => word[0].toUpperCase())
     .join('');
   return initials || '?';
+}
+
+/** A server's tile: its initials on a gradient whose hue comes from its name, the same in the rail and on the page. */
+export function serverTile(name: string) {
+  const hue = hueOf(name);
+  return {
+    initials: initialsOf(name),
+    background: `linear-gradient(135deg,${hsl(hue, 70, 55)},${hsl(hue + 45, 75, 42)})`,
+  };
 }
 
 /** The open folders saved in storage; anything malformed reads as none open. */

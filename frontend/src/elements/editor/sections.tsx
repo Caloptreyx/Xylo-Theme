@@ -456,6 +456,15 @@ export function LayoutSection({ valid, set }: SectionProps) {
         />
       </Group>
 
+      <Group title={t('layout.home', {})}>
+        <ToggleField
+          label={t('layout.homePage', {})}
+          description={t('layout.homePageHint', {})}
+          checked={valid.homePage}
+          onChange={(homePage) => set({ homePage })}
+        />
+      </Group>
+
       <Group title={t('layout.nav', {})}>
         <ChoiceTiles
           value={valid.navStyle}
