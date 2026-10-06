@@ -6,9 +6,9 @@ import { alpha, contrastRatio, HEX, hsl, luminance, mix, readable, shades } from
  * URLs checked by SAFE_URL, unknown fields dropped. Nothing reaches buildCss() or the html attributes without it.
  */
 
-export const FONTS = ['inter', 'jakarta', 'space', 'outfit', 'system', 'panel'] as const;
+export const FONTS = ['geist', 'inter', 'jakarta', 'space', 'outfit', 'system', 'panel'] as const;
 export type Font = (typeof FONTS)[number];
-export const MONO_FONTS = ['jetbrains', 'system', 'panel'] as const;
+export const MONO_FONTS = ['geistMono', 'jetbrains', 'system', 'panel'] as const;
 export type MonoFont = (typeof MONO_FONTS)[number];
 /** The ambient layer behind everything: drifting colour fields, a single glow, a four corner mesh, or none. */
 export const BACKDROPS = ['aurora', 'spotlight', 'mesh', 'solid'] as const;
@@ -129,6 +129,40 @@ export type PresetLook = Pick<
   | 'pageTransition'
 >;
 
+/**
+ * The default look: a cool off-black base, one desaturated accent (accent2 only a lighter step of it, so the
+ * "gradient" stays a single hue), solid surfaces, a faint spotlight and grain, no glow, Geist. Aurora's violet to
+ * cyan glass is a preset to choose rather than the default.
+ */
+const CARBON: PresetLook = {
+  accent: '#7c9fe0',
+  accent2: '#93b1e9',
+  background: '#0c0d10',
+  surface: '#15171b',
+  text: '#e6e8ec',
+  backdrop: 'spotlight',
+  backdropIntensity: 22,
+  backdropAnimate: false,
+  pattern: 'noise',
+  patternOpacity: 30,
+  surfaceStyle: 'solid',
+  surfaceOpacity: 100,
+  blur: 0,
+  borderStrength: 40,
+  shadow: 'soft',
+  radius: 14,
+  controlRadius: 9,
+  sidebar: 'rail',
+  buttonStyle: 'solid',
+  navStyle: 'bar',
+  glow: 0,
+  font: 'geist',
+  headingFont: 'geist',
+  headingWeight: 600,
+  gradientTitles: false,
+  pageTransition: 'fade',
+};
+
 const AURORA: PresetLook = {
   accent: '#7c5cff',
   accent2: '#22d3ee',
@@ -159,7 +193,7 @@ const AURORA: PresetLook = {
 };
 
 export const DEFAULT_THEME: XyloTheme = {
-  ...AURORA,
+  ...CARBON,
   success: '',
   warning: '',
   danger: '',
@@ -170,14 +204,23 @@ export const DEFAULT_THEME: XyloTheme = {
   backgroundDim: 70,
   density: 'comfortable',
   uiScale: 100,
-  monoFont: 'jetbrains',
+  monoFont: 'geistMono',
   motion: 'full',
   hoverLift: true,
   greeting: true,
   homePage: true,
 };
 
-export type PresetId = 'aurora' | 'nebula' | 'lagoon' | 'verdant' | 'ember' | 'graphite' | 'mono' | 'sandstone';
+export type PresetId =
+  | 'carbon'
+  | 'aurora'
+  | 'nebula'
+  | 'lagoon'
+  | 'verdant'
+  | 'ember'
+  | 'graphite'
+  | 'mono'
+  | 'sandstone';
 
 export interface Preset {
   id: PresetId;
@@ -186,6 +229,7 @@ export interface Preset {
 }
 
 export const PRESETS: Preset[] = [
+  { id: 'carbon', style: 'minimal', look: CARBON },
   { id: 'aurora', style: 'glass', look: AURORA },
   {
     id: 'nebula',
@@ -513,6 +557,7 @@ export function generatePalette(hue: number, spread = 48): Palette {
 }
 
 export const FONT_STACKS: Record<Font, string | null> = {
+  geist: "'Geist Variable', 'Geist', ui-sans-serif, system-ui, sans-serif",
   inter: "'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif",
   jakarta: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
   space: "'Space Grotesk', ui-sans-serif, system-ui, sans-serif",
@@ -522,6 +567,7 @@ export const FONT_STACKS: Record<Font, string | null> = {
 };
 
 export const MONO_STACKS: Record<MonoFont, string | null> = {
+  geistMono: "'Geist Mono Variable', 'Geist Mono', ui-monospace, Menlo, Consolas, monospace",
   jetbrains: "'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace",
   system: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
   panel: null,

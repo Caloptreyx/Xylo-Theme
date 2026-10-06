@@ -141,13 +141,21 @@ export function initialsOf(name: string): string {
   return initials || '?';
 }
 
-/** A server's tile: its initials on a gradient whose hue comes from its name, the same in the rail and on the page. */
+/**
+ * A server's tile: its initials on a muted two step gradient of one hue from its name, the same in the rail and on
+ * the page. Kept under 55% saturation so a column of them reads as identity, not a rainbow beside the one accent.
+ */
 export function serverTile(name: string) {
   const hue = hueOf(name);
   return {
     initials: initialsOf(name),
-    background: `linear-gradient(135deg,${hsl(hue, 70, 55)},${hsl(hue + 45, 75, 42)})`,
+    background: `linear-gradient(135deg,${hsl(hue, 50, 48)},${hsl(hue + 18, 54, 36)})`,
   };
+}
+
+/** A folder's colour, from its group's name like a server tile's, as muted as the tiles. */
+export function folderColor(name: string) {
+  return hsl(hueOf(name), 45, 62);
 }
 
 /** The open folders saved in storage; anything malformed reads as none open. */

@@ -31,7 +31,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type CSSProperties, createContext, type ReactNode, useContext, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router';
-import { hsl } from '../../lib/color.ts';
 import {
   Avatar,
   Button,
@@ -62,7 +61,7 @@ import {
   dropPart,
   FOLDER_PREVIEW,
   FOLDERS_KEY,
-  hueOf,
+  folderColor,
   looseServers,
   parseOpenFolders,
   type RailDrag,
@@ -247,11 +246,6 @@ function useGroupEdits(): GroupEdits {
       }),
     ungroup: (group: RailGroup) => run(() => remove(group)),
   };
-}
-
-/** A folder's colour, from its name like a server tile's. */
-function folderColor(name: string) {
-  return hsl(hueOf(name), 65, 58);
 }
 
 /**

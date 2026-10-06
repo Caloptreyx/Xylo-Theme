@@ -114,6 +114,50 @@
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/geist-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/geist-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Geist Mono Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/geist-mono-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Geist Mono Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/geist-mono-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 /* ---------- page, backdrop and texture ---------- */
 
 /* a first visit waits for the theme (lib/store.ts), 1.5s at most, instead of flashing the default look */
@@ -344,13 +388,12 @@ html[data-xylo] #sidebar-content > .overflow-y-auto {
   padding-right: var(--mantine-spacing-sm);
 }
 
+/* section labels in sentence case (as core writes them), not tracked capitals */
 html[data-xylo] #sidebar-content .mantine-Divider-label {
   padding-inline: var(--mantine-spacing-xs);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--mantine-color-placeholder);
+  color: var(--mantine-color-dimmed);
 }
 
 html[data-xylo] #sidebar-content .mantine-Divider-label::before,
@@ -1023,7 +1066,8 @@ html[data-xylo-titles="gradient"] :is(#dashboard-root, #server-root, #admin-root
 
 /* ---------- Xylo's own pieces ---------- */
 
-.xylo-greeting-title {
+/* the greeting takes the gradient only with "Gradient page titles" on, like the page titles */
+html[data-xylo-titles="gradient"] .xylo-greeting-title {
   background: var(--xylo-gradient);
   -webkit-background-clip: text;
   background-clip: text;
@@ -1068,16 +1112,11 @@ html[data-xylo-titles="gradient"] :is(#dashboard-root, #server-root, #admin-root
 
 /* ---------- the servers page (elements/home) ---------- */
 
+/* the stat strip: one card split by hairlines, not four equal cards */
 html[data-xylo] .xylo-home-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-@media (min-width: 64rem) {
-  html[data-xylo] .xylo-home-stats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
+  padding: 0;
 }
 
 html[data-xylo] .xylo-home-stat {
@@ -1085,11 +1124,33 @@ html[data-xylo] .xylo-home-stat {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 14px 16px;
+  padding: 16px 20px 18px;
+}
+
+html[data-xylo] .xylo-home-stat:nth-child(even) {
+  border-left: 1px solid var(--xylo-hairline);
+}
+
+html[data-xylo] .xylo-home-stat:nth-child(n + 3) {
+  border-top: 1px solid var(--xylo-hairline);
+}
+
+@media (min-width: 64rem) {
+  html[data-xylo] .xylo-home-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  html[data-xylo] .xylo-home-stat:not(:first-child) {
+    border-left: 1px solid var(--xylo-hairline);
+  }
+
+  html[data-xylo] .xylo-home-stat:nth-child(n + 3) {
+    border-top: 0;
+  }
 }
 
 html[data-xylo] .xylo-home-stat .xylo-meter-track {
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 /* a usage bar: the accent gradient, turning amber then red as it fills, as core colours usage */
@@ -1110,7 +1171,7 @@ html[data-xylo] .xylo-meter-track {
 html[data-xylo] .xylo-meter-fill {
   height: 100%;
   border-radius: inherit;
-  background: var(--xylo-gradient);
+  background: var(--xylo-accent);
   transition: width 600ms var(--xylo-ease);
 }
 
@@ -1150,7 +1211,8 @@ html[data-xylo] .xylo-chip {
   transition:
     background-color 160ms ease,
     border-color 160ms ease,
-    color 160ms ease;
+    color 160ms ease,
+    transform 120ms var(--xylo-ease);
 }
 
 @media (hover: hover) {
@@ -1165,10 +1227,15 @@ html[data-xylo] .xylo-chip:focus-visible {
   outline-offset: 2px;
 }
 
+html[data-xylo] .xylo-chip:active {
+  transform: scale(0.97);
+}
+
+/* the current chip: an accent tint and outline, so a row of them never turns into a gradient strip */
 html[data-xylo] .xylo-chip[data-active] {
-  border-color: transparent;
-  background: var(--xylo-gradient);
-  color: var(--xylo-accent-ink);
+  border-color: color-mix(in srgb, var(--xylo-accent) 55%, transparent);
+  background-color: color-mix(in srgb, var(--xylo-accent) 16%, transparent);
+  color: color-mix(in srgb, var(--xylo-accent) 70%, var(--mantine-color-text));
 }
 
 html[data-xylo] .xylo-chip-dot {
@@ -1341,22 +1408,8 @@ html[data-xylo] .xylo-status-dot {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  html[data-xylo]:not([data-xylo-motion="none"]) .xylo-status[data-phase="running"] .xylo-status-dot {
-    animation: xylo-pulse 2.4s ease-out infinite;
-  }
-
   html[data-xylo]:not([data-xylo-motion="none"]) .xylo-skeleton {
     animation: xylo-shimmer 1.4s ease-in-out infinite;
-  }
-}
-
-@keyframes xylo-pulse {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--xylo-status) 60%, transparent);
-  }
-  70%,
-  100% {
-    box-shadow: 0 0 0 7px transparent;
   }
 }
 
@@ -1419,7 +1472,7 @@ html[data-xylo] .xylo-home-empty-icon {
   height: 52px;
   margin-bottom: 6px;
   border-radius: 16px;
-  background: var(--xylo-gradient);
-  color: var(--xylo-accent-ink);
+  background-color: color-mix(in srgb, var(--mantine-color-text) 7%, transparent);
+  color: var(--xylo-accent);
   font-size: 1.25rem;
 }

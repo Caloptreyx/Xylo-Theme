@@ -147,7 +147,7 @@ describe('contrastIssues', () => {
 
 describe('buildCss', () => {
   test('repaints the accent scale and both schemes', () => {
-    const css = buildCss(DEFAULT_THEME);
+    const css = buildCss({ ...DEFAULT_THEME, accent: '#7c5cff', background: '#09090f' });
     assert.match(css, /html:root\{[^}]*--mantine-color-blue-6:#7c5cff;/);
     assert.match(css, /html:root\[data-mantine-color-scheme="dark"\]\{[^}]*--mantine-color-body:#09090f;/);
     assert.match(css, /html:root\[data-mantine-color-scheme="light"\]\{[^}]*--mantine-color-text:/);
@@ -170,7 +170,8 @@ describe('buildCss', () => {
 
   test("the panel font option keeps core's font", () => {
     assert.doesNotMatch(buildCss({ ...DEFAULT_THEME, font: 'panel', headingFont: 'panel' }), /--mantine-font-family:/);
-    assert.match(buildCss(DEFAULT_THEME), /--mantine-font-family:'Inter Variable'/);
+    assert.match(buildCss({ ...DEFAULT_THEME, font: 'inter' }), /--mantine-font-family:'Inter Variable'/);
+    assert.match(buildCss({ ...DEFAULT_THEME, font: 'geist' }), /--mantine-font-family:'Geist Variable'/);
   });
 
   test('a hostile saved theme cannot break out of the stylesheet', () => {

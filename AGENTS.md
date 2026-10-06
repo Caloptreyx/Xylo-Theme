@@ -51,6 +51,14 @@ rewritten only when they change, so the editor repaints its preview live without
 - Page transitions animate the routed page element inside core's Container (`#…-root > div > div:first-child`),
   without fill mode; the editor (fixed, full screen) is excluded because a transform would pin it to the column.
 - A first visit with no cached theme hides the page (`data-xylo-pending`) until the fetch settles, at most 1.5s.
+- The default look is the Carbon preset (`DEFAULT_THEME` spreads it): off-black, one muted accent whose second
+  accent is only a lighter step, solid surfaces, no glow, Geist and Geist Mono. Aurora (the violet to cyan glass
+  the theme started with) is a preset, and themes saved before keep their own values. Xylo's own pieces follow
+  the `design-taste-frontend` / `redesign-existing-projects` skills (taste-skill, installed in `~/.agents/skills`):
+  the gradient only where a preset asks for it (buttons, the pill link, the rail's current area), a plain accent
+  for bars and tints for chips, gradient text only with "Gradient page titles", sentence case labels instead of
+  tracked capitals, no looping animation on idle content (a running server's dot does not pulse), one card per
+  group of figures rather than a card per figure, muted server tile colours (`serverTile`, `folderColor`).
 
 **`normalizeTheme()` is the security boundary.** The saved JSON is served to every visitor, the login page
 included. Colours must be `#rrggbb`, numbers are clamped, choices are allow listed, `backgroundImage` must pass

@@ -2,7 +2,6 @@ import { faArrowDownWideShort, faCheck, faMagnifyingGlass, faServer } from '@for
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { type ComponentProps, cloneElement, type ReactElement, type ReactNode, useEffect, useState } from 'react';
-import { hsl } from '../../lib/color.ts';
 import {
   AccountContentContainer,
   BulkActionBar,
@@ -23,7 +22,7 @@ import {
 import { useGroupServers, useLoadServerGroups } from '../../lib/groups.ts';
 import { useXyloTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
-import { hueOf } from '../shell/folders.ts';
+import { folderColor } from '../shell/folders.ts';
 import {
   percentOf,
   SORTS,
@@ -90,8 +89,8 @@ function Stat({
   percent?: number | null;
 }) {
   return (
-    <Card className='xylo-home-stat'>
-      <span className='text-xs font-medium uppercase tracking-wider text-(--mantine-color-dimmed)'>{label}</span>
+    <div className='xylo-home-stat'>
+      <span className='text-sm text-(--mantine-color-dimmed)'>{label}</span>
       <span className='text-2xl font-semibold tabular-nums tracking-tight'>{value}</span>
       <span className='truncate text-xs text-(--mantine-color-dimmed)'>{detail}</span>
       {percent !== undefined && (
@@ -99,7 +98,7 @@ function Stat({
           <div className='xylo-meter-fill' style={{ width: `${percent ?? 0}%` }} />
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -219,7 +218,7 @@ export default function Home() {
 
   return (
     <div className='xylo-home flex flex-col gap-5'>
-      <div className='xylo-home-stats'>
+      <Card className='xylo-home-stats'>
         <Stat
           label={t('home.online', {})}
           value={`${totals.online}`}
@@ -244,7 +243,7 @@ export default function Home() {
           detail={ofLimit(totals.disk, (value) => bytesToString(value, 1))}
           percent={percentOf(totals.disk.used, totals.disk.limit)}
         />
-      </div>
+      </Card>
 
       <div className='flex flex-col gap-3'>
         <div className='flex flex-wrap items-center gap-3'>
@@ -310,7 +309,7 @@ export default function Home() {
                   key={candidate.uuid}
                   active={group?.uuid === candidate.uuid}
                   count={candidate.serverOrder.length}
-                  color={hsl(hueOf(candidate.name), 65, 58)}
+                  color={folderColor(candidate.name)}
                   onClick={() => setGroupUuid(group?.uuid === candidate.uuid ? null : candidate.uuid)}
                 >
                   {candidate.name}

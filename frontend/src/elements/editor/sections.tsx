@@ -67,7 +67,8 @@ export function PresetsSection({ valid, set }: SectionProps) {
 
   return (
     <div className='flex flex-col gap-7'>
-      {(['glass', 'minimal'] as const).map((style) => (
+      {/* the default (Carbon) is minimal, so that group leads */}
+      {(['minimal', 'glass'] as const).map((style) => (
         <Group key={style} title={t(`presets.${style}`, {})}>
           <div className='grid grid-cols-2 gap-2.5'>
             {PRESETS.filter((preset) => preset.style === style).map((preset) => {
