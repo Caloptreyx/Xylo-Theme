@@ -1,0 +1,20 @@
+[package]
+name = "dev_caloptreyx_xylo"
+description = "A modern glass theme for Calagopus Panel with a live theme editor."
+authors = ["Caloptreyx"]
+version = "0.1.0"
+edition = { workspace = true }
+
+[dependencies]
+shared = { workspace = true }
+async-trait = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
+compact_str = { workspace = true }
+anyhow = { workspace = true }
+axum = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }

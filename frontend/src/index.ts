@@ -1,0 +1,54 @@
+import { faPalette } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { createElement, lazy } from 'react';
+import { Extension, type ExtensionContext } from 'shared';
+import Greeting from './elements/Greeting.tsx';
+import { THEME_UPDATE_PERMISSION } from './lib/permissions.ts';
+import { applyCachedTheme, listenForPreview, loadTheme } from './lib/store.ts';
+import ThemeEditor, { LOGIN_PREVIEW_PATH } from './pages/ThemeEditor.tsx';
+import { getExtTranslations } from './translations.ts';
+
+// the login preview route is the only place that loads it outside core's own lazy auth router
+const Login = lazy(() => import('@/pages/auth/Login.tsx'));
+
+class DevCaloptreyxXyloExtension extends Extension {
+  public cardIcon = createElement(FontAwesomeIcon, { icon: faPalette });
+  public cardConfigurationPage: React.FC | null = ThemeEditor;
+  public cardComponent: React.FC | null = null;
+
+  public initialize(ctx: ExtensionContext): void {
+    // the look is runtime CSS (lib/store.ts): the cached theme paints at once, the fetch follows, and inside the
+    // editor's preview frame the editor's drafts replace both
+    applyCachedTheme();
+    void loadTheme();
+    listenForPreview();
+
+    // `greeting`: a welcome above the servers list, whichever of core's two list routes is the start page
+    ctx.extensionRegistry.pages.dashboard.home
+      .enterContainerAll((container) => container.prependComponent(Greeting))
+      .enterContainerGrouped((container) => container.prependComponent(Greeting));
+
+    // auth routes redirect signed in users, so the editor previews core's real login page here instead
+    ctx.extensionRegistry.routes.addGlobalRoute({
+      path: LOGIN_PREVIEW_PATH,
+      element: () => createElement(Login),
+    });
+
+    // the backend's `xylo-theme` admin permission group (backend/src/permissions.rs) in core's role editor
+    ctx.extensionRegistry.enterPermissionIcons((icons) =>
+      icons.addAdminPermissionIcon('xylo-theme', createElement(FontAwesomeIcon, { icon: faPalette })),
+    );
+    ctx.extensionRegistry.routes.addAdminRoute({
+      name: () => getExtTranslations().t('nav.editor', {}),
+      icon: faPalette,
+      path: '/xylo',
+      category: 'system',
+      // core shows it to roles holding either; saving needs settings.update or xylo-theme.update (lib/permissions.ts)
+      permission: ['settings.read', THEME_UPDATE_PERMISSION],
+      element: ThemeEditor,
+      exact: true,
+    });
+  }
+}
+
+export default new DevCaloptreyxXyloExtension();

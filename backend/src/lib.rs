@@ -1,0 +1,48 @@
+use shared::{
+    State,
+    extensions::{Extension, ExtensionPermissionsBuilder, ExtensionRouteBuilder},
+};
+use std::sync::Arc;
+
+mod permissions;
+mod routes;
+pub mod settings;
+
+#[derive(Default)]
+pub struct ExtensionStruct;
+
+#[async_trait::async_trait]
+impl Extension for ExtensionStruct {
+    async fn initialize(&mut self, _state: State) {
+        tracing::info!("xylo theme loaded");
+    }
+
+    async fn initialize_router(
+        &mut self,
+        state: State,
+        builder: ExtensionRouteBuilder,
+    ) -> ExtensionRouteBuilder {
+        builder
+            // public on purpose: the login page is themed too
+            .add_global_router(|routes| routes.nest("/xylo", routes::public(&state)))
+            .add_admin_api_router(|routes| {
+                routes.nest("/extensions/dev.caloptreyx.xylo", routes::admin(&state))
+            })
+    }
+
+    /// `xylo-theme.update`: saving the theme without the panel wide `settings.update`.
+    async fn initialize_permissions(
+        &mut self,
+        _state: State,
+        builder: ExtensionPermissionsBuilder,
+    ) -> ExtensionPermissionsBuilder {
+        permissions::register(builder)
+    }
+
+    async fn settings_deserializer(
+        &self,
+        _state: State,
+    ) -> shared::extensions::settings::ExtensionSettingsDeserializer {
+        Arc::new(settings::ExtensionSettingsDataDeserializer)
+    }
+}

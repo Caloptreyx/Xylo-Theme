@@ -1,0 +1,562 @@
+import {
+  faArrowRotateLeft,
+  faArrowRotateRight,
+  faDesktop,
+  faDownload,
+  faDroplet,
+  faEllipsisVertical,
+  faFont,
+  faLayerGroup,
+  faMobileScreen,
+  faMoon,
+  faRotateRight,
+  faSun,
+  faSwatchbook,
+  faTableColumns,
+  faTabletScreenButton,
+  faTrashArrowUp,
+  faUpload,
+  faWandMagicSparkles,
+  faWater,
+  faXmark,
+  type IconDefinition,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Loader, Select, useComputedColorScheme } from '@mantine/core';
+import { isAxiosError } from 'axios';
+import { type FC, useEffect, useReducer, useRef, useState } from 'react';
+import { useBeforeUnload, useNavigate } from 'react-router';
+import saveTheme from '../api/saveTheme.ts';
+import {
+  BackdropSection,
+  ColorsSection,
+  LayoutSection,
+  MotionSection,
+  PresetsSection,
+  type SectionProps,
+  SurfacesSection,
+  TypographySection,
+} from '../elements/editor/sections.tsx';
+import {
+  ActionIcon,
+  Button,
+  ConfirmationModal,
+  getServers,
+  httpErrorToHuman,
+  Menu,
+  SegmentedControl,
+  Tooltip,
+  useAdminCan,
+  useBlocker,
+  useKeyboardShortcuts,
+  useToast,
+} from '../lib/core.ts';
+import { useCanSaveTheme } from '../lib/permissions.ts';
+import { loadTheme, type PreviewScheme, READY_MSG, rememberTheme, savedTheme, sendPreview } from '../lib/store.ts';
+import { DEFAULT_THEME, normalizeTheme, SAFE_URL, sameTheme, type XyloTheme } from '../lib/theme.ts';
+import { useExtTranslations } from '../translations.ts';
+
+/** Auth routes redirect signed in users, so the editor previews core's real login page here (index.ts). */
+export const LOGIN_PREVIEW_PATH = '/xylo-preview/login';
+
+type SectionId = 'presets' | 'colors' | 'backdrop' | 'surfaces' | 'layout' | 'typography' | 'motion';
+
+const SECTIONS: { id: SectionId; icon: IconDefinition; Component: FC<SectionProps> }[] = [
+  { id: 'presets', icon: faSwatchbook, Component: PresetsSection },
+  { id: 'colors', icon: faDroplet, Component: ColorsSection },
+  { id: 'backdrop', icon: faWater, Component: BackdropSection },
+  { id: 'surfaces', icon: faLayerGroup, Component: SurfacesSection },
+  { id: 'layout', icon: faTableColumns, Component: LayoutSection },
+  { id: 'typography', icon: faFont, Component: TypographySection },
+  { id: 'motion', icon: faWandMagicSparkles, Component: MotionSection },
+];
+
+type Device = 'desktop' | 'tablet' | 'phone';
+const DEVICE_WIDTH: Record<Device, number> = { desktop: 1280, tablet: 834, phone: 390 };
+const STAGE_PADDING = 28;
+const HISTORY = 60;
+
+/** Debounced undo and redo over whole drafts: a burst of edits (a slider drag) is one step. */
+function useHistory(draft: XyloTheme, setDraft: (theme: XyloTheme) => void) {
+  const past = useRef<XyloTheme[]>([]);
+  const future = useRef<XyloTheme[]>([]);
+  const committed = useRef(draft);
+  const latest = useRef(draft);
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
+
+  /** Records the live draft as a step of its own, so undo inside the debounce window doesn't lose it. */
+  const flush = () => {
+    if (latest.current === committed.current) return;
+    // a save swaps in the normalized copy of the same draft; that is not a step anyone wants to undo
+    if (sameTheme(latest.current, committed.current)) {
+      committed.current = latest.current;
+      return;
+    }
+    past.current = [...past.current.slice(-(HISTORY - 1)), committed.current];
+    future.current = [];
+    committed.current = latest.current;
+  };
+
+  useEffect(() => {
+    latest.current = draft;
+    const id = setTimeout(() => {
+      flush();
+      rerender();
+    }, 400);
+    return () => clearTimeout(id);
+  }, [draft]);
+
+  const step = (from: typeof past, to: typeof past) => {
+    flush();
+    const next = from.current.pop();
+    if (!next) return rerender();
+    to.current.push(committed.current);
+    committed.current = next;
+    latest.current = next;
+    setDraft(next);
+    rerender();
+  };
+
+  const pending = draft !== committed.current;
+  return {
+    canUndo: past.current.length > 0 || pending,
+    canRedo: future.current.length > 0 && !pending,
+    undo: () => step(past, future),
+    redo: () => step(future, past),
+    restart: (theme: XyloTheme) => {
+      past.current = [];
+      future.current = [];
+      committed.current = theme;
+      latest.current = theme;
+    },
+  };
+}
+
+/** An imported file must be a JSON object with at least one theme field; normalizeTheme() handles the rest. */
+const isThemeFile = (value: unknown) =>
+  !!value &&
+  typeof value === 'object' &&
+  !Array.isArray(value) &&
+  Object.keys(value).some((key) => key in DEFAULT_THEME);
+
+export default function ThemeEditor() {
+  const { t } = useExtTranslations();
+  const { addToast } = useToast();
+  const navigate = useNavigate();
+
+  const [draft, setDraft] = useState<XyloTheme>(savedTheme);
+  const [saved, setSaved] = useState<XyloTheme>(savedTheme);
+  // the cache can be stale or missing, so nothing is saved until the stored theme has loaded
+  const [load, setLoad] = useState<'pending' | 'ok' | 'failed'>('pending');
+  // the stored theme's version, sent as `base` so a save never replaces a theme saved elsewhere meanwhile
+  const version = useRef('');
+  const [conflict, setConflict] = useState<XyloTheme | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [section, setSection] = useState<SectionId>('presets');
+  const [device, setDevice] = useState<Device>('desktop');
+  // the preview starts in the admin's own scheme; the toggle only ever touches the frame
+  const adminScheme = useComputedColorScheme('dark', { getInitialValueInEffect: false });
+  const [scheme, setScheme] = useState<PreviewScheme>(adminScheme);
+  const [page, setPage] = useState('/');
+  const [frameKey, setFrameKey] = useState(0);
+  const [serverId, setServerId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [stage, setStage] = useState({ width: 0, height: 0 });
+  // the draft can hold half typed colours; the preview, drawings and checks use the last valid one
+  const [valid, setValid] = useState(draft);
+
+  const frame = useRef<HTMLIFrameElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const importRef = useRef<HTMLInputElement>(null);
+  const shown = useRef(draft);
+  const history = useHistory(draft, setDraft);
+
+  const set = (patch: Partial<XyloTheme>) => setDraft((d) => ({ ...d, ...patch }));
+  const dirty = !sameTheme(normalizeTheme(draft, saved), saved);
+  const badUrl = draft.backgroundImage !== '' && !SAFE_URL.test(draft.backgroundImage);
+  const canSaveTheme = useCanSaveTheme();
+  const canSave = dirty && load === 'ok' && !badUrl && canSaveTheme;
+  // a role holding only the Xylo permission reaches the admin area, not necessarily its extensions page
+  const closeTo = useAdminCan('extensions.*') ? '/admin/extensions' : '/admin';
+
+  const blocker = useBlocker(dirty);
+  useBeforeUnload((e) => {
+    if (!dirty) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
+  /** Loads the stored theme; `replace` drops the draft, otherwise edits made meanwhile are kept. */
+  const fetchTheme = (replace: boolean) => {
+    const start = draft;
+    setLoad('pending');
+    loadTheme().then((res) => {
+      if (!res) {
+        setLoad('failed');
+        return;
+      }
+      version.current = res.version;
+      setSaved(res.theme);
+      setDraft((d) => {
+        if (!replace && d !== start) return d;
+        history.restart(res.theme);
+        return res.theme;
+      });
+      setLoad('ok');
+    });
+  };
+
+  useEffect(() => {
+    fetchTheme(false);
+    getServers(1, undefined, false)
+      .then((res) => setServerId(res.data[0]?.uuidShort ?? null))
+      .catch(() => {
+        // the server page is simply left out of the picker
+      });
+  }, []);
+
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setStage({ width: el.clientWidth, height: el.clientHeight }));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // drafts reach the frame at most every 50ms, so a slider drag stays smooth
+  useEffect(() => {
+    shown.current = normalizeTheme(draft, shown.current);
+    setValid(shown.current);
+    const id = setTimeout(() => sendPreview(frame.current, shown.current, scheme), 50);
+    return () => clearTimeout(id);
+  }, [draft, scheme]);
+
+  // the frame announces itself once Xylo runs in it (after every navigation inside it)
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.source !== frame.current?.contentWindow) return;
+      if ((event.data as { type?: string } | null)?.type === READY_MSG)
+        sendPreview(frame.current, shown.current, scheme);
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [scheme]);
+
+  /** Stores `theme` (made from the draft `sent`); without `base` it replaces whatever is stored. */
+  const store = (theme: XyloTheme, sent: XyloTheme, base?: string) => {
+    setSaving(true);
+    saveTheme(theme, base)
+      .then((newVersion) => {
+        version.current = newVersion;
+        rememberTheme(theme);
+        setSaved(theme);
+        // edits made while the request was out stay in the draft (and count as unsaved)
+        setDraft((d) => (d === sent ? theme : d));
+        setConflict(null);
+        addToast(t('editor.saved', {}), 'success');
+      })
+      .catch((err) => {
+        if (base !== undefined && isAxiosError(err) && err.response?.status === 409) setConflict(theme);
+        else addToast(httpErrorToHuman(err), 'error');
+      })
+      .finally(() => setSaving(false));
+  };
+
+  const doSave = () => {
+    if (canSave && !saving) store(normalizeTheme(draft, saved), draft, version.current);
+  };
+
+  useKeyboardShortcuts({
+    shortcuts: [
+      { key: 's', modifiers: ['ctrlOrMeta'], allowWhenInputFocused: true, callback: doSave },
+      // not while typing: there the field's own undo wins
+      { key: 'z', modifiers: ['ctrlOrMeta', 'shift'], callback: history.redo },
+      { key: 'z', modifiers: ['ctrlOrMeta'], callback: history.undo },
+    ],
+  });
+
+  const doExport = () => {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(
+      new Blob([JSON.stringify(normalizeTheme(draft, saved), null, 2)], { type: 'application/json' }),
+    );
+    link.download = 'xylo-theme.json';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const doImport = (file: File) =>
+    file
+      .text()
+      .then((body) => {
+        const parsed: unknown = JSON.parse(body);
+        if (!isThemeFile(parsed)) throw new Error('not a theme');
+        setDraft(normalizeTheme(parsed, valid));
+        addToast(t('editor.imported', {}), 'success');
+      })
+      .catch(() => addToast(t('editor.importFailed', {}), 'error'));
+
+  const pages = [
+    { value: '/', label: t('preview.servers', {}) },
+    ...(serverId ? [{ value: `/server/${serverId}`, label: t('preview.server', {}) }] : []),
+    { value: '/account', label: t('preview.account', {}) },
+    { value: '/admin', label: t('preview.admin', {}) },
+    { value: LOGIN_PREVIEW_PATH, label: t('preview.login', {}) },
+  ];
+
+  const available = Math.max(320, stage.width - STAGE_PADDING * 2);
+  // the desktop preview is at least 1280px wide (the panel's sidebar layout), scaled down on a narrower stage
+  const logicalWidth = device === 'desktop' ? Math.max(available, DEVICE_WIDTH.desktop) : DEVICE_WIDTH[device];
+  const scale = Math.min(1, available / logicalWidth);
+  const logicalHeight = Math.max(320, stage.height - STAGE_PADDING * 2) / scale;
+
+  const saveBlocked = !canSaveTheme
+    ? t('editor.noPermission', {})
+    : load === 'pending'
+      ? t('editor.loading', {})
+      : load === 'failed'
+        ? t('editor.loadFailed', {})
+        : null;
+
+  const current = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];
+  const SectionComponent = current.Component;
+
+  const iconButton = (label: string, icon: IconDefinition, onClick: () => void, disabled = false) => (
+    <Tooltip label={label}>
+      <ActionIcon variant='subtle' color='gray' size='lg' aria-label={label} disabled={disabled} onClick={onClick}>
+        <FontAwesomeIcon icon={icon} />
+      </ActionIcon>
+    </Tooltip>
+  );
+
+  return (
+    <div className='xylo-editor fixed inset-0 z-[120] flex flex-col bg-(--mantine-color-body) text-(--mantine-color-text)'>
+      <header className='flex h-14 shrink-0 items-center gap-3 border-b border-(--mantine-color-default-border) bg-(--xylo-card-solid) px-3'>
+        {iconButton(t('editor.close', {}), faXmark, () => navigate(closeTo))}
+        <div className='flex min-w-0 items-center gap-2.5'>
+          <div
+            aria-hidden
+            className='grid size-8 shrink-0 place-items-center rounded-lg text-sm font-bold text-(--xylo-accent-ink) shadow-[0_6px_18px_-8px_var(--xylo-glow-color)]'
+            style={{ background: 'var(--xylo-gradient)' }}
+          >
+            X
+          </div>
+          <div className='hidden min-w-0 flex-col leading-tight sm:flex'>
+            <span className='truncate text-sm font-semibold'>{t('editor.title', {})}</span>
+            <span className='flex items-center gap-1.5 text-xs text-(--mantine-color-dimmed)'>
+              <span
+                className={`size-1.5 rounded-full ${dirty ? 'bg-(--mantine-color-yellow-filled)' : 'bg-(--mantine-color-green-filled)'}`}
+              />
+              {dirty ? t('editor.unsaved', {}) : t('editor.upToDate', {})}
+            </span>
+          </div>
+        </div>
+
+        <div className='mx-auto flex min-w-0 items-center gap-2'>
+          <Select
+            size='xs'
+            w={150}
+            allowDeselect={false}
+            aria-label={t('preview.page', {})}
+            data={pages}
+            value={page}
+            onChange={(value) => value && setPage(value)}
+            comboboxProps={{ zIndex: 400 }}
+          />
+          <SegmentedControl
+            size='xs'
+            value={device}
+            onChange={(value) => setDevice(value as Device)}
+            data={(
+              [
+                ['desktop', faDesktop],
+                ['tablet', faTabletScreenButton],
+                ['phone', faMobileScreen],
+              ] as const
+            ).map(([value, icon]) => ({
+              value,
+              label: (
+                <Tooltip label={t(`preview.${value}`, {})}>
+                  <span className='flex items-center px-0.5' aria-label={t(`preview.${value}`, {})}>
+                    <FontAwesomeIcon icon={icon} />
+                  </span>
+                </Tooltip>
+              ),
+            }))}
+          />
+          {iconButton(
+            scheme === 'dark' ? t('preview.light', {}) : t('preview.dark', {}),
+            scheme === 'dark' ? faSun : faMoon,
+            () => setScheme(scheme === 'dark' ? 'light' : 'dark'),
+          )}
+          {iconButton(t('preview.reload', {}), faRotateRight, () => setFrameKey((k) => k + 1))}
+        </div>
+
+        <div className='flex items-center gap-1'>
+          {iconButton(t('editor.undo', {}), faArrowRotateLeft, history.undo, !history.canUndo)}
+          {iconButton(t('editor.redo', {}), faArrowRotateRight, history.redo, !history.canRedo)}
+          <Menu position='bottom-end' zIndex={400}>
+            <Menu.Target>
+              <ActionIcon variant='subtle' color='gray' size='lg' aria-label={t('editor.more', {})}>
+                <FontAwesomeIcon icon={faEllipsisVertical} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<FontAwesomeIcon icon={faUpload} />} onClick={() => importRef.current?.click()}>
+                {t('editor.import', {})}
+              </Menu.Item>
+              <Menu.Item leftSection={<FontAwesomeIcon icon={faDownload} />} onClick={doExport}>
+                {t('editor.export', {})}
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item
+                leftSection={<FontAwesomeIcon icon={faArrowRotateLeft} />}
+                disabled={!dirty}
+                onClick={() => setDraft(saved)}
+              >
+                {t('editor.discard', {})}
+              </Menu.Item>
+              <Menu.Item
+                color='red'
+                leftSection={<FontAwesomeIcon icon={faTrashArrowUp} />}
+                onClick={() => setConfirmReset(true)}
+              >
+                {t('editor.reset', {})}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+          <input
+            ref={importRef}
+            type='file'
+            accept='application/json,.json'
+            className='hidden'
+            onChange={(e) => {
+              const file = e.currentTarget.files?.[0];
+              e.currentTarget.value = '';
+              if (file) void doImport(file);
+            }}
+          />
+          <Tooltip label={saveBlocked ?? 'Ctrl / ⌘ + S'}>
+            <Button className='ml-1' disabled={!canSave} loading={saving} onClick={doSave}>
+              {t('editor.save', {})}
+            </Button>
+          </Tooltip>
+        </div>
+      </header>
+
+      <div className='flex min-h-0 flex-1'>
+        <nav className='flex w-[76px] shrink-0 flex-col items-stretch gap-1 overflow-y-auto border-r border-(--mantine-color-default-border) bg-(--xylo-card-solid) p-2'>
+          {SECTIONS.map(({ id, icon }) => {
+            const active = id === section;
+            return (
+              <button
+                key={id}
+                type='button'
+                aria-current={active ? 'page' : undefined}
+                onClick={() => setSection(id)}
+                className={`flex cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-2 text-[0.6875rem] font-medium transition-colors duration-200 ${
+                  active
+                    ? 'bg-(--mantine-color-blue-light) text-(--mantine-color-blue-light-color)'
+                    : 'text-(--mantine-color-dimmed) hover:bg-(--mantine-color-default-hover) hover:text-(--mantine-color-text)'
+                }`}
+              >
+                <FontAwesomeIcon icon={icon} className='text-base' />
+                {t(`section.${id}`, {})}
+              </button>
+            );
+          })}
+        </nav>
+
+        <aside className='flex w-[360px] shrink-0 flex-col border-r border-(--mantine-color-default-border) bg-(--xylo-card-solid)'>
+          <div className='border-b border-(--mantine-color-default-border) px-5 py-4'>
+            <h2 className='text-lg font-semibold tracking-tight'>{t(`section.${section}`, {})}</h2>
+            <p className='mt-0.5 text-xs text-(--mantine-color-dimmed)'>{t(`section.${section}Hint`, {})}</p>
+            {saveBlocked && load !== 'pending' && (
+              <div className='mt-2 flex flex-col items-start gap-1.5 text-xs text-(--mantine-color-yellow-text)'>
+                {saveBlocked}
+                {load === 'failed' && (
+                  <Button size='compact-xs' variant='default' onClick={() => fetchTheme(false)}>
+                    {t('editor.retry', {})}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+          <div key={section} className='xylo-pop min-h-0 flex-1 overflow-y-auto px-5 py-5'>
+            <SectionComponent draft={draft} valid={valid} set={set} />
+          </div>
+        </aside>
+
+        <main
+          ref={stageRef}
+          className='xylo-stage relative flex min-w-0 flex-1 items-start justify-center overflow-hidden'
+        >
+          <div
+            className='relative mt-7 shrink-0 overflow-hidden rounded-2xl border border-(--mantine-color-default-border) shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)] transition-[width] duration-300'
+            style={{ width: logicalWidth * scale, height: logicalHeight * scale }}
+          >
+            {load === 'pending' && (
+              <div className='absolute inset-0 z-10 grid place-items-center bg-(--mantine-color-body)'>
+                <Loader size='sm' />
+              </div>
+            )}
+            <iframe
+              key={frameKey}
+              ref={frame}
+              title={t('preview.page', {})}
+              src={page}
+              className='origin-top-left border-0'
+              style={{ width: logicalWidth, height: logicalHeight, transform: `scale(${scale})` }}
+            />
+          </div>
+        </main>
+      </div>
+
+      <ConfirmationModal
+        opened={confirmReset}
+        onClose={() => setConfirmReset(false)}
+        title={t('editor.resetTitle', {})}
+        confirm={t('editor.resetConfirm', {})}
+        onConfirmed={() => {
+          setDraft(DEFAULT_THEME);
+          setConfirmReset(false);
+        }}
+      >
+        {t('editor.resetBody', {})}
+      </ConfirmationModal>
+
+      <ConfirmationModal
+        opened={conflict !== null}
+        onClose={() => setConflict(null)}
+        title={t('editor.conflictTitle', {})}
+        confirm={t('editor.conflictOverwrite', {})}
+        onConfirmed={() => {
+          if (conflict) store(conflict, draft);
+        }}
+      >
+        <div className='flex flex-col items-start gap-3'>
+          {t('editor.conflictBody', {})}
+          <Button
+            variant='default'
+            onClick={() => {
+              setConflict(null);
+              fetchTheme(true);
+            }}
+          >
+            {t('editor.conflictReload', {})}
+          </Button>
+        </div>
+      </ConfirmationModal>
+
+      <ConfirmationModal
+        opened={blocker.state === 'blocked'}
+        onClose={blocker.reset}
+        title={t('editor.leaveTitle', {})}
+        confirm={t('editor.leaveConfirm', {})}
+        onConfirmed={blocker.proceed}
+      >
+        {t('editor.leaveBody', {})}
+      </ConfirmationModal>
+    </div>
+  );
+}

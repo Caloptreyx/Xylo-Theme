@@ -1,0 +1,668 @@
+/*
+ * Xylo's static styles. The panel loads every extension's app.css whether the extension is enabled or not, so every
+ * rule is scoped to the attributes applyTheme() (lib/store.ts) puts on html, which only an enabled Xylo sets. The
+ * colours and sizes come from the variables buildCss() (lib/theme.ts) writes; the attributes pick the variants.
+ */
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/inter-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("./fonts/plus-jakarta-sans-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("./fonts/plus-jakarta-sans-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/space-grotesk-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/space-grotesk-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Outfit";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/outfit-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Outfit";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/outfit-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("./fonts/jetbrains-mono-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("./fonts/jetbrains-mono-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---------- page, backdrop and texture ---------- */
+
+/* a first visit waits for the theme (lib/store.ts), 1.5s at most, instead of flashing the default look */
+html[data-xylo-pending] body {
+  visibility: hidden;
+}
+
+html[data-xylo] {
+  --xylo-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  background-color: var(--mantine-color-body);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--mantine-color-text) 18%, transparent) transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* the backdrop and the texture are fixed layers under body, which lets them through */
+html[data-xylo] body {
+  background-color: transparent;
+}
+
+html[data-xylo]::before,
+html[data-xylo]::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+}
+
+html[data-xylo]::before {
+  inset: -12vmax;
+}
+
+html[data-xylo]::after {
+  inset: 0;
+}
+
+/* the blur turns the gradients' straight falloff into soft light; rasterized once, then only moved */
+html[data-xylo]::before {
+  filter: blur(40px);
+}
+
+html[data-xylo-backdrop="aurora"]::before {
+  background:
+    radial-gradient(44vmax 34vmax at 30% 22%, var(--xylo-field-1), transparent 70%),
+    radial-gradient(38vmax 30vmax at 80% 24%, var(--xylo-field-2), transparent 70%),
+    radial-gradient(50vmax 34vmax at 58% 86%, var(--xylo-field-3), transparent 70%);
+}
+
+html[data-xylo-backdrop="spotlight"]::before {
+  background:
+    radial-gradient(60vmax 36vmax at 55% 12%, var(--xylo-field-1), transparent 72%),
+    radial-gradient(32vmax 22vmax at 66% 14%, var(--xylo-field-2), transparent 70%);
+}
+
+html[data-xylo-backdrop="mesh"]::before {
+  background:
+    radial-gradient(40vmax 32vmax at 20% 18%, var(--xylo-field-1), transparent 70%),
+    radial-gradient(40vmax 32vmax at 84% 20%, var(--xylo-field-2), transparent 70%),
+    radial-gradient(40vmax 32vmax at 80% 84%, var(--xylo-field-1), transparent 70%),
+    radial-gradient(40vmax 32vmax at 20% 82%, var(--xylo-field-3), transparent 70%);
+}
+
+/* only transform moves, so the drift stays on the compositor */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-xylo-animate="on"]::before {
+    animation: xylo-drift 36s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+}
+
+@keyframes xylo-drift {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(3vmax, -2vmax, 0) rotate(7deg) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-3vmax, 2.5vmax, 0) rotate(-5deg) scale(1.03);
+  }
+}
+
+html[data-xylo-pattern="grid"]::after {
+  background-image:
+    linear-gradient(var(--xylo-pattern-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--xylo-pattern-color) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 35%, transparent 100%);
+}
+
+html[data-xylo-pattern="dots"]::after {
+  background-image: radial-gradient(var(--xylo-pattern-color) 1.2px, transparent 1.6px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 90% 75% at 50% 0%, #000 40%, transparent 100%);
+}
+
+html[data-xylo-pattern="noise"]::after {
+  opacity: var(--xylo-noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+html[data-xylo] ::selection {
+  background-color: color-mix(in srgb, var(--xylo-accent) 38%, transparent);
+}
+
+html[data-xylo] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html[data-xylo] ::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  background-color: color-mix(in srgb, var(--mantine-color-text) 18%, transparent);
+}
+
+html[data-xylo] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* core resets the outline on buttons and inputs; keyboard focus gets a visible accent ring back */
+html[data-xylo] :is(a, button, [role="button"], [role="tab"], [role="switch"]):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--xylo-accent) 75%, transparent);
+  outline-offset: 2px;
+}
+
+/* ---------- shadows ---------- */
+
+html[data-xylo-shadow="none"] {
+  --xylo-shadow: 0 0 #0000;
+  --xylo-shadow-hover: 0 0 #0000;
+}
+
+html[data-xylo-shadow="soft"] {
+  --xylo-shadow:
+    0 1px 2px color-mix(in srgb, var(--xylo-shadow-color) 45%, transparent), 0 12px 32px -16px var(--xylo-shadow-color);
+  --xylo-shadow-hover:
+    0 2px 4px color-mix(in srgb, var(--xylo-shadow-color) 50%, transparent), 0 20px 44px -18px var(--xylo-shadow-color);
+}
+
+html[data-xylo-shadow="deep"] {
+  --xylo-shadow:
+    0 2px 6px color-mix(in srgb, var(--xylo-shadow-color) 60%, transparent), 0 26px 60px -22px var(--xylo-shadow-color);
+  --xylo-shadow-hover:
+    0 4px 10px color-mix(in srgb, var(--xylo-shadow-color) 60%, transparent), 0 34px 72px -24px var(--xylo-shadow-color);
+}
+
+/* ---------- blocks: cards (the sidebar is one) and bordered papers; overlays are handled below ---------- */
+
+html[data-xylo] .mantine-Card-root:not(.fixed > *),
+html[data-xylo]
+  .mantine-Paper-root[data-with-border]:not(
+    .mantine-Card-root,
+    .mantine-Modal-content,
+    .mantine-Drawer-content,
+    .mantine-Dialog-root,
+    .mantine-Notification-root
+  ) {
+  background-color: var(--xylo-card);
+  border-color: var(--xylo-hairline);
+  box-shadow:
+    var(--xylo-shadow),
+    inset 0 1px 0 var(--xylo-sheen);
+  transition:
+    transform 260ms var(--xylo-ease),
+    box-shadow 260ms var(--xylo-ease),
+    border-color 200ms ease,
+    background-color 200ms ease;
+}
+
+/* a block inside a block reads as a raised well, not another floating panel */
+html[data-xylo] .mantine-Card-root .mantine-Card-root {
+  background-color: color-mix(in srgb, var(--mantine-color-text) 3%, transparent);
+  box-shadow: none;
+}
+
+/* blur only the outermost glass blocks: nested backdrop filters cost a lot and add nothing */
+html[data-xylo-surface="glass"] .mantine-Card-root:not(.fixed > *, .mantine-Card-root .mantine-Card-root) {
+  -webkit-backdrop-filter: blur(var(--xylo-blur)) saturate(150%);
+  backdrop-filter: blur(var(--xylo-blur)) saturate(150%);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html[data-xylo-lift="on"] :is(a > .mantine-Card-root, .mantine-Card-root.cursor-pointer):hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--xylo-accent) 35%, var(--xylo-hairline));
+    box-shadow:
+      var(--xylo-shadow-hover),
+      0 10px 40px -18px var(--xylo-glow-color),
+      inset 0 1px 0 var(--xylo-sheen);
+  }
+}
+
+/* core's sticky page headers (a server's name and power buttons) paint the page colour, a dark band over the backdrop */
+html[data-xylo] .sticky.top-0[class~="bg-(--mantine-color-body)"] {
+  background-color: color-mix(in srgb, var(--mantine-color-body) 62%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+}
+
+/* ---------- sidebar ---------- */
+
+html[data-xylo-sidebar="floating"] #sidebar-desktop {
+  margin: 12px 0 12px 12px;
+  top: 12px;
+  height: calc(100vh - 24px);
+  border-radius: calc(var(--xylo-radius) + 4px);
+}
+
+html[data-xylo-sidebar="docked"] #sidebar-desktop {
+  margin: 0;
+  top: 0;
+  height: 100vh;
+  border-radius: 0;
+  border-width: 0 1px 0 0;
+  box-shadow: none;
+}
+
+/* overlay scrollbars paint over the links, so the scroller reaches into the card's padding and the bar sits there */
+html[data-xylo] #sidebar-content > .overflow-y-auto {
+  margin-right: calc(var(--mantine-spacing-sm) * -1);
+  padding-right: var(--mantine-spacing-sm);
+}
+
+html[data-xylo] #sidebar-content .mantine-Divider-label {
+  padding-inline: var(--mantine-spacing-xs);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--mantine-color-placeholder);
+}
+
+html[data-xylo] #sidebar-content .mantine-Divider-label::before,
+html[data-xylo] #sidebar-content .mantine-Divider-label::after {
+  display: none;
+}
+
+/* menu links (core's Sidebar.Link: a NavLink around a subtle Button that gets `active`) */
+html[data-xylo] #sidebar-content a > .mantine-Button-root {
+  font-weight: 500;
+  color: color-mix(in srgb, var(--mantine-color-text) 78%, transparent);
+  border-color: transparent;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 220ms ease;
+}
+
+html[data-xylo] #sidebar-content a > .mantine-Button-root svg {
+  opacity: 0.8;
+  transition: transform 220ms var(--xylo-ease);
+}
+
+@media (hover: hover) {
+  html[data-xylo] #sidebar-content a > .mantine-Button-root:not(.active):hover {
+    background-color: color-mix(in srgb, var(--mantine-color-text) 6%, transparent);
+    color: var(--mantine-color-text);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html[data-xylo]:not([data-xylo-motion="none"]) #sidebar-content a > .mantine-Button-root:not(.active):hover svg {
+    transform: translateX(2px);
+  }
+}
+
+html[data-xylo] #sidebar-content a > .mantine-Button-root.active svg {
+  opacity: 1;
+}
+
+html[data-xylo-nav="pill"] #sidebar-content a > .mantine-Button-root.active {
+  background: var(--xylo-gradient);
+  color: var(--xylo-accent-ink);
+  box-shadow:
+    0 8px 22px -10px var(--xylo-glow-color),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+html[data-xylo-nav="glow"] #sidebar-content a > .mantine-Button-root.active {
+  background: var(--mantine-color-blue-light);
+  color: var(--mantine-color-blue-light-color);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--xylo-accent) 40%, transparent),
+    0 0 26px -6px var(--xylo-glow-color);
+}
+
+html[data-xylo-nav="bar"] #sidebar-content a > .mantine-Button-root.active {
+  background: color-mix(in srgb, var(--mantine-color-text) 7%, transparent);
+  color: var(--mantine-color-bright);
+  box-shadow: inset 3px 0 0 var(--xylo-accent);
+}
+
+html[data-xylo-nav="subtle"] #sidebar-content a > .mantine-Button-root.active {
+  background: color-mix(in srgb, var(--mantine-color-text) 8%, transparent);
+  color: var(--mantine-color-bright);
+}
+
+/* ---------- buttons ---------- */
+
+html[data-xylo] :is(.mantine-Button-root, .mantine-ActionIcon-root) {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 220ms ease,
+    filter 180ms ease,
+    transform 140ms var(--xylo-ease);
+}
+
+/* Mantine nudges pressed buttons 1px down; Xylo gives them a short squeeze instead */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-xylo]:not([data-xylo-motion="none"]) .mantine-active:active:not(fieldset:disabled *) {
+    transform: scale(0.97);
+  }
+}
+
+/* `--button-bg` is the per colour fill Mantine sets inline, so red and green buttons keep their own colour */
+html[data-xylo-buttons="gradient"]
+.mantine-Button-root[data-variant="filled"][style*="--button-bg: var(--mantine-color-blue-filled)"]:not(
+  :disabled,
+  [data-disabled]
+) {
+  background-image: var(--xylo-gradient);
+  border-color: transparent;
+  box-shadow:
+    0 8px 24px -12px var(--xylo-glow-color),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+html[data-xylo-buttons="gradient"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]):hover {
+  filter: brightness(1.08) saturate(1.05);
+}
+
+html[data-xylo-buttons="soft"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]) {
+  background-color: color-mix(in srgb, var(--button-bg) 20%, transparent);
+  border-color: color-mix(in srgb, var(--button-bg) 34%, transparent);
+  color: color-mix(in srgb, var(--button-bg) 45%, var(--xylo-ink));
+}
+
+html[data-xylo-buttons="soft"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]):hover {
+  background-color: color-mix(in srgb, var(--button-bg) 30%, transparent);
+}
+
+html[data-xylo-buttons="outline"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]) {
+  background-color: transparent;
+  border-color: color-mix(in srgb, var(--button-bg) 70%, transparent);
+  color: color-mix(in srgb, var(--button-bg) 50%, var(--xylo-ink));
+}
+
+html[data-xylo-buttons="outline"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]):hover {
+  background-color: color-mix(in srgb, var(--button-bg) 14%, transparent);
+}
+
+/* ---------- inputs ---------- */
+
+html[data-xylo] .mantine-Input-input {
+  transition:
+    border-color 160ms ease,
+    box-shadow 200ms ease,
+    background-color 160ms ease;
+}
+
+html[data-xylo] .mantine-Input-input:focus,
+html[data-xylo] .mantine-Input-input:focus-within,
+html[data-xylo] .mantine-Input-input[data-expanded] {
+  border-color: color-mix(in srgb, var(--xylo-accent) 80%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--xylo-accent) 20%, transparent);
+}
+
+/* ---------- overlays: menus, popovers, dropdowns, modals, drawers, tooltips ---------- */
+
+html[data-xylo]
+:is(
+  .mantine-Menu-dropdown,
+  .mantine-Popover-dropdown,
+  .mantine-Combobox-dropdown,
+  .mantine-HoverCard-dropdown,
+  .mantine-Modal-content,
+  .mantine-Drawer-content
+) {
+  background-color: var(--xylo-overlay);
+  border: 1px solid var(--xylo-hairline);
+  box-shadow:
+    0 24px 60px -20px var(--xylo-shadow-color),
+    inset 0 1px 0 var(--xylo-sheen);
+}
+
+html[data-xylo-surface="glass"]
+  :is(
+    .mantine-Menu-dropdown,
+    .mantine-Popover-dropdown,
+    .mantine-Combobox-dropdown,
+    .mantine-HoverCard-dropdown,
+    .mantine-Modal-content,
+    .mantine-Drawer-content
+  ) {
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+}
+
+html[data-xylo] :is(.mantine-Modal-overlay, .mantine-Drawer-overlay) {
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+html[data-xylo] .mantine-Modal-header {
+  background-color: transparent;
+}
+
+html[data-xylo] .mantine-Tooltip-tooltip {
+  border-radius: var(--mantine-radius-sm);
+  box-shadow: 0 10px 30px -12px var(--xylo-shadow-color);
+}
+
+/* ---------- tables, tabs, badges, progress ---------- */
+
+html[data-xylo] .mantine-Table-tbody > .mantine-Table-tr {
+  transition: background-color 160ms ease;
+}
+
+html[data-xylo] .mantine-Tabs-tab {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+html[data-xylo] .mantine-Badge-root {
+  letter-spacing: 0.02em;
+}
+
+/* ---------- typography ---------- */
+
+html[data-xylo] .mantine-Title-root {
+  letter-spacing: -0.015em;
+}
+
+html[data-xylo] .mantine-Title-root:is([data-order="1"], [data-order="2"]) {
+  letter-spacing: -0.025em;
+}
+
+html[data-xylo-titles="gradient"] :is(#dashboard-root, #server-root, #admin-root) .mantine-Title-root[data-order="1"] {
+  width: fit-content;
+  background: var(--xylo-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- page transitions ---------- */
+
+/*
+ * Each router's content column holds core's Container, whose first div holds the announcements and the routed page.
+ * A route change mounts a new page element there, which plays the animation once. No fill mode, so no transform
+ * outlives it, and the editor (a fixed full screen page) is left out: a transform would pin it to the column.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-xylo-transition="rise"]
+    :is(#dashboard-root, #server-root, #admin-root)
+    > div
+    > div:first-child
+    > :not(:has(.xylo-editor)) {
+    animation: xylo-rise 480ms var(--xylo-ease);
+  }
+
+  html[data-xylo-transition="fade"]
+    :is(#dashboard-root, #server-root, #admin-root)
+    > div
+    > div:first-child
+    > :not(:has(.xylo-editor)) {
+    animation: xylo-fade 320ms ease-out;
+  }
+
+  html[data-xylo-transition="zoom"]
+    :is(#dashboard-root, #server-root, #admin-root)
+    > div
+    > div:first-child
+    > :not(:has(.xylo-editor)) {
+    animation: xylo-zoom 420ms var(--xylo-ease);
+  }
+}
+
+@keyframes xylo-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes xylo-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes xylo-zoom {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+
+/* ---------- Xylo's own pieces ---------- */
+
+.xylo-greeting-title {
+  background: var(--xylo-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes xylo-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .xylo-pop {
+    animation: xylo-pop 360ms var(--xylo-ease, ease-out) both;
+  }
+}
+
+/* the editor's preview stage and its option tiles (pages/ThemeEditor.tsx, elements/editor) */
+.xylo-stage {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--mantine-color-text) 9%, transparent) 1px,
+    transparent 1.5px
+  );
+  background-size: 18px 18px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .xylo-tile:hover .xylo-tile-anim-rise {
+    animation: xylo-rise 1100ms var(--xylo-ease, ease-out) infinite;
+  }
+
+  .xylo-tile:hover .xylo-tile-anim-fade {
+    animation: xylo-fade 1100ms ease-out infinite;
+  }
+
+  .xylo-tile:hover .xylo-tile-anim-zoom {
+    animation: xylo-zoom 1100ms var(--xylo-ease, ease-out) infinite;
+  }
+}
