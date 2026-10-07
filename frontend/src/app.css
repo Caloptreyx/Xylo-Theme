@@ -1110,7 +1110,7 @@ html[data-xylo-titles="gradient"] .xylo-greeting-title {
   }
 }
 
-/* ---------- figures: a stat strip and usage bars (the server overview, the console page) ---------- */
+/* ---------- figures: a stat strip and usage bars (the server overview) ---------- */
 
 /* the stat strip: one card split by hairlines, not a card per figure */
 html[data-xylo] .xylo-stats {
@@ -1137,22 +1137,6 @@ html[data-xylo] .xylo-stat-value {
     font-size: 1.5rem;
     line-height: 2rem;
   }
-}
-
-/* the console page's strip: the same figures at a size that leaves the height to the terminal */
-html[data-xylo] .xylo-stats[data-compact] .xylo-stat {
-  gap: 2px;
-  padding: 10px 16px 12px;
-}
-
-html[data-xylo] .xylo-stats[data-compact] .xylo-stat-value {
-  font-size: 1rem;
-  line-height: 1.5rem;
-}
-
-html[data-xylo] .xylo-stats[data-compact] .xylo-meter-track {
-  margin-top: 4px;
-  height: 4px;
 }
 
 html[data-xylo] .xylo-stat:nth-child(even) {
@@ -1318,69 +1302,573 @@ html[data-xylo] .xylo-ov-copy:active {
 
 /* ---------- the console page (elements/console) and every console's terminal ---------- */
 
-/* the card holding a terminal (Xylo's page, core's console, the popout) in the theme's terminal scheme; core's
-   xterm.css keeps xterm's own layers transparent over it */
+/* the card holding a terminal (core's console, the popout) in the theme's terminal scheme; core's xterm.css keeps
+   xterm's own layers transparent over it. On Xylo's page that card dissolves into the workspace, which paints it */
 html[data-xylo-terminal="custom"] .mantine-Card-root:has(.xterm) {
   background: var(--xylo-term-bg);
   color: var(--xylo-term-fg);
 }
 
+/*
+ * Xylo's console page is one workspace: a surface from where it starts (`--xylo-con-top`, measured) to the viewport's
+ * bottom, never shorter than a useful console, painted in the terminal scheme (the solid card colour with 'panel'),
+ * holding the command bar, core's terminal and the inspector. The bar and the inspector sit a step off the background
+ * (the scheme's text mixed in: lighter on a dark scheme, darker on a light one) behind hairlines, so the whole reads
+ * as one object in both modes. With the on-screen keyboard up it is short enough to keep the prompt above it.
+ */
 html[data-xylo] .xylo-con {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-html[data-xylo] .xylo-con-body {
-  display: grid;
-  gap: 16px;
-}
-
-/* the terminal runs from where it starts (`--xylo-con-top`, measured) to the viewport's bottom, never shorter than a
-   phone's useful console; with the on-screen keyboard up, short enough to keep the input above it, as core's */
-html[data-xylo] .xylo-con-term {
+  --xylo-con-bg: var(--xylo-term-bg, var(--xylo-card-solid));
+  --xylo-con-solid: var(--xylo-term-bg, var(--xylo-card-solid));
+  --xylo-con-fg: var(--xylo-term-fg, var(--mantine-color-text));
+  --xylo-con-line: color-mix(in srgb, var(--xylo-con-fg) 11%, transparent);
+  --xylo-con-step: color-mix(in srgb, var(--xylo-con-fg) 4%, transparent);
   --xylo-con-fill: calc(100dvh - var(--xylo-con-top, 14rem) - 1.5rem);
+  position: relative;
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  height: max(20rem, var(--xylo-con-fill));
+  height: max(24rem, var(--xylo-con-fill));
+  /* clip, not hidden: nothing (a focused field in the sliding panel) may scroll the surface sideways */
+  overflow: clip;
+  border: 1px solid var(--xylo-hairline);
+  border-radius: var(--xylo-radius);
+  background: var(--xylo-con-bg);
+  box-shadow: var(--xylo-shadow);
+  color: var(--xylo-con-fg);
+  container: xylo-con / inline-size;
 }
 
-html[data-xylo] .xylo-con-term[data-keyboard] {
+html[data-xylo] .xylo-con[data-keyboard] {
   height: max(8rem, min(var(--xylo-con-fill), calc(100dvh - var(--xylo-con-inset, 0px) - 7rem)));
 }
 
-/* the details panel: under the terminal, its cards side by side where they fit */
-html[data-xylo] .xylo-con-side {
+/* a named scheme's text and lines for what core and Mantine draw on it (inputs, subtle buttons, dimmed text), so a
+   dark scheme in light mode, or a light one in dark mode, still reads; overlays are portalled out and keep the page's */
+html[data-xylo-terminal="custom"] .xylo-con {
+  --mantine-color-text: var(--xylo-term-fg);
+  --mantine-color-dimmed: color-mix(in srgb, var(--xylo-term-fg) 60%, var(--xylo-term-bg));
+  --mantine-color-placeholder: color-mix(in srgb, var(--xylo-term-fg) 45%, var(--xylo-term-bg));
+  --mantine-color-body: var(--xylo-term-bg);
+  --mantine-color-default: color-mix(in srgb, var(--xylo-term-fg) 5%, var(--xylo-term-bg));
+  --mantine-color-default-hover: color-mix(in srgb, var(--xylo-term-fg) 10%, var(--xylo-term-bg));
+  --mantine-color-default-color: var(--xylo-term-fg);
+  --mantine-color-default-border: color-mix(in srgb, var(--xylo-term-fg) 18%, var(--xylo-term-bg));
+  --xylo-hairline: color-mix(in srgb, var(--xylo-term-fg) 12%, transparent);
+}
+
+/* the command bar: who and how the server is, its live figures, power and the inspector toggle in one row; two rows
+   when the workspace is too narrow for that */
+html[data-xylo] .xylo-con-bar {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-  align-items: start;
-  gap: 16px;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto auto;
+  grid-template-areas: "id meters power toggle";
+  align-items: center;
+  gap: 10px 20px;
+  padding: 10px 12px 10px 18px;
+  border-bottom: 1px solid var(--xylo-con-line);
+  background: var(--xylo-con-step);
+}
+
+@container xylo-con (width < 60rem) {
+  html[data-xylo] .xylo-con-bar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "id power toggle"
+      "meters meters meters";
+  }
+
+  html[data-xylo] .xylo-con-meter {
+    flex: 1 1 0;
+    grid-template-columns: max-content minmax(1rem, 6rem);
+  }
+}
+
+html[data-xylo] .xylo-con-id {
+  display: flex;
+  grid-area: id;
+  align-items: baseline;
+  gap: 2px 10px;
+  min-width: 0;
+  max-width: 22rem;
+}
+
+html[data-xylo] .xylo-con-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* the state as text in its status colour (the chip's colours, in the status section) */
+html[data-xylo] .xylo-con-state {
+  --xylo-status: var(--color-server-status-offline, var(--mantine-color-red-filled));
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--xylo-status) 80%, var(--xylo-con-fg));
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+html[data-xylo] .xylo-con-uptime {
+  flex-shrink: 0;
+  color: var(--mantine-color-dimmed);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* telemetry: a dimmed label over a tabular value, a sparkline of the last minute beside them; the sparklines give
+   way first when space runs short */
+html[data-xylo] .xylo-con-meters {
+  display: flex;
+  grid-area: meters;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+html[data-xylo] .xylo-con-meter {
+  display: grid;
+  grid-template-columns: max-content minmax(1rem, 3.25rem);
+  grid-template-areas:
+    "label spark"
+    "value spark";
+  align-items: center;
+  column-gap: 8px;
   min-width: 0;
 }
 
-/* beside it on wide pages, as tall as the terminal and scrolling on its own; size containment keeps the panel's
-   content from growing the row */
-@container page (width >= 80rem) {
-  html[data-xylo] .xylo-con-body[data-panel] {
-    grid-template-columns: minmax(0, 1fr) 20rem;
-  }
+html[data-xylo] .xylo-con-meter-label {
+  grid-area: label;
+  color: var(--mantine-color-dimmed);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  white-space: nowrap;
+}
 
-  html[data-xylo] .xylo-con-side {
-    display: flex;
-    flex-direction: column;
-    contain: size;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-  }
+/* a minimum width keeps the row from twitching as the figures change */
+html[data-xylo] .xylo-con-meter-value {
+  grid-area: value;
+  min-width: 7ch;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  line-height: 1.125rem;
+  white-space: nowrap;
+}
 
-  html[data-xylo] .xylo-con-side > * {
-    flex-shrink: 0;
+html[data-xylo] .xylo-con-spark {
+  grid-area: spark;
+  width: 100%;
+  height: 1.5rem;
+  overflow: visible;
+}
+
+html[data-xylo] .xylo-con-spark-line {
+  fill: none;
+  stroke: var(--xylo-accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.25;
+}
+
+html[data-xylo] .xylo-con-spark-area {
+  fill: color-mix(in srgb, var(--xylo-accent) 16%, transparent);
+}
+
+/* a stopped server: the figures dimmed over a flat, muted line */
+html[data-xylo] .xylo-con-meter:not([data-live]) .xylo-con-meter-value {
+  color: var(--mantine-color-dimmed);
+}
+
+html[data-xylo] .xylo-con-meter:not([data-live]) .xylo-con-spark-line {
+  stroke: color-mix(in srgb, var(--xylo-con-fg) 22%, transparent);
+}
+
+/* core's power controls (its row and buttons, other extensions' included) as one compact segmented group: each
+   segment in its action's colour on the bar, tinted under the pointer */
+html[data-xylo] .xylo-con-power {
+  display: flex;
+  grid-area: power;
+  min-width: 0;
+}
+
+html[data-xylo] .xylo-con-power > div {
+  gap: 0;
+  width: auto;
+}
+
+html[data-xylo] .xylo-con-power .mantine-Button-root {
+  height: 2rem;
+  padding-inline: 12px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--xylo-con-tone, var(--xylo-con-fg)) 85%, var(--xylo-con-fg));
+  font-size: 0.8125rem;
+}
+
+html[data-xylo] .xylo-con-power .mantine-Button-root[style*="--mantine-color-green-filled"] {
+  --xylo-con-tone: var(--mantine-color-green-filled);
+}
+
+html[data-xylo] .xylo-con-power .mantine-Button-root[style*="--mantine-color-red-filled"] {
+  --xylo-con-tone: var(--mantine-color-red-filled);
+}
+
+html[data-xylo] .xylo-con-power .mantine-Button-root + .mantine-Button-root {
+  margin-left: -1px;
+}
+
+html[data-xylo] .xylo-con-power button:first-of-type {
+  border-start-start-radius: var(--xylo-control-radius);
+  border-end-start-radius: var(--xylo-control-radius);
+}
+
+html[data-xylo] .xylo-con-power button:last-of-type {
+  border-start-end-radius: var(--xylo-control-radius);
+  border-end-end-radius: var(--xylo-control-radius);
+}
+
+@media (hover: hover) {
+  html[data-xylo] .xylo-con-power .mantine-Button-root:not(:disabled):hover {
+    background: color-mix(in srgb, var(--xylo-con-tone, var(--xylo-con-fg)) 14%, transparent);
   }
 }
 
-/* quick commands: one outlined monospace row each, the whole row sends it */
+html[data-xylo] .xylo-con-power .mantine-Loader-root {
+  --loader-color: currentColor;
+}
+
+html[data-xylo] .xylo-con-toggle {
+  grid-area: toggle;
+  margin-left: -12px;
+}
+
+html[data-xylo] .xylo-con-main {
+  position: relative;
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+}
+
+/* core's terminal fills the middle; its card dissolves (`display: contents`), so its header, output and input row
+   lay out in this column: the header a slim toolbar, the input the prompt along the bottom, the chips above it */
+html[data-xylo] .xylo-con-term {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+html[data-xylo] .xylo-con-term > .mantine-Card-root {
+  display: contents;
+}
+
+html[data-xylo] .xylo-con-term > .mantine-Card-root > :first-child {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 2.25rem;
+  margin: 0;
+  padding: 2px 8px 2px 18px;
+  border-bottom: 1px solid var(--xylo-con-line);
+  color: var(--mantine-color-dimmed);
+}
+
+html[data-xylo] .xylo-con-term > .mantine-Card-root > :first-child > :first-child {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+html[data-xylo] .xylo-con-term > .mantine-Card-root > :first-child > :last-child {
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+/* core's connection dot: smaller, and still (no looping animation on idle content) */
+html[data-xylo] .xylo-con-term > .mantine-Card-root > :first-child .rounded-full {
+  width: 6px;
+  height: 6px;
+  animation: none;
+}
+
+/* the output, inset from the workspace's edges */
+html[data-xylo] .xylo-con-term > .mantine-Card-root > .flex-1 {
+  margin: 10px 6px 6px 18px;
+}
+
+html[data-xylo] .xylo-con-term > .mantine-Card-root > span {
+  margin: 0 18px 8px;
+}
+
+/* core's jump to the bottom, clear of the chips and the prompt */
+html[data-xylo] .xylo-con-term > .mantine-Card-root > [class~="z-90"] {
+  right: 1.25rem;
+  bottom: 6.5rem;
+}
+
+/* the prompt: core's input row as a line along the bottom edge, a `›` cue (core's prefix button is the cue where
+   the panel has one), mono, no box; focus lights the cue's edge */
+html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child {
+  order: 2;
+  align-items: center;
+  gap: 4px;
+  min-height: 2.75rem;
+  margin: 0;
+  padding: 4px 10px 4px 18px;
+  border-top: 1px solid var(--xylo-con-line);
+  font-family: var(--mantine-font-family-monospace);
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child::before {
+  content: "›";
+  flex-shrink: 0;
+  color: var(--xylo-accent);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child:has([data-with-left-section])::before {
+  content: none;
+}
+
+html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child:has(:disabled)::before {
+  color: var(--mantine-color-dimmed);
+}
+
+html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child:focus-within {
+  background-color: var(--xylo-con-step);
+  box-shadow: inset 2px 0 0 var(--xylo-accent);
+}
+
+html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child .mantine-Input-input {
+  height: 2.25rem;
+  min-height: 2.25rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.8125rem;
+}
+
+html[data-xylo]
+  .xylo-con-term
+  > .mantine-Card-root
+  > :last-child
+  :not([data-with-left-section])
+  > .mantine-Input-input {
+  padding-inline-start: 6px;
+}
+
+html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child .mantine-Input-input:disabled {
+  background: transparent;
+}
+
+/* quick commands: one row of chips just above the prompt, a click sends one; the last opens the inspector at them */
+html[data-xylo] .xylo-con-chips {
+  display: flex;
+  order: 1;
+  gap: 6px;
+  /* the block padding leaves room for a chip's focus ring, which the scroller would clip */
+  padding: 6px 12px 6px 18px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+html[data-xylo] .xylo-con-chip {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 7px;
+  max-width: 16rem;
+  height: 1.75rem;
+  padding: 0 10px;
+  border: 1px solid var(--xylo-con-line);
+  border-radius: var(--xylo-control-radius, 8px);
+  background-color: var(--xylo-con-step);
+  color: color-mix(in srgb, var(--xylo-con-fg) 85%, transparent);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 120ms var(--xylo-ease);
+}
+
+html[data-xylo] .xylo-con-chip[data-edit] {
+  border-style: dashed;
+  background-color: transparent;
+  color: var(--mantine-color-dimmed);
+  font-family: inherit;
+}
+
+@media (hover: hover) {
+  html[data-xylo] .xylo-con-chip:not(:disabled):hover {
+    border-color: color-mix(in srgb, var(--xylo-accent) 50%, var(--xylo-con-line));
+    color: var(--xylo-con-fg);
+  }
+}
+
+html[data-xylo] .xylo-con-chip:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+html[data-xylo] .xylo-con-chip:focus-visible {
+  outline: 2px solid var(--xylo-accent);
+  outline-offset: 1px;
+}
+
+html[data-xylo] .xylo-con-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* the inspector: a column behind a hairline, docked from DOCK (Console.tsx) as wide as 20rem, gone while closed */
+html[data-xylo] .xylo-con-aside {
+  display: none;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--xylo-con-line);
+  background: var(--xylo-con-step);
+}
+
+html[data-xylo] .xylo-con[data-inspector="docked"] .xylo-con-main:has(> .xylo-con-aside[data-open]) {
+  grid-template-columns: minmax(0, 1fr) 20rem;
+}
+
+html[data-xylo] .xylo-con[data-inspector="docked"] .xylo-con-aside[data-open] {
+  display: flex;
+}
+
+/* narrower, it slides over the terminal from the workspace's right edge, opaque, and slides back out */
+html[data-xylo] .xylo-con[data-inspector="over"] .xylo-con-aside {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 20;
+  display: flex;
+  width: min(22rem, 100% - 3rem);
+  background: linear-gradient(var(--xylo-con-step), var(--xylo-con-step)), var(--xylo-con-solid);
+  box-shadow: -16px 0 32px -20px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateX(1.5rem);
+  visibility: hidden;
+  transition:
+    opacity 180ms ease,
+    transform 240ms var(--xylo-ease),
+    visibility 0s linear 240ms;
+}
+
+html[data-xylo] .xylo-con[data-inspector="over"] .xylo-con-aside[data-open] {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+html[data-xylo][data-xylo-motion="none"] .xylo-con-aside {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-xylo] .xylo-con-aside {
+    transition: none;
+  }
+}
+
+/* the inspector's parts, the same in the panel and the phone's sheet: tabs over a scrolling body */
+html[data-xylo] .xylo-con-inspect {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+html[data-xylo] .xylo-con-inspect-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 2.25rem;
+  padding: 4px 8px 4px 12px;
+  border-bottom: 1px solid var(--xylo-hairline);
+}
+
+html[data-xylo] .xylo-con-tabs {
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+html[data-xylo] .xylo-con-tab {
+  flex-shrink: 0;
+  height: 1.75rem;
+  padding: 0 10px;
+  border-radius: var(--xylo-control-radius, 8px);
+  color: var(--mantine-color-dimmed);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+@media (hover: hover) {
+  html[data-xylo] .xylo-con-tab:hover {
+    color: var(--mantine-color-text);
+  }
+}
+
+html[data-xylo] .xylo-con-tab[aria-selected="true"] {
+  background-color: color-mix(in srgb, var(--mantine-color-text) 8%, transparent);
+  color: var(--mantine-color-text);
+}
+
+html[data-xylo] .xylo-con-inspect-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+html[data-xylo] .xylo-con-inspect-body > * {
+  flex-shrink: 0;
+}
+
+html[data-xylo] .xylo-con-desc {
+  color: var(--mantine-color-dimmed);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+  white-space: pre-line;
+}
+
+/* the inspector's quick commands: one outlined monospace row each, the whole row sends it */
 html[data-xylo] .xylo-con-commands {
   display: flex;
   flex-direction: column;
@@ -1433,199 +1921,126 @@ html[data-xylo] .xylo-con-command:disabled {
 }
 
 /*
- * The phone's console page (Console.tsx's `usePhone` sets data-phone when this query holds, measured the same way):
- * name, state and a Details button, the power buttons as one row, usage as one scrolling line, the saved quick
- * commands as chips, and the terminal out to the canvas's edges with core's header in one row.
+ * Phones (Console.tsx's `usePageSize` sets data-phone under 64rem, measured as the shell's container query is): the
+ * workspace out to the canvas's edges (core's `px-4` and `mb-4`), the bar as identity and the inspector button, the
+ * power buttons as a full width row, the figures as one line scrolling sideways; touch targets 40px or more. With
+ * the keyboard up only the identity, the terminal and the prompt stay.
  */
-@container page (width < 64rem) {
-  html[data-xylo] .xylo-con[data-phone] {
-    /* core's padding around the page below lg (`px-4`), which the terminal and the chips reach out over */
-    --xylo-con-bleed: 16px;
-    gap: 12px;
-  }
-
-  html[data-xylo] .xylo-con-head {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  html[data-xylo] .xylo-con-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  html[data-xylo] .xylo-con-bar .xylo-con-uptime {
-    display: flex;
-    margin-top: 2px;
-    font-size: 0.75rem;
-    line-height: 1rem;
-  }
-
-  html[data-xylo] .xylo-con[data-phone] :is(.xylo-con-bar, .xylo-con-power) .mantine-Button-root {
-    min-height: 2.5rem;
-  }
-
-  /* core's power controls (its row and its buttons, other extensions' included) as one row of equal buttons */
-  html[data-xylo] .xylo-con-power > div {
-    width: 100%;
-  }
-
-  html[data-xylo] .xylo-con-power .mantine-Button-root {
-    flex: 1 1 0;
-    min-width: 0;
-    padding-inline: 8px;
-  }
-
-  /* usage: one line of figures, label over value, scrolling sideways when it doesn't fit, a hairline of a bar */
-  html[data-xylo] .xylo-con[data-phone] .xylo-stats {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-
-  html[data-xylo] .xylo-con[data-phone] .xylo-stat {
-    display: grid;
-    flex: 1 0 auto;
-    grid-template-columns: auto auto;
-    justify-content: start;
-    align-items: baseline;
-    gap: 0 6px;
-    padding: 8px 14px 10px;
-    border-top: 0;
-    border-left: 1px solid var(--xylo-hairline);
-  }
-
-  html[data-xylo] .xylo-con[data-phone] .xylo-stat:first-child {
-    border-left: 0;
-  }
-
-  html[data-xylo] .xylo-con[data-phone] .xylo-stat > :first-child {
-    grid-column: 1 / -1;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    white-space: nowrap;
-  }
-
-  html[data-xylo] .xylo-con[data-phone] .xylo-stat-value {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-
-  html[data-xylo] .xylo-con[data-phone] .xylo-stat-value + span {
-    overflow: visible;
-    white-space: nowrap;
-  }
-
-  html[data-xylo] .xylo-con[data-phone] .xylo-stat .xylo-meter {
-    grid-column: 1 / -1;
-  }
-
-  html[data-xylo] .xylo-con[data-phone] .xylo-stat .xylo-meter-track {
-    margin-top: 6px;
-    height: 2px;
-  }
-
-  /* quick commands: a row of chips running out to the canvas's edges, a tap sends one */
-  html[data-xylo] .xylo-con-chips {
-    display: flex;
-    gap: 8px;
-    /* the block padding leaves room for a chip's focus ring, which the scroller would clip */
-    margin: -4px calc(-1 * var(--xylo-con-bleed));
-    padding: 4px var(--xylo-con-bleed);
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-
-  html[data-xylo] .xylo-con-chip {
-    display: inline-flex;
-    flex-shrink: 0;
-    align-items: center;
-    gap: 8px;
-    max-width: 16rem;
-    min-height: 2.5rem;
-    padding: 0 14px;
-    border: 1px solid var(--xylo-hairline);
-    border-radius: 999px;
-    background-color: color-mix(in srgb, var(--mantine-color-text) 4%, transparent);
-    color: color-mix(in srgb, var(--mantine-color-text) 85%, transparent);
-    font-family: var(--mantine-font-family-monospace);
-    font-size: 0.8125rem;
-    white-space: nowrap;
-    transition:
-      background-color 160ms ease,
-      transform 120ms var(--xylo-ease);
-  }
-
-  html[data-xylo] .xylo-con-chip[data-edit] {
-    justify-content: center;
-    width: 2.5rem;
-    padding: 0;
-    color: var(--mantine-color-dimmed);
-  }
-
-  html[data-xylo] .xylo-con-chip:not(:disabled):active {
-    background-color: color-mix(in srgb, var(--mantine-color-text) 10%, transparent);
-    transform: scale(0.97);
-  }
-
-  html[data-xylo] .xylo-con-chip:focus-visible {
-    outline: 2px solid var(--xylo-accent);
-    outline-offset: 2px;
-  }
-
-  html[data-xylo] .xylo-con-chip:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  /* the terminal to the canvas's edges, with a smaller radius */
-  html[data-xylo] .xylo-con[data-phone] .xylo-con-term {
-    margin-inline: calc(-1 * var(--xylo-con-bleed));
-  }
-
-  html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root {
-    border-radius: min(var(--xylo-radius), 8px);
-  }
-
-  /* core's terminal header in one row: the connection on the left, its buttons scrolling sideways if they must */
-  html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :first-child {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 4px;
-  }
-
-  html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :first-child > :first-child {
-    flex-shrink: 0;
-    white-space: nowrap;
-  }
-
-  html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :first-child > :last-child {
-    gap: 0;
-    min-width: 0;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-
-  html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :first-child .mantine-ActionIcon-root {
-    flex-shrink: 0;
-    width: 2.5rem;
-    min-width: 2.5rem;
-    height: 2.5rem;
-    margin: 0;
-  }
+html[data-xylo] .xylo-con[data-phone] {
+  --xylo-con-fill: calc(100dvh - var(--xylo-con-top, 10rem) - 8px);
+  margin: 0 -16px -16px;
+  border-width: 1px 0 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-/* the phone's details sheet: from the bottom, rounded on top, never taller than most of the screen (doubled class to
-   outrank the overlay rule) */
+html[data-xylo] .xylo-con[data-phone] .xylo-con-bar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "id toggle"
+    "power power"
+    "meters meters";
+  gap: 10px 12px;
+  padding: 8px 8px 10px 16px;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-id {
+  flex-wrap: wrap;
+  max-width: none;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-name {
+  font-size: 1rem;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-toggle {
+  margin-left: 0;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-power > div {
+  width: 100%;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-power .mantine-Button-root {
+  flex: 1 1 0;
+  height: 2.5rem;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-meters {
+  gap: 18px;
+  margin: 0 -8px 0 -16px;
+  padding-inline: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-meter {
+  flex: 0 0 auto;
+  grid-template-columns: max-content 2.25rem;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-spark {
+  height: 1.125rem;
+}
+
+html[data-xylo] .xylo-con[data-phone][data-keyboard] :is(.xylo-con-power, .xylo-con-meters) {
+  display: none;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :first-child {
+  padding: 0 4px 0 16px;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :first-child > :last-child {
+  gap: 0;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :first-child .mantine-ActionIcon-root {
+  flex-shrink: 0;
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  margin: 0;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > .flex-1 {
+  margin: 8px 4px 4px 16px;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > [class~="z-90"] {
+  bottom: 7.5rem;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-chips {
+  padding-left: 16px;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-chip {
+  height: 2.5rem;
+  padding: 0 14px;
+  font-size: 0.8125rem;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-chip[data-edit]:not(:has(span)) {
+  justify-content: center;
+  width: 2.5rem;
+  padding: 0;
+}
+
+/* at 16px the phone's browser doesn't zoom in on the prompt */
+html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :last-child {
+  min-height: 3rem;
+  padding: 4px 8px calc(4px + env(safe-area-inset-bottom)) 16px;
+}
+
+html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :last-child .mantine-Input-input {
+  height: 2.5rem;
+  font-size: 1rem;
+}
+
+/* the phone's inspector sheet: from the bottom, rounded on top, never taller than most of the screen (doubled class
+   to outrank the overlay rule); the inspector inside it scrolls with the sheet */
 html[data-xylo] .xylo-sheet.xylo-sheet {
   height: auto;
   max-height: 85dvh;
@@ -1640,15 +2055,21 @@ html[data-xylo] .xylo-sheet-header {
 }
 
 html[data-xylo] .xylo-sheet-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
 }
 
-/* clear of the sticky header when the sheet opens at the quick commands */
-html[data-xylo] .xylo-sheet-anchor {
-  scroll-margin-top: 4.5rem;
+html[data-xylo] .xylo-sheet .xylo-con-inspect-head {
+  padding: 0 0 10px;
+}
+
+html[data-xylo] .xylo-sheet .xylo-con-tab {
+  height: 2.5rem;
+  padding: 0 14px;
+}
+
+html[data-xylo] .xylo-sheet .xylo-con-inspect-body {
+  padding: 14px 0 0;
+  overflow: visible;
 }
 
 html[data-xylo]
@@ -1664,19 +2085,20 @@ html[data-xylo] .xylo-sheet .xylo-con-commands .mantine-ActionIcon-root {
 /* ---------- terminal frames (`terminalSkin`) and the console's look picker (elements/console/TerminalLook.tsx) ---------- */
 
 /*
- * Every frame styles the card holding `.xterm`, so core's console and the popout wear it too. They paint with
- * currentColor (the scheme's foreground, or the panel's text with the 'panel' scheme) and `--xylo-term-bg` with the
- * card's own colour as the fallback, so each one works with every scheme in both modes. 'card' is the plain card
- * above. The doubled attribute outranks the glass surfaces' blur rule.
+ * Every frame styles the card holding `.xterm` on core's console and the popout, and the whole workspace on Xylo's
+ * page (the card there is dissolved: the rules that would draw on or around it skip `.xylo-con-term > *`). They
+ * paint with currentColor (the scheme's foreground, or the panel's text with the 'panel' scheme) and
+ * `--xylo-term-bg` with the card's own colour as the fallback, so each one works with every scheme in both modes.
+ * 'card' is the plain card above. The doubled attribute outranks the glass surfaces' blur rule.
  */
 
 /* window: a title bar of three muted dots over a hairline; core's header (the card's first child) moves down for it,
    since core's own padding is a layered !important no unlayered rule can change */
-html[data-xylo][data-xylo-term-skin="window"] .mantine-Card-root:has(.xterm) > :first-child {
+html[data-xylo][data-xylo-term-skin="window"] .mantine-Card-root:has(.xterm):not(.xylo-con-term > *) > :first-child {
   margin-top: 1.75rem;
 }
 
-html[data-xylo][data-xylo-term-skin="window"] .mantine-Card-root:has(.xterm)::before {
+html[data-xylo][data-xylo-term-skin="window"] .mantine-Card-root:has(.xterm):not(.xylo-con-term > *)::before {
   --xylo-term-dot: color-mix(in srgb, currentColor 26%, transparent);
   content: "";
   position: absolute;
@@ -1691,8 +2113,27 @@ html[data-xylo][data-xylo-term-skin="window"] .mantine-Card-root:has(.xterm)::be
   pointer-events: none;
 }
 
+/* the workspace's window: the command bar is the title bar, a shade stronger, the dots at its left */
+html[data-xylo][data-xylo-term-skin="window"] .xylo-con-bar {
+  background: color-mix(in srgb, var(--xylo-con-fg) 6%, transparent);
+}
+
+html[data-xylo][data-xylo-term-skin="window"] .xylo-con-id::before {
+  --xylo-term-dot: color-mix(in srgb, currentColor 26%, transparent);
+  content: "";
+  flex-shrink: 0;
+  align-self: center;
+  width: 42px;
+  height: 10px;
+  margin-right: 6px;
+  background:
+    radial-gradient(circle closest-side, var(--xylo-term-dot) 80%, transparent) left 0 center / 10px 10px no-repeat,
+    radial-gradient(circle closest-side, var(--xylo-term-dot) 80%, transparent) left 16px center / 10px 10px no-repeat,
+    radial-gradient(circle closest-side, var(--xylo-term-dot) 80%, transparent) left 32px center / 10px 10px no-repeat;
+}
+
 /* flush: no card at all; 'theme' and 'panel' sit on the canvas, a named scheme keeps its background as a plain block */
-html[data-xylo][data-xylo-term-skin="flush"] .mantine-Card-root:has(.xterm) {
+html[data-xylo][data-xylo-term-skin="flush"] :is(.mantine-Card-root:has(.xterm), .xylo-con) {
   border-color: transparent;
   border-radius: 0;
   background: var(--xylo-term-flush, transparent);
@@ -1702,7 +2143,7 @@ html[data-xylo][data-xylo-term-skin="flush"] .mantine-Card-root:has(.xterm) {
 }
 
 /* glass: the scheme's background, translucent and blurred over the backdrop as much as the theme's glass is */
-html[data-xylo][data-xylo-term-skin="glass"] .mantine-Card-root:has(.xterm) {
+html[data-xylo][data-xylo-term-skin="glass"] :is(.mantine-Card-root:has(.xterm), .xylo-con) {
   border-color: color-mix(in srgb, currentColor 14%, transparent);
   background: color-mix(in srgb, var(--xylo-term-bg, var(--xylo-card-solid)) 72%, transparent);
   box-shadow:
@@ -1712,9 +2153,10 @@ html[data-xylo][data-xylo-term-skin="glass"] .mantine-Card-root:has(.xterm) {
   backdrop-filter: blur(var(--xylo-blur)) saturate(140%);
 }
 
-/* crt: rounder glass, scanlines and a vignette over the whole screen (clicks pass through), text glowing in its own
-   colour; all of it still, no flicker. The strengths (buildCss) are faint on a light screen */
-html[data-xylo][data-xylo-term-skin="crt"] .mantine-Card-root:has(.xterm) {
+/* crt: rounder glass, scanlines and a vignette over the whole screen (on the workspace, its terminal area; clicks
+   pass through), text glowing in its own colour; all of it still, no flicker. The strengths (buildCss) are faint on
+   a light screen. A phone's workspace keeps its square edges */
+html[data-xylo][data-xylo-term-skin="crt"] :is(.mantine-Card-root:has(.xterm), .xylo-con:not([data-phone])) {
   border-color: color-mix(in srgb, currentColor 10%, transparent);
   border-radius: calc(var(--xylo-radius) + 10px);
   box-shadow:
@@ -1722,7 +2164,8 @@ html[data-xylo][data-xylo-term-skin="crt"] .mantine-Card-root:has(.xterm) {
     0 0 0 3px color-mix(in srgb, var(--xylo-term-bg, var(--xylo-card-solid)) 70%, #000000);
 }
 
-html[data-xylo][data-xylo-term-skin="crt"] .mantine-Card-root:has(.xterm)::after {
+html[data-xylo][data-xylo-term-skin="crt"]
+  :is(.mantine-Card-root:has(.xterm):not(.xylo-con-term > *), .xylo-con-term)::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -1738,8 +2181,8 @@ html[data-xylo][data-xylo-term-skin="crt"] .mantine-Card-root .xterm-rows :is(di
   text-shadow: var(--xylo-term-glow);
 }
 
-/* neon: an accent outline with a soft accent glow */
-html[data-xylo][data-xylo-term-skin="neon"] .mantine-Card-root:has(.xterm) {
+/* neon: an accent outline with a soft accent glow, around the workspace's edge on Xylo's page */
+html[data-xylo][data-xylo-term-skin="neon"] :is(.mantine-Card-root:has(.xterm), .xylo-con) {
   border-color: color-mix(in srgb, var(--xylo-accent) 85%, transparent);
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--xylo-accent) 30%, transparent),
@@ -1747,7 +2190,8 @@ html[data-xylo][data-xylo-term-skin="neon"] .mantine-Card-root:has(.xterm) {
     inset 0 0 28px -14px color-mix(in srgb, var(--xylo-accent) 45%, transparent);
 }
 
-html[data-xylo][data-xylo-term-skin="neon"][data-mantine-color-scheme="light"] .mantine-Card-root:has(.xterm) {
+html[data-xylo][data-xylo-term-skin="neon"][data-mantine-color-scheme="light"]
+  :is(.mantine-Card-root:has(.xterm), .xylo-con) {
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--xylo-accent) 22%, transparent),
     0 0 22px -6px color-mix(in srgb, var(--xylo-accent) 40%, transparent);
@@ -2038,23 +2482,28 @@ html[data-xylo] .xylo-status {
   white-space: nowrap;
 }
 
-html[data-xylo] .xylo-status[data-phase="running"] {
+html[data-xylo] :is(.xylo-status, .xylo-con-state)[data-phase="running"] {
   --xylo-status: var(--color-server-status-running, var(--mantine-color-green-filled));
 }
 
-html[data-xylo] .xylo-status:is([data-phase="starting"], [data-phase="stopping"]) {
+html[data-xylo] :is(.xylo-status, .xylo-con-state):is([data-phase="starting"], [data-phase="stopping"]) {
   --xylo-status: var(--color-server-status-starting, var(--mantine-color-yellow-filled));
 }
 
-html[data-xylo] .xylo-status:is([data-phase="installing"], [data-phase="restoring"], [data-phase="transferring"]) {
+html[data-xylo]
+  :is(.xylo-status, .xylo-con-state):is(
+    [data-phase="installing"],
+    [data-phase="restoring"],
+    [data-phase="transferring"]
+  ) {
   --xylo-status: var(--mantine-color-blue-filled);
 }
 
-html[data-xylo] .xylo-status:is([data-phase="failed"], [data-phase="suspended"]) {
+html[data-xylo] :is(.xylo-status, .xylo-con-state):is([data-phase="failed"], [data-phase="suspended"]) {
   --xylo-status: var(--mantine-color-red-filled);
 }
 
-html[data-xylo] .xylo-status[data-phase="offline"] {
+html[data-xylo] :is(.xylo-status, .xylo-con-state)[data-phase="offline"] {
   --xylo-status: var(--mantine-color-dimmed);
 }
 

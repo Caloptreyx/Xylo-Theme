@@ -6,7 +6,7 @@ import { useExtTranslations } from '../../translations.ts';
 import { addressOf, type Phase, phaseOf } from '../home/home.ts';
 import { levelOf, percentOf } from './overview.ts';
 
-/** The pieces the server overview and the console page share. */
+/** The server overview's pieces; the console page's inspector shares the connect details. */
 
 /** The server's state as a tinted chip with a dot in its colour. */
 export function StatusChip({ phase }: { phase: Phase }) {
@@ -109,9 +109,9 @@ function Stat({
 
 /**
  * Live CPU, memory, disk and network (received, sent) against the server's limits, from its websocket, in one card
- * split by hairlines. `compact` is the console page's lower strip.
+ * split by hairlines.
  */
-export function UsageStrip({ compact = false }: { compact?: boolean }) {
+export function UsageStrip() {
   const { t } = useExtTranslations();
   const server = useServerStore((state) => state.server);
   const state = useServerStore((state) => state.state);
@@ -130,7 +130,7 @@ export function UsageStrip({ compact = false }: { compact?: boolean }) {
   const diskLimit = server.limits.disk > 0 ? mbToBytes(server.limits.disk) : null;
 
   return (
-    <Card className='xylo-stats' data-compact={compact || undefined}>
+    <Card className='xylo-stats'>
       <Stat
         label={t('overview.cpu', {})}
         value={`${cpu.toFixed(1)}%`}

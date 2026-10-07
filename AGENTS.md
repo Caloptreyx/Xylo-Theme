@@ -27,15 +27,18 @@ frontend/src/elements/shell/      the rail layout: Shell.tsx (context panel, pho
                                   rail, folders, drag and drop), nav.ts (core's sidebar nodes), folders.ts (pure rules)
 frontend/src/elements/home/       the servers page: Home.tsx (page, HomeSwitch), ServerCard.tsx, home.ts (pure rules)
 frontend/src/elements/server/     the server overview: Overview.tsx (page, ServerHome), parts.tsx (the usage strip,
-                                  connect details, status chip and section card the console page shares), overview.ts
-                                  (pure helpers)
-frontend/src/elements/console/    the console page: Console.tsx (page, its phone layout, ConsoleSwitch, quick commands),
-                                  xterm.ts (hooks into every console's xterm), TerminalButtons.tsx (clear, download,
-                                  and TerminalLook.tsx, the visitor's own scheme and frame), console.ts (pure)
+                                  status chip, section card, and the connect details the console's inspector shares),
+                                  overview.ts (pure helpers)
+frontend/src/elements/console/    the console page: Console.tsx (the workspace, ConsoleSwitch), Telemetry.tsx (the
+                                  command bar's figures), Inspector.tsx, QuickCommands.tsx (chips, the list, their
+                                  storage), xterm.ts (hooks into every console's xterm), TerminalButtons.tsx (clear,
+                                  download, and TerminalLook.tsx, the visitor's own scheme and frame), console.ts and
+                                  telemetry.ts (pure)
 frontend/src/elements/Greeting.tsx  the greeting above the servers list
 frontend/src/translations.ts      every user facing string (English)
 tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, lib/terminal.ts, shell/folders.ts,
-                                  home/home.ts, server/overview.ts, console/console.ts, editor/fields.ts (not shipped)
+                                  home/home.ts, server/overview.ts, console/console.ts, console/telemetry.ts,
+                                  editor/fields.ts (not shipped)
 scripts/package.py                builds dist/dev_caloptreyx_xylo.c7s.zip
 ```
 
@@ -165,53 +168,71 @@ once the admin adds `/terminal` to that order (core's editor lists it, since it 
 overview is off. The route interceptor in index.ts gives both a `ConsoleSwitch` around core's element, read with the
 theme hook so Studio switches it live; `/console/popout` stays core's.
 
-- The page is terminal first: the name, state chip and uptime with core's `ServerPowerControls` (in core's
-  `ServerCan`), one compact usage strip (parts.tsx, the overview's), and core's own terminal component
-  (`terminal/Console.tsx`: search, history, SSH, popout, features, input row slots). The terminal runs from where it
-  starts (`--xylo-con-top`, measured when the header or window resizes) to the viewport's bottom, at least 20rem,
-  and shrinks above the on-screen keyboard as core's does (`useVisualViewportBottomInset`). It is wrapped in
+- The page is one workspace: a single surface (`.xylo-con`) from where it starts (`--xylo-con-top`, measured when the
+  page's height or the window changes) to the viewport's bottom, at least 24rem, shrinking above the on-screen
+  keyboard as core's terminal does (`useVisualViewportBottomInset`); no cards around or inside it. It is wrapped in
   `ServerContentContainer` with core's title and container registry, so other extensions' container slots stay.
-- The details panel (toggle in the header, `xylo:console-panel` in localStorage): beside the terminal from 80rem of
-  page width, as tall as it and scrolling on its own (`contain: size`), under it below that. It holds the connect
-  details, quick commands, and core's `statCards` and `statBlocks` slots, so other extensions' cards still show.
   Core's three charts are dropped.
-- Phones (a `page` container under 64rem, the shell's top bar width): `usePhone` measures it as core's
-  `usePageBreakpoint` does (the virtual window, else the body; that hook only exists from panel 1.2.2, and biome
-  bans `useMediaQuery`) and sets `data-phone`, and app.css's rules for it sit in `@container page (width < 64rem)`.
-  A page of its own: the name (truncated) and state chip over the uptime, with a Details button instead of the
-  panel toggle; core's power buttons as one row of equal buttons (CSS on core's markup); the usage strip as one line
-  of figures scrolling sideways, with hairline bars; the saved quick commands as a row of chips above the terminal,
-  the last one opening the sheet at them; the terminal out to the canvas's edges (`--xylo-con-bleed`, core's `px-4`)
-  with a smaller radius, and core's terminal header in one row, its buttons 40px and scrolling sideways when they
-  don't fit. Details is a Mantine `Drawer` from the bottom (as tall as its content, at most 85dvh, safe area padded)
-  holding what the panel holds; the slots mount there only, never with the panel. Buttons and chips are at least
+- The command bar (its top strip): the name (truncated), the state as text in its status colour (`phaseOf`, the
+  status chip's colours) and the uptime while it runs; the telemetry (Telemetry.tsx: CPU, memory, disk, network in
+  and out as rates, each a dimmed label, a tabular value and a sparkline of the last 60 samples, limits and totals
+  in the title; flat and muted while offline); core's `ServerPowerControls` (in core's `ServerCan`) restyled as one
+  segmented group by CSS on core's markup; the inspector toggle. One row, two (figures under) when the workspace is
+  under 60rem (`@container xylo-con`). `useTelemetry` subscribes to core's server store (`useServerStoreApi`) and
+  feeds telemetry.ts: `pushSample` (a 60 sample window), `ratesOf` (bytes per second from the running totals, none
+  across a restart), `withReading` (an offline reading starts the curves over, the disk's excepted), `sparkPath`
+  (the line and area paths, newest sample at the right edge, scaled to the limit or the largest sample).
+- Core's own terminal (`terminal/Console.tsx`: search, history, SSH, popout, features, input row slots) fills the
+  middle. Its card is `display: contents` inside `.xylo-con-term`, so its children lay out in that column: the header
+  is a slim toolbar (its connection dot small and still), the output inset, the input row (`order: 2`) a prompt along
+  the bottom edge (a `›` cue, or core's prefix button where the panel has one, 1.2.4; mono, no box, focus lights its
+  edge), and the quick command chips (`order: 1`) just above it. xterm.ts and TerminalButtons still find the card.
+- The workspace paints the scheme (`--xylo-term-bg`, the solid card colour with 'panel') and, with a named scheme,
+  sets Mantine's text, dimmed, default and border colours and `--xylo-hairline` from it, so a dark scheme in light
+  mode (or the reverse) reads; the bar and the inspector sit a step off it (the scheme's text mixed in).
+- The inspector (Inspector.tsx): tabs Connect (the description, then parts.tsx's `ConnectDetails`), Commands (with
+  `control.console`) and More (core's `statCards` and `statBlocks` slots, only when one is filled; mounted while that
+  tab shows). From 80rem of page width (`usePageSize`, measured as core's `usePageBreakpoint` does: the virtual
+  window, else the body; that hook only exists from panel 1.2.2, and biome bans `useMediaQuery`) it docks as a 20rem
+  column behind a hairline and the terminal narrows; open state in `xylo:console-panel` ('hidden' when closed).
+  Below, it slides over the terminal from the right edge (transform and opacity; none with the motion setting off or
+  reduced motion), opens on demand only, and closes on Escape and a press outside it (toggles and portals excepted).
+- Phones (`data-phone` under 64rem, the shell's top bar width): the workspace bleeds to the canvas's edges (core's
+  `px-4` and `mb-4`), the bar is identity and the inspector button, power a full width segmented row, the figures
+  one sideways scrolling line with smaller sparklines (power and figures hide while the keyboard is up); the
+  toolbar's buttons 40px scrolling sideways; the prompt at 16px so the browser doesn't zoom. The inspector is a
+  Mantine `Drawer` from the bottom (at most 85dvh, safe area padded) with the same tabs. Touch targets are at least
   40px; nothing depends on hover.
 - Quick commands: per server and browser (`xylo:commands:<uuid>`), at most 20 of 200 characters, one line each,
-  validated on read (console.ts). `useQuickCommands` reads them through `useSyncExternalStore`, so the chips, the
-  sheet and the panel stay in step (a list storage refuses is kept for that load). Shown only with
-  `control.console`; a click sends one over the server's websocket (`SocketRequest.SEND_COMMAND`) while it is
-  connected and the server is not offline.
+  validated on read (console.ts). `useQuickCommands` reads them through `useSyncExternalStore`, so the chips and the
+  inspector stay in step (a list storage refuses is kept for that load). Shown only with `control.console`; a click
+  sends one over the server's websocket (`SocketRequest.SEND_COMMAND`) while it is connected and the server is not
+  offline, the disabled chips' title saying why. The last chip opens the inspector at Commands; with none saved it
+  is the only one, labelled.
 - xterm.ts hooks every console, core's page and the popout included (`pages.server.console.xterm`): the init handler
   sets the mono font (`MONO_STACKS`, core's when 'panel'), the line height and the palette (`terminalPalette`, with a
-  transparent background: app.css paints `--xylo-term-bg` on the card holding `.xterm` while `data-xylo-terminal`
-  is 'custom'). Core reassigns `term.options.theme` on every scheme change, so `theme` is redefined on that
-  terminal's options object (xterm 6 defines each key as a configurable accessor): core's value is kept and Xylo's
-  palette over it goes through, or core's own with the 'panel' scheme. A scheme attribute observer reapplies in case
-  that fails. `subscribeTheme` reapplies colours, font and line height on every theme change (Studio's drafts too),
-  then Xylo's own FitAddon refits; a web font that loads after the terminal opened triggers a remeasure.
+  transparent background: app.css paints `--xylo-term-bg` on the card holding `.xterm`, or on Xylo's workspace,
+  while `data-xylo-terminal` is 'custom'). Core reassigns `term.options.theme` on every scheme change, so `theme` is
+  redefined on that terminal's options object (xterm 6 defines each key as a configurable accessor): core's value is
+  kept and Xylo's palette over it goes through, or core's own with the 'panel' scheme. A scheme attribute observer
+  reapplies in case that fails. `subscribeTheme` reapplies colours, font and line height on every theme change
+  (Studio's drafts too), then Xylo's own FitAddon refits; a web font that loads after the terminal opened triggers a
+  remeasure.
 - With `consoleHighlight`, `term.write` is wrapped so new uncoloured warning and error lines are tinted
   (lib/terminal.ts). Clear and download (`<server>-<date and time>.log`, the active buffer as plain text with soft
   wrapped rows joined) are core header buttons (`terminalHeaderRightComponents`), finding their terminal through
   the card they sit in.
 - Frames (`terminalSkin`, `data-xylo-term-skin`; app.css's "terminal frames" section) style the card holding
-  `.xterm`, so core's console and the popout wear them too: card (plain), window (a title bar of `::before` dots,
-  core's header moved down by a margin, since core's `p-2!` is a layered `!important`), flush (no card: 'theme' and
-  'panel' on the canvas, a named scheme on its own background, `--xylo-term-flush`), glass (the scheme's background
-  translucent, `--xylo-blur`), crt (scanlines and vignette in a `::after` that clicks pass through, text glow on the
-  DOM renderer's row spans, still; `--xylo-term-scan/vignette/glow` from buildCss are faint on a light screen), neon
-  (accent outline and glow). They paint with currentColor and fall back to the card's colour without
-  `--xylo-term-bg`, so each works with every scheme in both modes. The selectors double the html attribute to outrank
-  the glass surfaces' blur rule.
+  `.xterm` on core's console and the popout, and the whole workspace on Xylo's page (the card rules that would draw
+  around the dissolved card skip `.xylo-con-term > *`): card (plain), window (core's card: a title bar of `::before`
+  dots, core's header moved down by a margin, since core's `p-2!` is a layered `!important`; the workspace: the dots
+  at the left of the command bar, which turns title bar), flush (no surface: 'theme' and 'panel' on the canvas, a
+  named scheme on its own background, `--xylo-term-flush`), glass (the scheme's background translucent,
+  `--xylo-blur`), crt (scanlines and vignette in a `::after` that clicks pass through, over the workspace's terminal
+  column; text glow on the DOM renderer's row spans, still; `--xylo-term-scan/vignette/glow` from buildCss are faint
+  on a light screen), neon (accent outline and glow, the workspace's edge). They paint with currentColor and fall
+  back to the card's colour without `--xylo-term-bg`, so each works with every scheme in both modes. The selectors
+  double the html attribute to outrank the glass surfaces' blur rule.
 - Personal looks (`terminalUserChoice`, on by default): a palette button in core's terminal header (TerminalLook.tsx,
   rendered by TerminalButtons) opens a popover of every scheme (grouped as `TERMINAL_SCHEME_GROUPS`) and frame, "Site
   default" first in each. The pick is this browser's: `xylo:terminal` in localStorage, `{ scheme?, skin? }`, allow

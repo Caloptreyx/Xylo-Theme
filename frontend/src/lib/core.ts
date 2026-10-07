@@ -67,5 +67,5 @@ export { useToast } from '@/providers/ToastProvider.tsx';
 export { useTranslations as useCoreTranslations } from '@/providers/TranslationProvider.tsx';
 export { useGlobalStore } from '@/stores/global.ts';
 export { useQuickActionsStore } from '@/stores/quickActions.ts';
-export { useServerStore } from '@/stores/server.ts';
+export { useServerStore, useServerStoreApi } from '@/stores/server.ts';
 export { useUserStore } from '@/stores/user.ts';
