@@ -8,9 +8,11 @@ import {
   contrastIssues,
   DEFAULT_THEME,
   generatePalette,
+  MAX_CUSTOM_PRESETS,
   normalizeTheme,
   PRESETS,
   sameTheme,
+  terminalPalette,
   themeAttributes,
 } from '../frontend/src/lib/theme.ts';
 
@@ -77,6 +79,35 @@ describe('normalizeTheme', () => {
       assert.equal(normalizeTheme({ backgroundImage: url }).backgroundImage, '', url.slice(0, 40));
     }
   });
+
+  test('console fields: scheme allow listed, line height clamped', () => {
+    assert.equal(normalizeTheme({ terminalScheme: 'dracula' }).terminalScheme, 'dracula');
+    assert.equal(normalizeTheme({ terminalScheme: 'matrix' }).terminalScheme, DEFAULT_THEME.terminalScheme);
+    assert.equal(normalizeTheme({ terminalLineHeight: 400 }).terminalLineHeight, 180);
+    assert.equal(normalizeTheme({ terminalLineHeight: 50 }).terminalLineHeight, 100);
+  });
+
+  test('custom presets: valid unique names, normalized looks, at most twelve', () => {
+    const look = { ...PRESETS[1].look, accent: 'red;}', extra: 1, customPresets: [{ name: 'nested', look: {} }] };
+    const theme = normalizeTheme({
+      customPresets: [
+        { name: '  Night\u0000 ', look },
+        { name: 'Night', look: PRESETS[2].look },
+        { name: '', look },
+        { name: 'x'.repeat(33), look },
+        { name: 'No look' },
+        'Morning',
+        ...Array.from({ length: 20 }, (_, i) => ({ name: `p${i}`, look })),
+      ],
+    });
+    assert.equal(theme.customPresets.length, MAX_CUSTOM_PRESETS);
+    const [first] = theme.customPresets;
+    assert.equal(first.name, 'Night');
+    assert.equal(first.look.accent, DEFAULT_THEME.accent);
+    assert.equal(first.look.backdrop, PRESETS[1].look.backdrop);
+    assert.deepEqual(Object.keys(first.look).sort(), Object.keys(PRESETS[0].look).sort());
+    assert.deepEqual(normalizeTheme({ customPresets: 'x' }).customPresets, []);
+  });
 });
 
 describe('presets', () => {
@@ -124,6 +155,11 @@ describe('presets', () => {
       const theme = normalizeTheme({ ...DEFAULT_THEME, ...generatePalette(hue) });
       assert.deepEqual(contrastIssues(theme), [], `hue ${hue}`);
     }
+  });
+
+  test('a preset keeps the saved custom presets', () => {
+    const site = normalizeTheme({ customPresets: [{ name: 'Mine', look: PRESETS[3].look }] });
+    assert.equal(applyPreset(site, PRESETS[1].look).customPresets[0].name, 'Mine');
   });
 });
 
@@ -238,5 +274,50 @@ describe('sameTheme', () => {
     const reversed = Object.fromEntries(Object.entries(DEFAULT_THEME).reverse()) as typeof DEFAULT_THEME;
     assert.ok(sameTheme(reversed, DEFAULT_THEME));
     assert.ok(!sameTheme({ ...DEFAULT_THEME, greeting: false }, DEFAULT_THEME));
+  });
+
+  test('compares custom presets by value', () => {
+    const a = normalizeTheme({ customPresets: [{ name: 'A', look: PRESETS[1].look }] });
+    const b = normalizeTheme({ customPresets: [{ name: 'A', look: PRESETS[1].look }] });
+    assert.ok(sameTheme(a, b));
+    assert.ok(!sameTheme(a, normalizeTheme({ customPresets: [{ name: 'A', look: PRESETS[2].look }] })));
+    assert.ok(!sameTheme(a, normalizeTheme({ customPresets: [{ name: 'B', look: PRESETS[1].look }] })));
+  });
+});
+
+describe('terminalPalette', () => {
+  test("'panel' keeps core's colours: no palette, no variables", () => {
+    const theme = normalizeTheme({ terminalScheme: 'panel' });
+    assert.equal(terminalPalette(theme, true), null);
+    assert.equal(themeAttributes(theme).xyloTerminal, 'panel');
+    assert.ok(!buildCss(theme).includes('--xylo-term-bg'));
+  });
+
+  test('a named scheme is the same in both modes', () => {
+    const theme = normalizeTheme({ terminalScheme: 'nord' });
+    assert.deepEqual(terminalPalette(theme, false), terminalPalette(theme, true));
+    assert.equal(terminalPalette(theme, true)?.background, '#2e3440');
+    assert.equal(themeAttributes(theme).xyloTerminal, 'custom');
+  });
+
+  test("'theme' colours read on their background in both modes for every preset", () => {
+    for (const preset of PRESETS) {
+      for (const dark of [true, false]) {
+        const palette = terminalPalette(applyPreset(DEFAULT_THEME, preset.look), dark);
+        assert.ok(palette);
+        assert.equal(palette.ansi.length, 16);
+        assert.ok(contrastRatio(palette.foreground, palette.background) >= 4.5, preset.id);
+        for (const i of [1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14]) {
+          const ratio = contrastRatio(palette.ansi[i], palette.background);
+          assert.ok(ratio >= 4.5, `${preset.id} ${dark ? 'dark' : 'light'} ${i}: ${ratio}`);
+        }
+      }
+    }
+  });
+
+  test("'theme' takes the status colours when set", () => {
+    const palette = terminalPalette(normalizeTheme({ danger: '#ff4d4f', success: '#52c41a' }), true);
+    assert.equal(palette?.ansi[1], '#ff4d4f');
+    assert.equal(palette?.ansi[2], '#52c41a');
   });
 });

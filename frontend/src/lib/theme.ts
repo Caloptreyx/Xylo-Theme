@@ -37,6 +37,13 @@ export type Motion = (typeof MOTIONS)[number];
 export const TRANSITIONS = ['rise', 'fade', 'zoom', 'none'] as const;
 export type Transition = (typeof TRANSITIONS)[number];
 
+/**
+ * The console's colours: derived from the theme, core's own (no override), or a named scheme. Named schemes keep
+ * their own dark background in light mode, as a terminal usually does.
+ */
+export const TERMINAL_SCHEMES = ['theme', 'panel', 'oneDark', 'dracula', 'nord', 'gruvbox', 'tokyoNight'] as const;
+export type TerminalScheme = (typeof TERMINAL_SCHEMES)[number];
+
 export interface XyloTheme {
   accent: string;
   /** The gradient's second stop and the backdrop's second colour. */
@@ -94,6 +101,20 @@ export interface XyloTheme {
   homePage: boolean;
   /** Xylo's server overview (elements/server) as the page a server opens on; the console moves to `/terminal`. */
   serverOverview: boolean;
+  /** Xylo's console page (elements/console): a full height terminal, live readouts, a details panel. */
+  consolePage: boolean;
+  terminalScheme: TerminalScheme;
+  /** Line height in percent of the font size. */
+  terminalLineHeight: number;
+  /** Tints uncoloured console lines that read as errors or warnings (lib/terminal.ts). */
+  consoleHighlight: boolean;
+  /** Looks the admins saved in Studio, applied like the built in presets. */
+  customPresets: CustomPreset[];
+}
+
+export interface CustomPreset {
+  name: string;
+  look: PresetLook;
 }
 
 /**
@@ -212,6 +233,11 @@ export const DEFAULT_THEME: XyloTheme = {
   greeting: true,
   homePage: true,
   serverOverview: true,
+  consolePage: true,
+  terminalScheme: 'theme',
+  terminalLineHeight: 120,
+  consoleHighlight: true,
+  customPresets: [],
 };
 
 export type PresetId =
@@ -472,9 +498,43 @@ const choice = <T extends string>(v: unknown, list: readonly T[], fallback: T): 
 const int = (v: unknown, min: number, max: number, fallback: number) =>
   typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, Math.round(v))) : fallback;
 const flag = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
+const record = (v: unknown) =>
+  v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+
+/** The fields a preset sets, in PresetLook's order. */
+export const LOOK_KEYS = Object.keys(CARBON) as (keyof PresetLook)[];
+export const MAX_CUSTOM_PRESETS = 12;
+export const MAX_PRESET_NAME = 32;
+
+/** A name as shown: control characters dropped, trimmed; null when nothing or too much is left. */
+export function presetName(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: control characters are what it removes
+  const name = v.replace(/[\u0000-\u001f\u007f]/g, '').trim();
+  return name.length > 0 && name.length <= MAX_PRESET_NAME ? name : null;
+}
+
+export const pickLook = (t: XyloTheme): PresetLook =>
+  Object.fromEntries(LOOK_KEYS.map((key) => [key, t[key]])) as PresetLook;
+
+/** At most MAX_CUSTOM_PRESETS entries with a valid, unique name; each look normalized like a theme. */
+function customPresets(v: unknown, fallback: CustomPreset[]): CustomPreset[] {
+  if (!Array.isArray(v)) return fallback;
+  const out: CustomPreset[] = [];
+  for (const item of v) {
+    const entry = record(item);
+    const name = presetName(entry?.name);
+    const look = record(entry?.look);
+    if (!name || !look || out.some((p) => p.name === name)) continue;
+    // a look never carries presets of its own, so this does not recurse
+    out.push({ name, look: pickLook(normalizeTheme({ ...look, customPresets: [] })) });
+    if (out.length === MAX_CUSTOM_PRESETS) break;
+  }
+  return out;
+}
 
 export function normalizeTheme(raw: unknown, d: XyloTheme = DEFAULT_THEME): XyloTheme {
-  const r = (raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}) as Record<string, unknown>;
+  const r = record(raw) ?? {};
   const image = r.backgroundImage;
 
   return {
@@ -531,6 +591,11 @@ export function normalizeTheme(raw: unknown, d: XyloTheme = DEFAULT_THEME): Xylo
     greeting: flag(r.greeting, d.greeting),
     homePage: flag(r.homePage, d.homePage),
     serverOverview: flag(r.serverOverview, d.serverOverview),
+    consolePage: flag(r.consolePage, d.consolePage),
+    terminalScheme: choice(r.terminalScheme, TERMINAL_SCHEMES, d.terminalScheme),
+    terminalLineHeight: int(r.terminalLineHeight, 100, 180, d.terminalLineHeight),
+    consoleHighlight: flag(r.consoleHighlight, d.consoleHighlight),
+    customPresets: customPresets(r.customPresets, d.customPresets),
   };
 }
 
@@ -541,7 +606,14 @@ export function applyPreset(base: XyloTheme, look: PresetLook): XyloTheme {
 
 /** Field by field equality; comparing JSON would depend on key order, which differs between sources. */
 export function sameTheme(a: XyloTheme, b: XyloTheme): boolean {
-  return (Object.keys(DEFAULT_THEME) as (keyof XyloTheme)[]).every((key) => a[key] === b[key]);
+  return (Object.keys(DEFAULT_THEME) as (keyof XyloTheme)[]).every((key) => {
+    if (key !== 'customPresets') return a[key] === b[key];
+    const [x, y] = [a.customPresets, b.customPresets];
+    return (
+      x.length === y.length &&
+      x.every((p, i) => p.name === y[i].name && LOOK_KEYS.every((look) => p.look[look] === y[i].look[look]))
+    );
+  });
 }
 
 export type Palette = Pick<XyloTheme, 'accent' | 'accent2' | 'background' | 'surface' | 'text'>;
@@ -626,6 +698,176 @@ export function accentInk(t: XyloTheme): string {
   return worst('#ffffff') >= worst('#0b0b10') ? '#ffffff' : '#0b0b10';
 }
 
+/** xterm's sixteen colour names in ANSI order: SGR 30 to 37, then the bright 90 to 97. */
+export const ANSI_NAMES = [
+  'black',
+  'red',
+  'green',
+  'yellow',
+  'blue',
+  'magenta',
+  'cyan',
+  'white',
+  'brightBlack',
+  'brightRed',
+  'brightGreen',
+  'brightYellow',
+  'brightBlue',
+  'brightMagenta',
+  'brightCyan',
+  'brightWhite',
+] as const;
+
+export interface TerminalPalette {
+  background: string;
+  foreground: string;
+  /** In ANSI_NAMES order. */
+  ansi: string[];
+}
+
+/** The named schemes as their authors publish them. */
+export const NAMED_TERMINALS: Record<Exclude<TerminalScheme, 'theme' | 'panel'>, TerminalPalette> = {
+  oneDark: {
+    background: '#282c34',
+    foreground: '#abb2bf',
+    ansi: [
+      '#3f4451',
+      '#e06c75',
+      '#98c379',
+      '#e5c07b',
+      '#61afef',
+      '#c678dd',
+      '#56b6c2',
+      '#d7dae0',
+      '#4f5666',
+      '#ff7b86',
+      '#b1e18b',
+      '#efb074',
+      '#67cdff',
+      '#e48bff',
+      '#63d4e0',
+      '#e6e6e6',
+    ],
+  },
+  dracula: {
+    background: '#282a36',
+    foreground: '#f8f8f2',
+    ansi: [
+      '#21222c',
+      '#ff5555',
+      '#50fa7b',
+      '#f1fa8c',
+      '#bd93f9',
+      '#ff79c6',
+      '#8be9fd',
+      '#f8f8f2',
+      '#6272a4',
+      '#ff6e6e',
+      '#69ff94',
+      '#ffffa5',
+      '#d6acff',
+      '#ff92df',
+      '#a4ffff',
+      '#ffffff',
+    ],
+  },
+  nord: {
+    background: '#2e3440',
+    foreground: '#d8dee9',
+    ansi: [
+      '#3b4252',
+      '#bf616a',
+      '#a3be8c',
+      '#ebcb8b',
+      '#81a1c1',
+      '#b48ead',
+      '#88c0d0',
+      '#e5e9f0',
+      '#4c566a',
+      '#bf616a',
+      '#a3be8c',
+      '#ebcb8b',
+      '#81a1c1',
+      '#b48ead',
+      '#8fbcbb',
+      '#eceff4',
+    ],
+  },
+  gruvbox: {
+    background: '#282828',
+    foreground: '#ebdbb2',
+    ansi: [
+      '#282828',
+      '#cc241d',
+      '#98971a',
+      '#d79921',
+      '#458588',
+      '#b16286',
+      '#689d6a',
+      '#a89984',
+      '#928374',
+      '#fb4934',
+      '#b8bb26',
+      '#fabd2f',
+      '#83a598',
+      '#d3869b',
+      '#8ec07c',
+      '#ebdbb2',
+    ],
+  },
+  tokyoNight: {
+    background: '#1a1b26',
+    foreground: '#c0caf5',
+    ansi: [
+      '#15161e',
+      '#f7768e',
+      '#9ece6a',
+      '#e0af68',
+      '#7aa2f7',
+      '#bb9af7',
+      '#7dcfff',
+      '#a9b1d6',
+      '#414868',
+      '#f7768e',
+      '#9ece6a',
+      '#e0af68',
+      '#7aa2f7',
+      '#bb9af7',
+      '#7dcfff',
+      '#c0caf5',
+    ],
+  },
+};
+
+/**
+ * The console's colours in dark or light mode; null for 'panel', which keeps core's. 'theme' sinks the terminal a
+ * step below the page, takes red, green and yellow from the status colours and blue from the accent, and darkens or
+ * lightens every hue until it reads on that background at 4.5:1.
+ */
+export function terminalPalette(t: XyloTheme, dark: boolean): TerminalPalette | null {
+  if (t.terminalScheme === 'panel') return null;
+  if (t.terminalScheme !== 'theme') return NAMED_TERMINALS[t.terminalScheme];
+
+  const light = lightBase(t);
+  const fg = dark ? t.text : light.text;
+  const bg = dark ? mix(t.background, '#000000', 0.7) : mix(light.text, light.surface, 0.035);
+  // black, bright black, white, bright white: steps between the background and the text
+  const [black, brightBlack, white, brightWhite] = (dark ? [0.3, 0.5, 0.8, 1] : [0.95, 0.65, 0.5, 0.35]).map((w) =>
+    mix(fg, bg, w),
+  );
+  const hues = [
+    t.danger || '#ef6b73',
+    t.success || '#7fcf8b',
+    t.warning || '#e5c07b',
+    t.accent,
+    mix('#c792ea', t.accent, 0.8),
+    mix('#6fc8d6', t.accent, 0.8),
+  ];
+  const normal = hues.map((c) => readable(c, fg, bg));
+  const bright = hues.map((c) => readable(dark ? mix(c, '#ffffff', 0.8) : mix(c, '#000000', 0.85), fg, bg));
+  return { background: bg, foreground: fg, ansi: [black, ...normal, white, brightBlack, ...bright, brightWhite] };
+}
+
 export interface ContrastIssue {
   pair: 'text' | 'dimmed' | 'accentInk' | 'lightText';
   ratio: number;
@@ -664,6 +906,7 @@ export function themeAttributes(t: XyloTheme): Record<string, string> {
     xyloTransition: t.motion === 'none' ? 'none' : t.pageTransition,
     xyloLift: t.hoverLift && t.motion !== 'none' ? 'on' : 'off',
     xyloTitles: t.gradientTitles ? 'gradient' : 'plain',
+    xyloTerminal: t.terminalScheme === 'panel' ? 'panel' : 'custom',
   };
 }
 
@@ -800,6 +1043,15 @@ export function buildCss(t: XyloTheme): string {
     ['--chart-series-2', readable(t.accent2, light.text, light.surface, 3)],
     ['--chart-tick-color', 'var(--mantine-color-dimmed)'],
   ];
+
+  // the console's card behind the transparent xterm (app.css, `data-xylo-terminal='custom'`)
+  for (const [block, dark] of [
+    [darkScheme, true],
+    [lightScheme, false],
+  ] as const) {
+    const palette = terminalPalette(t, dark);
+    if (palette) block.push(['--xylo-term-bg', palette.background], ['--xylo-term-fg', palette.foreground]);
+  }
 
   // status colours repaint their Mantine palette and the server state dots; the scales go in plain html:root, the
   // variants in the scheme blocks because core and Mantine pin those on `:root[data-mantine-color-scheme]`

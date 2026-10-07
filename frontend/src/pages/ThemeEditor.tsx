@@ -1,12 +1,14 @@
 import {
   faArrowRotateLeft,
   faArrowRotateRight,
+  faCodeCompare,
   faDesktop,
   faDownload,
   faDroplet,
   faEllipsisVertical,
   faFont,
   faLayerGroup,
+  faMagnifyingGlass,
   faMobileScreen,
   faMoon,
   faRotateRight,
@@ -14,6 +16,7 @@ import {
   faSwatchbook,
   faTableColumns,
   faTabletScreenButton,
+  faTerminal,
   faTrashArrowUp,
   faUpload,
   faWandMagicSparkles,
@@ -28,8 +31,16 @@ import { type FC, useEffect, useReducer, useRef, useState } from 'react';
 import { useBeforeUnload, useNavigate } from 'react-router';
 import saveTheme from '../api/saveTheme.ts';
 import {
+  SECTION_IDS,
+  type SectionId,
+  sectionChanged,
+  sectionSettings,
+  withSection,
+} from '../elements/editor/fields.ts';
+import {
   BackdropSection,
   ColorsSection,
+  ConsoleSection,
   LayoutSection,
   MotionSection,
   PresetsSection,
@@ -59,17 +70,16 @@ import { useExtTranslations } from '../translations.ts';
 /** Auth routes redirect signed in users, so the editor previews core's real login page here (index.ts). */
 export const LOGIN_PREVIEW_PATH = '/xylo-preview/login';
 
-type SectionId = 'presets' | 'colors' | 'backdrop' | 'surfaces' | 'layout' | 'typography' | 'motion';
-
-const SECTIONS: { id: SectionId; icon: IconDefinition; Component: FC<SectionProps> }[] = [
-  { id: 'presets', icon: faSwatchbook, Component: PresetsSection },
-  { id: 'colors', icon: faDroplet, Component: ColorsSection },
-  { id: 'backdrop', icon: faWater, Component: BackdropSection },
-  { id: 'surfaces', icon: faLayerGroup, Component: SurfacesSection },
-  { id: 'layout', icon: faTableColumns, Component: LayoutSection },
-  { id: 'typography', icon: faFont, Component: TypographySection },
-  { id: 'motion', icon: faWandMagicSparkles, Component: MotionSection },
-];
+const SECTIONS: Record<SectionId, { icon: IconDefinition; Component: FC<SectionProps> }> = {
+  presets: { icon: faSwatchbook, Component: PresetsSection },
+  colors: { icon: faDroplet, Component: ColorsSection },
+  backdrop: { icon: faWater, Component: BackdropSection },
+  surfaces: { icon: faLayerGroup, Component: SurfacesSection },
+  layout: { icon: faTableColumns, Component: LayoutSection },
+  typography: { icon: faFont, Component: TypographySection },
+  console: { icon: faTerminal, Component: ConsoleSection },
+  motion: { icon: faWandMagicSparkles, Component: MotionSection },
+};
 
 type Device = 'desktop' | 'tablet' | 'phone';
 const DEVICE_WIDTH: Record<Device, number> = { desktop: 1280, tablet: 834, phone: 390 };
@@ -164,16 +174,25 @@ export default function ThemeEditor() {
   const [stage, setStage] = useState({ width: 0, height: 0 });
   // the draft can hold half typed colours; the preview, drawings and checks use the last valid one
   const [valid, setValid] = useState(draft);
+  // held down on the compare button: the frame shows the saved theme until it is let go
+  const [holding, setHolding] = useState(false);
+  const [query, setQuery] = useState('');
+  // a setting picked in the search; a fresh object each time, so picking the same one again scrolls again
+  const [jump, setJump] = useState<{ field: keyof XyloTheme } | null>(null);
 
   const frame = useRef<HTMLIFrameElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const asideRef = useRef<HTMLDivElement>(null);
   const shown = useRef(draft);
+  // what the frame shows: the valid draft, or the saved theme while comparing; re-sent when the frame reloads
+  const onScreen = useRef(draft);
   const history = useHistory(draft, setDraft);
 
   const set = (patch: Partial<XyloTheme>) => setDraft((d) => ({ ...d, ...patch }));
   const dirty = !sameTheme(normalizeTheme(draft, saved), saved);
   const badUrl = draft.backgroundImage !== '' && !SAFE_URL.test(draft.backgroundImage);
+  const comparing = holding && dirty;
   const canSaveTheme = useCanSaveTheme();
   const canSave = dirty && load === 'ok' && !badUrl && canSaveTheme;
   // a role holding only the Xylo permission reaches the admin area, not necessarily its extensions page
@@ -211,7 +230,7 @@ export default function ThemeEditor() {
     getServers(1, undefined, false)
       .then((res) => setServerId(res.data[0]?.uuidShort ?? null))
       .catch(() => {
-        // the server page is simply left out of the picker
+        // the server pages are simply left out of the picker
       });
   }, []);
 
@@ -223,24 +242,45 @@ export default function ThemeEditor() {
     return () => observer.disconnect();
   }, []);
 
-  // drafts reach the frame at most every 50ms, so a slider drag stays smooth
   useEffect(() => {
     shown.current = normalizeTheme(draft, shown.current);
     setValid(shown.current);
-    const id = setTimeout(() => sendPreview(frame.current, shown.current, scheme), 50);
+  }, [draft]);
+
+  // drafts reach the frame at most every 50ms, so a slider drag stays smooth
+  useEffect(() => {
+    onScreen.current = comparing ? saved : valid;
+    const id = setTimeout(() => sendPreview(frame.current, onScreen.current, scheme), 50);
     return () => clearTimeout(id);
-  }, [draft, scheme]);
+  }, [valid, saved, comparing, scheme]);
 
   // the frame announces itself once Xylo runs in it (after every navigation inside it)
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin || event.source !== frame.current?.contentWindow) return;
       if ((event.data as { type?: string } | null)?.type === READY_MSG)
-        sendPreview(frame.current, shown.current, scheme);
+        sendPreview(frame.current, onScreen.current, scheme);
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
   }, [scheme]);
+
+  // a setting picked in the search: scrolled into view in its (now open) section and briefly lit, once
+  useEffect(() => {
+    if (!jump) return;
+    const el = asideRef.current?.querySelector<HTMLElement>(`[data-xylo-setting="${jump.field}"]`);
+    if (!el) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+    const lit = 'color-mix(in srgb, var(--xylo-accent) 20%, transparent)';
+    el.animate(
+      [
+        { borderRadius: '10px', backgroundColor: lit, boxShadow: `0 0 0 6px ${lit}` },
+        { borderRadius: '10px', backgroundColor: 'transparent', boxShadow: '0 0 0 6px transparent' },
+      ],
+      { duration: 1600, easing: 'ease-out' },
+    );
+  }, [jump]);
 
   /** Stores `theme` (made from the draft `sent`); without `base` it replaces whatever is stored. */
   const store = (theme: XyloTheme, sent: XyloTheme, base?: string) => {
@@ -296,13 +336,24 @@ export default function ThemeEditor() {
       })
       .catch(() => addToast(t('editor.importFailed', {}), 'error'));
 
+  const serverPath = serverId ? `/server/${serverId}` : null;
   const pages = [
     { value: '/', label: t('preview.servers', {}) },
-    ...(serverId ? [{ value: `/server/${serverId}`, label: t('preview.server', {}) }] : []),
+    // with the overview on, a server opens on it and its console moves to /terminal (index.ts)
+    ...(serverPath && valid.serverOverview ? [{ value: serverPath, label: t('preview.server', {}) }] : []),
+    ...(serverPath
+      ? [{ value: valid.serverOverview ? `${serverPath}/terminal` : serverPath, label: t('preview.console', {}) }]
+      : []),
     { value: '/account', label: t('preview.account', {}) },
     { value: '/admin', label: t('preview.admin', {}) },
     { value: LOGIN_PREVIEW_PATH, label: t('preview.login', {}) },
   ];
+
+  const searchData = SECTION_IDS.map((id) => ({
+    group: t(`section.${id}`, {}),
+    items: sectionSettings(id).map(([field, label]) => ({ value: field, label: t(label, {}) })),
+  }));
+  const changed = SECTION_IDS.filter((id) => sectionChanged(id, valid, saved));
 
   const available = Math.max(320, stage.width - STAGE_PADDING * 2);
   // the desktop preview is at least 1280px wide (the panel's sidebar layout), scaled down on a narrower stage
@@ -318,8 +369,7 @@ export default function ThemeEditor() {
         ? t('editor.loadFailed', {})
         : null;
 
-  const current = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];
-  const SectionComponent = current.Component;
+  const SectionComponent = SECTIONS[section].Component;
 
   const iconButton = (label: string, icon: IconDefinition, onClick: () => void, disabled = false) => (
     <Tooltip label={label}>
@@ -359,7 +409,7 @@ export default function ThemeEditor() {
             allowDeselect={false}
             aria-label={t('preview.page', {})}
             data={pages}
-            value={page}
+            value={pages.some((p) => p.value === page) ? page : null}
             onChange={(value) => value && setPage(value)}
             comboboxProps={{ zIndex: 400 }}
           />
@@ -390,6 +440,36 @@ export default function ThemeEditor() {
             () => setScheme(scheme === 'dark' ? 'light' : 'dark'),
           )}
           {iconButton(t('preview.reload', {}), faRotateRight, () => setFrameKey((k) => k + 1))}
+          <Tooltip label={t('editor.compare', {})}>
+            <ActionIcon
+              variant={comparing ? 'light' : 'subtle'}
+              color='gray'
+              size='lg'
+              className='touch-none'
+              aria-label={t('editor.compare', {})}
+              aria-pressed={comparing}
+              disabled={!dirty}
+              onPointerDown={(e) => {
+                if (e.button === 0) setHolding(true);
+              }}
+              onPointerUp={() => setHolding(false)}
+              onPointerLeave={() => setHolding(false)}
+              onPointerCancel={() => setHolding(false)}
+              onContextMenu={(e) => e.preventDefault()}
+              onKeyDown={(e) => {
+                if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) {
+                  e.preventDefault();
+                  setHolding(true);
+                }
+              }}
+              onKeyUp={(e) => {
+                if (e.key === ' ' || e.key === 'Enter') setHolding(false);
+              }}
+              onBlur={() => setHolding(false)}
+            >
+              <FontAwesomeIcon icon={faCodeCompare} />
+            </ActionIcon>
+          </Tooltip>
         </div>
 
         <div className='flex items-center gap-1'>
@@ -446,7 +526,7 @@ export default function ThemeEditor() {
 
       <div className='flex min-h-0 flex-1'>
         <nav className='flex w-[76px] shrink-0 flex-col items-stretch gap-1 overflow-y-auto border-r border-(--mantine-color-default-border) bg-(--xylo-card-solid) p-2'>
-          {SECTIONS.map(({ id, icon }) => {
+          {SECTION_IDS.map((id) => {
             const active = id === section;
             return (
               <button
@@ -454,14 +534,23 @@ export default function ThemeEditor() {
                 type='button'
                 aria-current={active ? 'page' : undefined}
                 onClick={() => setSection(id)}
-                className={`flex cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-2 text-[0.6875rem] font-medium transition-colors duration-200 ${
+                className={`relative flex cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-2 text-[0.6875rem] font-medium transition-colors duration-200 ${
                   active
                     ? 'bg-(--mantine-color-blue-light) text-(--mantine-color-blue-light-color)'
                     : 'text-(--mantine-color-dimmed) hover:bg-(--mantine-color-default-hover) hover:text-(--mantine-color-text)'
                 }`}
               >
-                <FontAwesomeIcon icon={icon} className='text-base' />
+                <FontAwesomeIcon icon={SECTIONS[id].icon} className='text-base' />
                 {t(`section.${id}`, {})}
+                {changed.includes(id) && (
+                  <>
+                    <span
+                      aria-hidden
+                      className='absolute top-1.5 right-2 size-1.5 rounded-full bg-(--mantine-color-yellow-filled)'
+                    />
+                    <span className='sr-only'>{t('editor.changed', {})}</span>
+                  </>
+                )}
               </button>
             );
           })}
@@ -469,8 +558,54 @@ export default function ThemeEditor() {
 
         <aside className='flex w-[360px] shrink-0 flex-col border-r border-(--mantine-color-default-border) bg-(--xylo-card-solid)'>
           <div className='border-b border-(--mantine-color-default-border) px-5 py-4'>
-            <h2 className='text-lg font-semibold tracking-tight'>{t(`section.${section}`, {})}</h2>
-            <p className='mt-0.5 text-xs text-(--mantine-color-dimmed)'>{t(`section.${section}Hint`, {})}</p>
+            <Select
+              size='xs'
+              mb='md'
+              searchable
+              aria-label={t('editor.search', {})}
+              placeholder={t('editor.search', {})}
+              leftSection={<FontAwesomeIcon icon={faMagnifyingGlass} className='text-xs' />}
+              // a search field, not a picker: no chevron
+              rightSection={null}
+              nothingFoundMessage={t('editor.searchEmpty', {})}
+              data={searchData}
+              value={null}
+              searchValue={query}
+              onSearchChange={setQuery}
+              onChange={(value) => {
+                const field = value as keyof XyloTheme | null;
+                const target = field && SECTION_IDS.find((id) => sectionSettings(id).some(([f]) => f === field));
+                if (field && target) {
+                  setSection(target);
+                  setJump({ field });
+                }
+                setQuery('');
+              }}
+              maxDropdownHeight={320}
+              comboboxProps={{ zIndex: 400 }}
+            />
+            <div className='flex items-start justify-between gap-3'>
+              <div className='min-w-0'>
+                <h2 className='text-lg font-semibold tracking-tight'>{t(`section.${section}`, {})}</h2>
+                <p className='mt-0.5 text-xs text-(--mantine-color-dimmed)'>{t(`section.${section}Hint`, {})}</p>
+              </div>
+              {/* presets are the admins' own saves, not settings with a default */}
+              {section !== 'presets' && (
+                <Tooltip label={t('editor.resetSectionHint', {})}>
+                  <Button
+                    size='compact-xs'
+                    variant='subtle'
+                    color='gray'
+                    className='mt-1 shrink-0'
+                    leftSection={<FontAwesomeIcon icon={faArrowRotateLeft} />}
+                    disabled={!sectionChanged(section, valid, DEFAULT_THEME)}
+                    onClick={() => setDraft((d) => withSection(d, section, DEFAULT_THEME))}
+                  >
+                    {t('editor.resetSection', {})}
+                  </Button>
+                </Tooltip>
+              )}
+            </div>
             {saveBlocked && load !== 'pending' && (
               <div className='mt-2 flex flex-col items-start gap-1.5 text-xs text-(--mantine-color-yellow-text)'>
                 {saveBlocked}
@@ -482,7 +617,7 @@ export default function ThemeEditor() {
               </div>
             )}
           </div>
-          <div key={section} className='xylo-pop min-h-0 flex-1 overflow-y-auto px-5 py-5'>
+          <div ref={asideRef} key={section} className='xylo-pop min-h-0 flex-1 overflow-y-auto px-5 py-5'>
             <SectionComponent draft={draft} valid={valid} set={set} />
           </div>
         </aside>
@@ -518,7 +653,8 @@ export default function ThemeEditor() {
         title={t('editor.resetTitle', {})}
         confirm={t('editor.resetConfirm', {})}
         onConfirmed={() => {
-          setDraft(DEFAULT_THEME);
+          // the admins' own presets are saves, not part of the look being reset
+          setDraft((d) => ({ ...DEFAULT_THEME, customPresets: d.customPresets }));
           setConfirmReset(false);
         }}
       >

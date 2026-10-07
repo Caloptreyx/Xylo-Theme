@@ -10,6 +10,7 @@ import {
   type PresetLook,
   type Sidebar,
   type Surface,
+  type TerminalPalette,
   type Transition,
 } from '../../lib/theme.ts';
 
@@ -249,6 +250,55 @@ export const TransitionMock = ({ look, transition }: { look: Look; transition: T
     />
   </div>
 );
+
+/** Core's dark terminal: no background of its own (the card shows through), xterm's default (Tango) colours. */
+const PANEL_TERMINAL = {
+  foreground: '#f8f8f2',
+  dim: '#555753',
+  green: '#4e9a06',
+  yellow: '#c4a000',
+  red: '#cc0000',
+  blue: '#3465a4',
+};
+
+/** A few log lines in a terminal scheme: a timestamped line, a success, a warning, an error and the prompt. */
+export function TerminalMock({ look, palette }: { look: Look; palette: TerminalPalette | null }) {
+  const c = palette
+    ? {
+        foreground: palette.foreground,
+        dim: palette.ansi[8],
+        green: palette.ansi[2],
+        yellow: palette.ansi[3],
+        red: palette.ansi[1],
+        blue: palette.ansi[4],
+      }
+    : PANEL_TERMINAL;
+  const bar = (color: string, width: string) => <div className='h-1 rounded-sm' style={{ width, background: color }} />;
+  return (
+    <div
+      className='flex h-full flex-col justify-center gap-1 px-2'
+      style={{ background: palette?.background ?? look.surface }}
+    >
+      <div className='flex gap-1'>
+        {bar(c.dim, '22%')}
+        {bar(c.foreground, '50%')}
+      </div>
+      <div className='flex gap-1'>
+        {bar(c.green, '30%')}
+        {bar(c.foreground, '28%')}
+      </div>
+      <div className='flex gap-1'>{bar(c.yellow, '62%')}</div>
+      <div className='flex gap-1'>
+        {bar(c.red, '40%')}
+        {bar(c.foreground, '22%')}
+      </div>
+      <div className='flex items-center gap-1'>
+        <div className='h-1 w-1.5 rounded-sm' style={{ background: c.blue }} />
+        <div className='h-1.5 w-1 rounded-[1px]' style={{ background: c.foreground }} />
+      </div>
+    </div>
+  );
+}
 
 /** A whole preset at a glance: backdrop, sidebar, a card and a button. */
 export function PresetMock({ look }: { look: PresetLook }) {

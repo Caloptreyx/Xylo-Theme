@@ -1,39 +1,27 @@
-import {
-  faArrowUpRightFromSquare,
-  faChevronRight,
-  faClock,
-  faCopy,
-  faGamepad,
-  faServer,
-  faTerminal,
-} from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight, faClock, faGamepad, faServer, faTerminal } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useQuery } from '@tanstack/react-query';
-import { type FC, type ReactNode, useEffect, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
   Avatar,
   Button,
-  bytesToString,
-  Card,
-  CopyOnClick,
   formatMilliseconds,
   getAllocations,
   getBackups,
   getSchedules,
   getServerActivity,
-  mbToBytes,
   queryKeys,
   ServerContentContainer,
   ServerPowerControls,
-  useAuth,
   useServerCan,
   useServerStore,
 } from '../../lib/core.ts';
 import { useXyloTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
-import { phaseOf } from '../home/home.ts';
-import { eventLabel, levelOf, newest, percentOf, timeAgo } from './overview.ts';
+import { addressOf, phaseOf } from '../home/home.ts';
+import { eventLabel, newest, timeAgo } from './overview.ts';
+import { ConnectDetails, Section, StatusChip, UsageStrip } from './parts.tsx';
 
 /** How many activity entries the overview lists; the activity page has the rest. */
 const ACTIVITY_ROWS = 8;
@@ -55,60 +43,6 @@ function useNow() {
     return () => window.clearInterval(id);
   }, []);
   return now;
-}
-
-/** One figure of the stat strip, with a bar when it has a limit. */
-function Stat({
-  label,
-  value,
-  detail,
-  percent,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-  percent?: number | null;
-}) {
-  return (
-    <div className='xylo-stat'>
-      <span className='text-sm text-(--mantine-color-dimmed)'>{label}</span>
-      <span className='whitespace-nowrap text-xl font-semibold tabular-nums tracking-tight sm:text-2xl'>{value}</span>
-      <span className='truncate text-xs text-(--mantine-color-dimmed)'>{detail}</span>
-      {percent !== undefined && (
-        <div className='xylo-meter' data-level={levelOf(percent)}>
-          <div className='xylo-meter-track'>
-            <div className='xylo-meter-fill' style={{ width: `${percent ?? 0}%` }} />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** A card with a heading and an optional link on the right of it. */
-function Section({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
-  return (
-    <Card className='xylo-ov-section'>
-      <div className='flex items-center justify-between gap-3'>
-        <h2 className='text-base font-semibold tracking-tight'>{title}</h2>
-        {action}
-      </div>
-      {children}
-    </Card>
-  );
-}
-
-/** A labelled value people copy (address, SFTP host, username, ID); a click copies it. */
-function CopyRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className='xylo-ov-row'>
-      <span className='text-xs text-(--mantine-color-dimmed)'>{label}</span>
-      <CopyOnClick content={value} className='xylo-ov-copy'>
-        <span className='truncate'>{value}</span>
-        <FontAwesomeIcon icon={faCopy} className='shrink-0 opacity-50' />
-      </CopyOnClick>
-    </div>
-  );
 }
 
 /** A row of the "at a glance" card: what, how many, a line about it, and a link to its page when allowed. */
@@ -140,7 +74,6 @@ function GlanceRow({ to, label, value, detail }: { to: string | null; label: str
  */
 function Overview() {
   const { t, language } = useExtTranslations();
-  const { user } = useAuth();
   const server = useServerStore((state) => state.server);
   const state = useServerStore((state) => state.state);
   const stats = useServerStore((state) => state.stats);
@@ -178,19 +111,7 @@ function Overview() {
   const phase = phaseOf(server, { state });
   const live = phase === 'running' || phase === 'starting';
   const ago = (date: Date) => timeAgo(date, now, language);
-  const ofLimit = (limit: number | null, format: (value: number) => string) =>
-    limit === null ? t('overview.noLimit', {}) : t('overview.of', { total: format(limit) });
-
-  const cpu = live ? (stats?.cpuAbsolute ?? 0) : 0;
-  const memory = live ? (stats?.memoryBytes ?? 0) : 0;
-  const disk = stats?.diskBytes ?? 0;
-  const cpuLimit = server.limits.cpu > 0 ? server.limits.cpu : null;
-  const memoryLimit = server.limits.memory > 0 ? mbToBytes(server.limits.memory) : null;
-  const diskLimit = server.limits.disk > 0 ? mbToBytes(server.limits.disk) : null;
-  const address = server.allocation
-    ? `${server.allocation.ipAlias || server.allocation.ip}:${server.allocation.port}`
-    : null;
-  const sftpUser = user ? `${user.username}.${server.uuidShort}` : null;
+  const address = addressOf(server);
 
   const lastBackup = newest(backups.data?.data ?? [], (backup) => backup.completed ?? backup.created);
   const lastRun = newest(schedules.data?.data ?? [], (schedule) => schedule.lastRun);
@@ -205,10 +126,7 @@ function Overview() {
           <div className='min-w-0'>
             <div className='flex flex-wrap items-center gap-3'>
               <h1 className='truncate text-2xl font-semibold tracking-tight sm:text-3xl'>{server.name}</h1>
-              <span className='xylo-status' data-phase={phase}>
-                <span className='xylo-status-dot' />
-                {t(`home.${phase}`, {})}
-              </span>
+              <StatusChip phase={phase} />
             </div>
             <p className='mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-(--mantine-color-dimmed)'>
               <span className='inline-flex items-center gap-1.5'>
@@ -240,31 +158,7 @@ function Overview() {
           </div>
         </header>
 
-        <Card className='xylo-stats'>
-          <Stat
-            label={t('overview.cpu', {})}
-            value={`${cpu.toFixed(1)}%`}
-            detail={ofLimit(cpuLimit, (value) => `${value}%`)}
-            percent={percentOf(cpu, cpuLimit)}
-          />
-          <Stat
-            label={t('overview.memory', {})}
-            value={bytesToString(memory, 1)}
-            detail={ofLimit(memoryLimit, (value) => bytesToString(value, 0))}
-            percent={percentOf(memory, memoryLimit)}
-          />
-          <Stat
-            label={t('overview.disk', {})}
-            value={bytesToString(disk, 1)}
-            detail={ofLimit(diskLimit, (value) => bytesToString(value, 0))}
-            percent={percentOf(disk, diskLimit)}
-          />
-          <Stat
-            label={t('overview.network', {})}
-            value={`↓ ${bytesToString(live ? (stats?.network.rxBytes ?? 0) : 0, 1)}`}
-            detail={t('overview.sent', { amount: bytesToString(live ? (stats?.network.txBytes ?? 0) : 0, 1) })}
-          />
-        </Card>
+        <UsageStrip />
 
         <div className='xylo-ov-grid'>
           {canActivity && (
@@ -317,28 +211,7 @@ function Overview() {
 
           <div className='flex flex-col gap-4'>
             <Section title={t('overview.connect', {})}>
-              <div className='flex flex-col gap-3'>
-                {address ? (
-                  <CopyRow label={t('overview.address', {})} value={address} />
-                ) : (
-                  <div className='xylo-ov-row'>
-                    <span className='text-xs text-(--mantine-color-dimmed)'>{t('overview.address', {})}</span>
-                    <span className='text-sm text-(--mantine-color-dimmed)'>{t('overview.noAddress', {})}</span>
-                  </div>
-                )}
-                <CopyRow label={t('overview.sftp', {})} value={`${server.sftpHost}:${server.sftpPort}`} />
-                {sftpUser && <CopyRow label={t('overview.username', {})} value={sftpUser} />}
-                <CopyRow label={t('overview.serverId', {})} value={server.uuidShort} />
-                {sftpUser && (
-                  <a
-                    href={`sftp://${sftpUser}@${server.sftpHost}:${server.sftpPort}`}
-                    className='xylo-ov-link inline-flex items-center gap-1.5'
-                  >
-                    {t('overview.openSftp', {})}
-                    <FontAwesomeIcon icon={faArrowUpRightFromSquare} className='text-[0.7em]' />
-                  </a>
-                )}
-              </div>
+              <ConnectDetails />
             </Section>
 
             {(canBackups || canSchedules || canAllocations) && (

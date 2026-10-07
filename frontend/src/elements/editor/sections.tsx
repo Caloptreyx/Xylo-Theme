@@ -1,25 +1,33 @@
 import {
   faArrowRightArrowLeft,
   faCircleCheck,
+  faEllipsis,
+  faPen,
+  faPlus,
   faShuffle,
+  faTrash,
   faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Slider } from '@mantine/core';
 import { type CSSProperties, useState } from 'react';
 import { hsl } from '../../lib/color.ts';
-import { ActionIcon, Button, SegmentedControl, TextInput, Tooltip } from '../../lib/core.ts';
+import { ActionIcon, Button, Menu, Modal, ModalFooter, SegmentedControl, TextInput, Tooltip } from '../../lib/core.ts';
 import {
   applyPreset,
   BACKDROPS,
   BUTTON_STYLES,
   type ContrastIssue,
+  type CustomPreset,
   contrastIssues,
   DENSITIES,
   type Density,
   FONTS,
   generatePalette,
+  LOOK_KEYS,
   lightBase,
+  MAX_CUSTOM_PRESETS,
+  MAX_PRESET_NAME,
   MONO_FONTS,
   MOTIONS,
   type MonoFont,
@@ -28,16 +36,20 @@ import {
   PATTERNS,
   PRESETS,
   type PresetLook,
+  pickLook,
+  presetName,
   SAFE_URL,
   SHADOWS,
   type Shadow,
   SIDEBARS,
   SURFACES,
+  TERMINAL_SCHEMES,
   TRANSITIONS,
+  terminalPalette,
   type XyloTheme,
 } from '../../lib/theme.ts';
 import { useExtTranslations } from '../../translations.ts';
-import { ChoiceTiles, ColorField, Group, SliderField, ToggleField } from './controls.tsx';
+import { ChoiceTiles, ColorField, Group, Setting, SliderField, ToggleField } from './controls.tsx';
 import {
   BackdropMock,
   ButtonMock,
@@ -47,6 +59,7 @@ import {
   PresetMock,
   SidebarMock,
   SurfaceMock,
+  TerminalMock,
   TransitionMock,
 } from './mocks.tsx';
 
@@ -58,9 +71,183 @@ export interface SectionProps {
   set: (patch: Partial<XyloTheme>) => void;
 }
 
-const LOOK_KEYS = Object.keys(PRESETS[0].look) as (keyof PresetLook)[];
+/** A preset's drawing and name; picking it lays its look over the draft, and it reads as picked while it matches. */
+function PresetTile({ name, look, valid, set }: { name: string; look: PresetLook } & Omit<SectionProps, 'draft'>) {
+  const selected = LOOK_KEYS.every((key) => valid[key] === look[key]);
+  return (
+    <button
+      type='button'
+      aria-pressed={selected}
+      onClick={() => set(applyPreset(valid, look))}
+      className={`xylo-tile group flex w-full cursor-pointer flex-col gap-1.5 rounded-2xl border p-1.5 text-left transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 ${
+        selected
+          ? 'border-(--xylo-accent) shadow-[0_0_0_3px_color-mix(in_srgb,var(--xylo-accent)_22%,transparent)]'
+          : 'border-(--mantine-color-default-border) hover:border-(--mantine-color-placeholder)'
+      }`}
+    >
+      <div className='h-20 overflow-hidden rounded-xl'>
+        <PresetMock look={look} />
+      </div>
+      <span className='flex min-w-0 items-center gap-1.5 px-1 pb-0.5 text-sm font-medium'>
+        <span
+          className='size-2.5 shrink-0 rounded-full'
+          style={{ background: `linear-gradient(135deg,${look.accent},${look.accent2})` }}
+        />
+        <span className='truncate'>{name}</span>
+      </span>
+    </button>
+  );
+}
 
-export function PresetsSection({ valid, set }: SectionProps) {
+/** The cleaned name, and whether another preset already has it (`own` is the name being renamed, if any). */
+function checkName(raw: string, presets: CustomPreset[], own?: string) {
+  const name = presetName(raw);
+  return { name, taken: name !== null && name !== own && presets.some((preset) => preset.name === name) };
+}
+
+function RenamePresetModal({
+  preset,
+  presets,
+  onClose,
+  onRename,
+}: {
+  preset: string;
+  presets: CustomPreset[];
+  onClose: () => void;
+  onRename: (name: string) => void;
+}) {
+  const { t } = useExtTranslations();
+  const [raw, setRaw] = useState(preset);
+  const { name, taken } = checkName(raw, presets, preset);
+
+  return (
+    <Modal opened onClose={onClose} title={t('presets.renameTitle', { name: preset })}>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!name || taken) return;
+          onClose();
+          if (name !== preset) onRename(name);
+        }}
+      >
+        <TextInput
+          label={t('presets.name', {})}
+          value={raw}
+          maxLength={MAX_PRESET_NAME}
+          onChange={(event) => setRaw(event.currentTarget.value)}
+          error={taken ? t('presets.nameTaken', {}) : undefined}
+          data-autofocus
+        />
+        <ModalFooter>
+          <Button variant='default' onClick={onClose}>
+            {t('presets.cancel', {})}
+          </Button>
+          <Button type='submit' disabled={!name || taken}>
+            {t('presets.save', {})}
+          </Button>
+        </ModalFooter>
+      </form>
+    </Modal>
+  );
+}
+
+/** The admins' own presets: saved from the current look, kept in the theme, renamed and deleted from a menu. */
+function CustomPresets({ draft, valid, set }: SectionProps) {
+  const { t } = useExtTranslations();
+  const [raw, setRaw] = useState('');
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const presets = draft.customPresets;
+  const { name, taken } = checkName(raw, presets);
+  const full = presets.length >= MAX_CUSTOM_PRESETS;
+
+  return (
+    <Group title={t('presets.custom', {})} hint={t('presets.customHint', {})}>
+      <Setting field='customPresets'>
+        <div className='flex flex-col gap-3'>
+          {presets.length > 0 && (
+            <div className='grid grid-cols-2 gap-2.5'>
+              {presets.map((preset) => (
+                <div key={preset.name} className='relative'>
+                  <PresetTile name={preset.name} look={preset.look} valid={valid} set={set} />
+                  <div className='absolute top-2.5 right-2.5'>
+                    <Menu position='bottom-end' zIndex={400}>
+                      <Menu.Target>
+                        <ActionIcon size='sm' variant='default' aria-label={t('presets.options', {})}>
+                          <FontAwesomeIcon icon={faEllipsis} />
+                        </ActionIcon>
+                      </Menu.Target>
+                      <Menu.Dropdown>
+                        <Menu.Label>{preset.name}</Menu.Label>
+                        <Menu.Item
+                          leftSection={<FontAwesomeIcon icon={faPen} />}
+                          onClick={() => setRenaming(preset.name)}
+                        >
+                          {t('presets.rename', {})}
+                        </Menu.Item>
+                        <Menu.Item
+                          color='red'
+                          leftSection={<FontAwesomeIcon icon={faTrash} />}
+                          onClick={() => set({ customPresets: presets.filter((p) => p.name !== preset.name) })}
+                        >
+                          {t('presets.delete', {})}
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <form
+            className='flex items-start gap-2'
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!name || taken || full) return;
+              set({ customPresets: [...presets, { name, look: pickLook(valid) }] });
+              setRaw('');
+            }}
+          >
+            <TextInput
+              size='xs'
+              className='flex-1'
+              placeholder={t('presets.name', {})}
+              aria-label={t('presets.name', {})}
+              value={raw}
+              maxLength={MAX_PRESET_NAME}
+              disabled={full}
+              onChange={(event) => setRaw(event.currentTarget.value)}
+              error={taken ? t('presets.nameTaken', {}) : undefined}
+            />
+            <Button
+              type='submit'
+              size='xs'
+              variant='default'
+              disabled={!name || taken || full}
+              leftSection={<FontAwesomeIcon icon={faPlus} />}
+            >
+              {t('presets.saveLook', {})}
+            </Button>
+          </form>
+          {full && (
+            <p className='text-xs text-(--mantine-color-dimmed)'>{t('presets.full', { max: MAX_CUSTOM_PRESETS })}</p>
+          )}
+        </div>
+      </Setting>
+      {renaming !== null && (
+        <RenamePresetModal
+          preset={renaming}
+          presets={presets}
+          onClose={() => setRenaming(null)}
+          onRename={(newName) =>
+            set({ customPresets: presets.map((p) => (p.name === renaming ? { ...p, name: newName } : p)) })
+          }
+        />
+      )}
+    </Group>
+  );
+}
+
+export function PresetsSection({ draft, valid, set }: SectionProps) {
   const { t } = useExtTranslations();
   const [hue, setHue] = useState(265);
   const palette = generatePalette(hue);
@@ -71,36 +258,20 @@ export function PresetsSection({ valid, set }: SectionProps) {
       {(['minimal', 'glass'] as const).map((style) => (
         <Group key={style} title={t(`presets.${style}`, {})}>
           <div className='grid grid-cols-2 gap-2.5'>
-            {PRESETS.filter((preset) => preset.style === style).map((preset) => {
-              const selected = LOOK_KEYS.every((key) => valid[key] === preset.look[key]);
-              return (
-                <button
-                  key={preset.id}
-                  type='button'
-                  aria-pressed={selected}
-                  onClick={() => set(applyPreset(valid, preset.look))}
-                  className={`xylo-tile group flex cursor-pointer flex-col gap-1.5 rounded-2xl border p-1.5 text-left transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 ${
-                    selected
-                      ? 'border-(--xylo-accent) shadow-[0_0_0_3px_color-mix(in_srgb,var(--xylo-accent)_22%,transparent)]'
-                      : 'border-(--mantine-color-default-border) hover:border-(--mantine-color-placeholder)'
-                  }`}
-                >
-                  <div className='h-20 overflow-hidden rounded-xl'>
-                    <PresetMock look={preset.look} />
-                  </div>
-                  <span className='flex items-center gap-1.5 px-1 pb-0.5 text-sm font-medium'>
-                    <span
-                      className='size-2.5 rounded-full'
-                      style={{ background: `linear-gradient(135deg,${preset.look.accent},${preset.look.accent2})` }}
-                    />
-                    {t(`presets.${preset.id}`, {})}
-                  </span>
-                </button>
-              );
-            })}
+            {PRESETS.filter((preset) => preset.style === style).map((preset) => (
+              <PresetTile
+                key={preset.id}
+                name={t(`presets.${preset.id}`, {})}
+                look={preset.look}
+                valid={valid}
+                set={set}
+              />
+            ))}
           </div>
         </Group>
       ))}
+
+      <CustomPresets draft={draft} valid={valid} set={set} />
 
       <Group title={t('presets.generate', {})} hint={t('presets.generateHint', {})}>
         <div className='flex flex-col gap-3 rounded-2xl border border-(--mantine-color-default-border) bg-(--mantine-color-default) p-3'>
@@ -207,8 +378,14 @@ export function ColorsSection({ draft, valid, set }: SectionProps) {
           className='h-2 rounded-full'
           style={{ background: `linear-gradient(90deg,${valid.accent},${valid.accent2})` }}
         />
-        <ColorField label={t('colors.accent', {})} value={draft.accent} onChange={(accent) => set({ accent })} />
         <ColorField
+          field='accent'
+          label={t('colors.accent', {})}
+          value={draft.accent}
+          onChange={(accent) => set({ accent })}
+        />
+        <ColorField
+          field='accent2'
           label={t('colors.accent2', {})}
           description={t('colors.accent2Hint', {})}
           value={draft.accent2}
@@ -218,16 +395,23 @@ export function ColorsSection({ draft, valid, set }: SectionProps) {
 
       <Group title={t('colors.base', {})}>
         <ColorField
+          field='background'
           label={t('colors.background', {})}
           value={draft.background}
           onChange={(background) => set({ background })}
         />
-        <ColorField label={t('colors.surface', {})} value={draft.surface} onChange={(surface) => set({ surface })} />
-        <ColorField label={t('colors.text', {})} value={draft.text} onChange={(text) => set({ text })} />
+        <ColorField
+          field='surface'
+          label={t('colors.surface', {})}
+          value={draft.surface}
+          onChange={(surface) => set({ surface })}
+        />
+        <ColorField field='text' label={t('colors.text', {})} value={draft.text} onChange={(text) => set({ text })} />
       </Group>
 
       <Group title={t('colors.status', {})} hint={t('colors.statusHint', {})}>
         <ColorField
+          field='success'
           optional
           fallback='#40c057'
           label={t('colors.success', {})}
@@ -235,6 +419,7 @@ export function ColorsSection({ draft, valid, set }: SectionProps) {
           onChange={(success) => set({ success })}
         />
         <ColorField
+          field='warning'
           optional
           fallback='#fab005'
           label={t('colors.warning', {})}
@@ -242,6 +427,7 @@ export function ColorsSection({ draft, valid, set }: SectionProps) {
           onChange={(warning) => set({ warning })}
         />
         <ColorField
+          field='danger'
           optional
           fallback='#fa5252'
           label={t('colors.danger', {})}
@@ -252,6 +438,7 @@ export function ColorsSection({ draft, valid, set }: SectionProps) {
 
       <Group title={t('colors.light', {})} hint={t('colors.lightHint', {})}>
         <ColorField
+          field='lightBackground'
           optional
           fallback={light.background}
           label={t('colors.lightBackground', {})}
@@ -259,6 +446,7 @@ export function ColorsSection({ draft, valid, set }: SectionProps) {
           onChange={(lightBackground) => set({ lightBackground })}
         />
         <ColorField
+          field='lightSurface'
           optional
           fallback={light.surface}
           label={t('colors.lightSurface', {})}
@@ -266,6 +454,7 @@ export function ColorsSection({ draft, valid, set }: SectionProps) {
           onChange={(lightSurface) => set({ lightSurface })}
         />
         <ColorField
+          field='lightText'
           optional
           fallback={light.text}
           label={t('colors.lightText', {})}
@@ -284,6 +473,7 @@ export function BackdropSection({ draft, valid, set }: SectionProps) {
     <div className='flex flex-col gap-7'>
       <Group title={t('backdrop.style', {})}>
         <ChoiceTiles
+          field='backdrop'
           value={valid.backdrop}
           onChange={(backdrop) => set({ backdrop })}
           options={BACKDROPS.map((backdrop) => ({
@@ -293,6 +483,7 @@ export function BackdropSection({ draft, valid, set }: SectionProps) {
           }))}
         />
         <SliderField
+          field='backdropIntensity'
           label={t('backdrop.intensity', {})}
           value={valid.backdropIntensity}
           min={0}
@@ -301,6 +492,7 @@ export function BackdropSection({ draft, valid, set }: SectionProps) {
           onChange={(backdropIntensity) => set({ backdropIntensity })}
         />
         <ToggleField
+          field='backdropAnimate'
           label={t('backdrop.animate', {})}
           description={t('backdrop.animateHint', {})}
           checked={valid.backdropAnimate}
@@ -310,6 +502,7 @@ export function BackdropSection({ draft, valid, set }: SectionProps) {
 
       <Group title={t('backdrop.pattern', {})}>
         <ChoiceTiles
+          field='pattern'
           columns={4}
           value={valid.pattern}
           onChange={(pattern) => set({ pattern })}
@@ -320,6 +513,7 @@ export function BackdropSection({ draft, valid, set }: SectionProps) {
           }))}
         />
         <SliderField
+          field='patternOpacity'
           label={t('backdrop.patternOpacity', {})}
           value={valid.patternOpacity}
           min={0}
@@ -330,14 +524,18 @@ export function BackdropSection({ draft, valid, set }: SectionProps) {
       </Group>
 
       <Group title={t('backdrop.image', {})} hint={t('backdrop.imageHint', {})}>
-        <TextInput
-          placeholder='https://'
-          value={draft.backgroundImage}
-          error={imageInvalid ? t('backdrop.imageInvalid', {}) : undefined}
-          onChange={(e) => set({ backgroundImage: e.currentTarget.value.trim() })}
-        />
+        <Setting field='backgroundImage'>
+          <TextInput
+            placeholder='https://'
+            aria-label={t('backdrop.image', {})}
+            value={draft.backgroundImage}
+            error={imageInvalid ? t('backdrop.imageInvalid', {}) : undefined}
+            onChange={(e) => set({ backgroundImage: e.currentTarget.value.trim() })}
+          />
+        </Setting>
         {valid.backgroundImage && (
           <SliderField
+            field='backgroundDim'
             label={t('backdrop.dim', {})}
             value={valid.backgroundDim}
             min={0}
@@ -363,6 +561,7 @@ export function SurfacesSection({ valid, set }: SectionProps) {
     <div className='flex flex-col gap-7'>
       <Group title={t('surfaces.material', {})}>
         <ChoiceTiles
+          field='surfaceStyle'
           columns={3}
           value={valid.surfaceStyle}
           onChange={(surfaceStyle) => set({ surfaceStyle })}
@@ -375,6 +574,7 @@ export function SurfacesSection({ valid, set }: SectionProps) {
         {valid.surfaceStyle === 'glass' && (
           <>
             <SliderField
+              field='surfaceOpacity'
               label={t('surfaces.opacity', {})}
               value={valid.surfaceOpacity}
               min={30}
@@ -383,6 +583,7 @@ export function SurfacesSection({ valid, set }: SectionProps) {
               onChange={(surfaceOpacity) => set({ surfaceOpacity })}
             />
             <SliderField
+              field='blur'
               label={t('surfaces.blur', {})}
               value={valid.blur}
               min={0}
@@ -393,6 +594,7 @@ export function SurfacesSection({ valid, set }: SectionProps) {
           </>
         )}
         <SliderField
+          field='borderStrength'
           label={t('surfaces.border', {})}
           value={valid.borderStrength}
           min={0}
@@ -403,16 +605,19 @@ export function SurfacesSection({ valid, set }: SectionProps) {
       </Group>
 
       <Group title={t('surfaces.shadow', {})}>
-        <SegmentedControl
-          fullWidth
-          value={valid.shadow}
-          onChange={(shadow) => set({ shadow: shadow as Shadow })}
-          data={SHADOWS.map((shadow) => ({ value: shadow, label: t(SHADOW_LABEL[shadow], {}) }))}
-        />
+        <Setting field='shadow'>
+          <SegmentedControl
+            fullWidth
+            value={valid.shadow}
+            onChange={(shadow) => set({ shadow: shadow as Shadow })}
+            data={SHADOWS.map((shadow) => ({ value: shadow, label: t(SHADOW_LABEL[shadow], {}) }))}
+          />
+        </Setting>
       </Group>
 
       <Group title={t('surfaces.corners', {})}>
         <SliderField
+          field='radius'
           label={t('surfaces.radius', {})}
           value={valid.radius}
           min={0}
@@ -421,6 +626,7 @@ export function SurfacesSection({ valid, set }: SectionProps) {
           onChange={(radius) => set({ radius })}
         />
         <SliderField
+          field='controlRadius'
           label={t('surfaces.controlRadius', {})}
           value={valid.controlRadius}
           min={0}
@@ -446,6 +652,7 @@ export function LayoutSection({ valid, set }: SectionProps) {
     <div className='flex flex-col gap-7'>
       <Group title={t('layout.sidebar', {})}>
         <ChoiceTiles
+          field='sidebar'
           columns={3}
           value={valid.sidebar}
           onChange={(sidebar) => set({ sidebar })}
@@ -459,12 +666,14 @@ export function LayoutSection({ valid, set }: SectionProps) {
 
       <Group title={t('layout.home', {})}>
         <ToggleField
+          field='homePage'
           label={t('layout.homePage', {})}
           description={t('layout.homePageHint', {})}
           checked={valid.homePage}
           onChange={(homePage) => set({ homePage })}
         />
         <ToggleField
+          field='serverOverview'
           label={t('layout.serverOverview', {})}
           description={t('layout.serverOverviewHint', {})}
           checked={valid.serverOverview}
@@ -474,6 +683,7 @@ export function LayoutSection({ valid, set }: SectionProps) {
 
       <Group title={t('layout.nav', {})}>
         <ChoiceTiles
+          field='navStyle'
           value={valid.navStyle}
           onChange={(navStyle) => set({ navStyle })}
           options={NAV_STYLES.map((nav) => ({
@@ -486,6 +696,7 @@ export function LayoutSection({ valid, set }: SectionProps) {
 
       <Group title={t('layout.buttons', {})}>
         <ChoiceTiles
+          field='buttonStyle'
           value={valid.buttonStyle}
           onChange={(buttonStyle) => set({ buttonStyle })}
           options={BUTTON_STYLES.map((style) => ({
@@ -495,6 +706,7 @@ export function LayoutSection({ valid, set }: SectionProps) {
           }))}
         />
         <SliderField
+          field='glow'
           label={t('layout.glowStrength', {})}
           value={valid.glow}
           min={0}
@@ -505,13 +717,16 @@ export function LayoutSection({ valid, set }: SectionProps) {
       </Group>
 
       <Group title={t('layout.density', {})}>
-        <SegmentedControl
-          fullWidth
-          value={valid.density}
-          onChange={(density) => set({ density: density as Density })}
-          data={DENSITIES.map((density) => ({ value: density, label: t(`layout.${density}`, {}) }))}
-        />
+        <Setting field='density'>
+          <SegmentedControl
+            fullWidth
+            value={valid.density}
+            onChange={(density) => set({ density: density as Density })}
+            data={DENSITIES.map((density) => ({ value: density, label: t(`layout.${density}`, {}) }))}
+          />
+        </Setting>
         <SliderField
+          field='uiScale'
           label={t('layout.scale', {})}
           value={valid.uiScale}
           min={85}
@@ -534,16 +749,24 @@ export function TypographySection({ valid, set }: SectionProps) {
   return (
     <div className='flex flex-col gap-7'>
       <Group title={t('typography.body', {})}>
-        <ChoiceTiles columns={3} value={valid.font} onChange={(font) => set({ font })} options={fontTiles} />
+        <ChoiceTiles
+          field='font'
+          columns={3}
+          value={valid.font}
+          onChange={(font) => set({ font })}
+          options={fontTiles}
+        />
       </Group>
       <Group title={t('typography.headings', {})}>
         <ChoiceTiles
+          field='headingFont'
           columns={3}
           value={valid.headingFont}
           onChange={(headingFont) => set({ headingFont })}
           options={fontTiles}
         />
         <SliderField
+          field='headingWeight'
           label={t('typography.weight', {})}
           value={valid.headingWeight}
           min={400}
@@ -552,6 +775,7 @@ export function TypographySection({ valid, set }: SectionProps) {
           onChange={(headingWeight) => set({ headingWeight })}
         />
         <ToggleField
+          field='gradientTitles'
           label={t('typography.gradientTitles', {})}
           description={t('typography.gradientTitlesHint', {})}
           checked={valid.gradientTitles}
@@ -559,11 +783,67 @@ export function TypographySection({ valid, set }: SectionProps) {
         />
       </Group>
       <Group title={t('typography.mono', {})}>
-        <SegmentedControl
-          fullWidth
-          value={valid.monoFont}
-          onChange={(monoFont) => set({ monoFont: monoFont as MonoFont })}
-          data={MONO_FONTS.map((font) => ({ value: font, label: t(`typography.${font}`, {}) }))}
+        <Setting field='monoFont'>
+          <SegmentedControl
+            fullWidth
+            value={valid.monoFont}
+            onChange={(monoFont) => set({ monoFont: monoFont as MonoFont })}
+            data={MONO_FONTS.map((font) => ({ value: font, label: t(`typography.${font}`, {}) }))}
+          />
+        </Setting>
+      </Group>
+    </div>
+  );
+}
+
+export function ConsoleSection({ valid, set }: SectionProps) {
+  const { t } = useExtTranslations();
+  return (
+    <div className='flex flex-col gap-7'>
+      <Group title={t('consoleSection.page', {})}>
+        <ToggleField
+          field='consolePage'
+          label={t('consoleSection.consolePage', {})}
+          description={t('consoleSection.consolePageHint', {})}
+          checked={valid.consolePage}
+          onChange={(consolePage) => set({ consolePage })}
+        />
+      </Group>
+
+      <Group title={t('consoleSection.scheme', {})} hint={t('consoleSection.schemeHint', {})}>
+        <ChoiceTiles
+          field='terminalScheme'
+          columns={3}
+          value={valid.terminalScheme}
+          onChange={(terminalScheme) => set({ terminalScheme })}
+          options={TERMINAL_SCHEMES.map((scheme) => ({
+            value: scheme,
+            label: t(`consoleSection.${scheme}`, {}),
+            // drawn in dark mode, like every other drawing
+            preview: (
+              <TerminalMock look={valid} palette={terminalPalette({ ...valid, terminalScheme: scheme }, true)} />
+            ),
+          }))}
+        />
+      </Group>
+
+      <Group title={t('consoleSection.text', {})} hint={t('consoleSection.textHint', {})}>
+        <SliderField
+          field='terminalLineHeight'
+          label={t('consoleSection.lineHeight', {})}
+          value={valid.terminalLineHeight}
+          min={100}
+          max={180}
+          step={5}
+          format={(value) => String(value / 100)}
+          onChange={(terminalLineHeight) => set({ terminalLineHeight })}
+        />
+        <ToggleField
+          field='consoleHighlight'
+          label={t('consoleSection.highlight', {})}
+          description={t('consoleSection.highlightHint', {})}
+          checked={valid.consoleHighlight}
+          onChange={(consoleHighlight) => set({ consoleHighlight })}
         />
       </Group>
     </div>
@@ -575,16 +855,19 @@ export function MotionSection({ valid, set }: SectionProps) {
   return (
     <div className='flex flex-col gap-7'>
       <Group title={t('motion.level', {})} hint={t('motion.levelHint', {})}>
-        <SegmentedControl
-          fullWidth
-          value={valid.motion}
-          onChange={(motion) => set({ motion: motion as Motion })}
-          data={MOTIONS.map((motion) => ({ value: motion, label: t(`motion.${motion}`, {}) }))}
-        />
+        <Setting field='motion'>
+          <SegmentedControl
+            fullWidth
+            value={valid.motion}
+            onChange={(motion) => set({ motion: motion as Motion })}
+            data={MOTIONS.map((motion) => ({ value: motion, label: t(`motion.${motion}`, {}) }))}
+          />
+        </Setting>
       </Group>
       {valid.motion !== 'none' && (
         <Group title={t('motion.transition', {})}>
           <ChoiceTiles
+            field='pageTransition'
             columns={4}
             value={valid.pageTransition}
             onChange={(pageTransition) => set({ pageTransition })}
@@ -595,6 +878,7 @@ export function MotionSection({ valid, set }: SectionProps) {
             }))}
           />
           <ToggleField
+            field='hoverLift'
             label={t('motion.lift', {})}
             description={t('motion.liftHint', {})}
             checked={valid.hoverLift}
@@ -604,6 +888,7 @@ export function MotionSection({ valid, set }: SectionProps) {
       )}
       <Group title={t('motion.extras', {})}>
         <ToggleField
+          field='greeting'
           label={t('motion.greeting', {})}
           description={t('motion.greetingHint', {})}
           checked={valid.greeting}

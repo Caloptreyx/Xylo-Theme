@@ -4,8 +4,16 @@ import { ColorInput, Slider } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { HEX, toHexColor } from '../../lib/color.ts';
 import { ActionIcon, Switch } from '../../lib/core.ts';
-import { PRESETS } from '../../lib/theme.ts';
+import { PRESETS, type XyloTheme } from '../../lib/theme.ts';
 import { useExtTranslations } from '../../translations.ts';
+
+/**
+ * Every control is marked with the theme field it edits (`data-xylo-setting`), which the settings search scrolls to
+ * (fields.ts lists them). The field controls below mark themselves; `Setting` marks any other control.
+ */
+export const Setting = ({ field, children }: { field: keyof XyloTheme; children: ReactNode }) => (
+  <div data-xylo-setting={field}>{children}</div>
+);
 
 /** A titled block of settings inside a section. */
 export function Group({
@@ -43,6 +51,7 @@ const SWATCHES = [...new Set(PRESETS.flatMap((p) => [p.look.accent, p.look.accen
  * placeholder, the colour actually painted.
  */
 export function ColorField({
+  field,
   label,
   description,
   value,
@@ -50,6 +59,7 @@ export function ColorField({
   optional = false,
   onChange,
 }: {
+  field: keyof XyloTheme;
   label: string;
   description?: string;
   value: string;
@@ -60,64 +70,70 @@ export function ColorField({
   const { t } = useExtTranslations();
   const invalid = value !== '' && !HEX.test(value);
   return (
-    <ColorInput
-      size='sm'
-      label={label}
-      description={description}
-      value={value}
-      placeholder={fallback}
-      format='hex'
-      withEyeDropper
-      swatches={SWATCHES}
-      swatchesPerRow={8}
-      error={invalid ? t('colors.notHex', {}) : undefined}
-      onChange={onChange}
-      onBlur={() => {
-        if (value === '' && optional) return;
-        const hex = toHexColor(value);
-        if (hex && hex !== value) onChange(hex);
-      }}
-      rightSection={
-        optional && value !== '' ? (
-          <ActionIcon
-            size='sm'
-            variant='subtle'
-            color='gray'
-            aria-label={t('colors.clear', {})}
-            onClick={() => onChange('')}
-          >
-            <FontAwesomeIcon icon={faXmark} />
-          </ActionIcon>
-        ) : undefined
-      }
-    />
+    <Setting field={field}>
+      <ColorInput
+        size='sm'
+        label={label}
+        description={description}
+        value={value}
+        placeholder={fallback}
+        format='hex'
+        withEyeDropper
+        swatches={SWATCHES}
+        swatchesPerRow={8}
+        error={invalid ? t('colors.notHex', {}) : undefined}
+        onChange={onChange}
+        onBlur={() => {
+          if (value === '' && optional) return;
+          const hex = toHexColor(value);
+          if (hex && hex !== value) onChange(hex);
+        }}
+        rightSection={
+          optional && value !== '' ? (
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              color='gray'
+              aria-label={t('colors.clear', {})}
+              onClick={() => onChange('')}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </ActionIcon>
+          ) : undefined
+        }
+      />
+    </Setting>
   );
 }
 
 export function SliderField({
+  field,
   label,
   value,
   min,
   max,
   step = 1,
   unit = '',
+  format,
   onChange,
 }: {
+  field: keyof XyloTheme;
   label: string;
   value: number;
   min: number;
   max: number;
   step?: number;
   unit?: string;
+  /** How the value reads beside the label; `unit` is appended to the plain number otherwise. */
+  format?: (value: number) => string;
   onChange: (value: number) => void;
 }) {
   return (
-    <div className='flex flex-col gap-1.5'>
+    <div className='flex flex-col gap-1.5' data-xylo-setting={field}>
       <div className='flex items-center justify-between text-sm'>
         <span>{label}</span>
         <span className='rounded-md bg-(--mantine-color-default) px-1.5 py-0.5 font-mono text-xs tabular-nums text-(--mantine-color-dimmed)'>
-          {value}
-          {unit}
+          {format ? format(value) : `${value}${unit}`}
         </span>
       </div>
       <Slider
@@ -135,23 +151,27 @@ export function SliderField({
 }
 
 export function ToggleField({
+  field,
   label,
   description,
   checked,
   onChange,
 }: {
+  field: keyof XyloTheme;
   label: string;
   description?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <Switch
-      label={label}
-      description={description}
-      checked={checked}
-      onChange={(e) => onChange(e.currentTarget.checked)}
-    />
+    <Setting field={field}>
+      <Switch
+        label={label}
+        description={description}
+        checked={checked}
+        onChange={(e) => onChange(e.currentTarget.checked)}
+      />
+    </Setting>
   );
 }
 
@@ -163,12 +183,14 @@ export interface Tile<T extends string> {
 
 /** A row of picture buttons, one per choice. */
 export function ChoiceTiles<T extends string>({
+  field,
   label,
   value,
   options,
   columns = 2,
   onChange,
 }: {
+  field: keyof XyloTheme;
   label?: string;
   value: T;
   options: Tile<T>[];
@@ -177,7 +199,7 @@ export function ChoiceTiles<T extends string>({
 }) {
   const grid = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' }[columns];
   return (
-    <div className='flex flex-col gap-1.5' role='radiogroup' aria-label={label}>
+    <div className='flex flex-col gap-1.5' role='radiogroup' aria-label={label} data-xylo-setting={field}>
       {label && <span className='text-sm'>{label}</span>}
       <div className={`grid ${grid} gap-2`}>
         {options.map((option) => {

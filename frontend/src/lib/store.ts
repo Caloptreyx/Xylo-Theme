@@ -20,13 +20,14 @@ const listeners = new Set<() => void>();
 
 export const savedTheme = () => saved;
 
-function subscribe(listener: () => void) {
+/** Calls `listener` whenever the theme on screen changes (a draft included); returns the unsubscribe. */
+export function subscribeTheme(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
 /** The theme on screen, a draft included while the editor previews one; re-renders when it changes. */
-export const useXyloTheme = () => useSyncExternalStore(subscribe, () => current);
+export const useXyloTheme = () => useSyncExternalStore(subscribeTheme, () => current);
 /** The theme on screen, for code that runs outside a component (route names and filters); no re-render. */
 export const currentTheme = () => current;
 

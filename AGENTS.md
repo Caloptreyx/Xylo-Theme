@@ -11,7 +11,8 @@ backend/src/lib.rs                Extension impl: routers, permissions, settings
 backend/src/settings.rs           one opaque setting, `theme` (the editor's JSON, empty for the default look)
 backend/src/routes.rs             GET /xylo/theme (public, `{ theme, version }`, ETag, 304) and the admin PUT
 backend/src/permissions.rs        the `xylo-theme.update` admin permission; the PUT takes it or settings.update
-frontend/src/index.ts             entry: applies the theme, greeting, servers page, login preview route, admin route
+frontend/src/index.ts             entry: applies the theme, greeting, servers page, server routes, console hooks, login
+                                  preview route, admin route
 frontend/src/lib/theme.ts         the theme model, presets, normalizeTheme(), buildCss(), themeAttributes()
 frontend/src/lib/color.ts         hex colour maths (mix, contrast, shades, hsl, toHexColor)
 frontend/src/lib/store.ts         paints the theme, caches it, the editor's preview bridge, useXyloTheme()
@@ -19,15 +20,20 @@ frontend/src/lib/core.ts          every core (`@/`) import, in one place
 frontend/src/lib/groups.ts        the server group queries the rail and the servers page share
 frontend/src/app.css              static CSS keyed off html's data-xylo-* attributes, fonts
 frontend/src/pages/ThemeEditor.tsx  Xylo Studio
-frontend/src/elements/editor/     sections (one per editor tab), controls, mocks (the option drawings)
+frontend/src/elements/editor/     sections (one per editor tab), controls, mocks (the option drawings), fields.ts (each
+                                  section's theme fields and their search labels)
 frontend/src/elements/shell/      the rail layout: Shell.tsx (context panel, phone top bar and drawer), Rail.tsx (the
                                   rail, folders, drag and drop), nav.ts (core's sidebar nodes), folders.ts (pure rules)
 frontend/src/elements/home/       the servers page: Home.tsx (page, HomeSwitch), ServerCard.tsx, home.ts (pure rules)
-frontend/src/elements/server/     the server overview: Overview.tsx (page, ServerHome), overview.ts (pure helpers)
+frontend/src/elements/server/     the server overview: Overview.tsx (page, ServerHome), parts.tsx (the usage strip,
+                                  connect details, status chip and section card the console page shares), overview.ts
+                                  (pure helpers)
+frontend/src/elements/console/    the console page: Console.tsx (page, ConsoleSwitch, quick commands), xterm.ts (hooks
+                                  into every console's xterm), TerminalButtons.tsx (clear, download), console.ts (pure)
 frontend/src/elements/Greeting.tsx  the greeting above the servers list
 frontend/src/translations.ts      every user facing string (English)
-tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, shell/folders.ts, home/home.ts,
-                                  server/overview.ts (not shipped)
+tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, lib/terminal.ts, shell/folders.ts,
+                                  home/home.ts, server/overview.ts, console/console.ts, editor/fields.ts (not shipped)
 scripts/package.py                builds dist/dev_caloptreyx_xylo.c7s.zip
 ```
 
@@ -151,6 +157,38 @@ once the admin adds `/terminal` to that order (core's editor lists it, since it 
 - overview.ts: `eventLabel` (`server:power.start` reads "Power start"), `timeAgo`, `percentOf`/`levelOf` for the
   bars, `newest`.
 
+## The console
+
+`consolePage` (on by default) replaces core's console page wherever core shows it: `/terminal`, and `/` when the
+overview is off. The route interceptor in index.ts gives both a `ConsoleSwitch` around core's element, read with the
+theme hook so Studio switches it live; `/console/popout` stays core's.
+
+- The page is terminal first: the name, state chip and uptime with core's `ServerPowerControls` (in core's
+  `ServerCan`), one compact usage strip (parts.tsx, the overview's), and core's own terminal component
+  (`terminal/Console.tsx`: search, history, SSH, popout, features, input row slots). The terminal runs from where it
+  starts (`--xylo-con-top`, measured when the header or window resizes) to the viewport's bottom, at least 20rem,
+  and shrinks above the on-screen keyboard as core's does (`useVisualViewportBottomInset`). It is wrapped in
+  `ServerContentContainer` with core's title and container registry, so other extensions' container slots stay.
+- The details panel (toggle in the header, `xylo:console-panel` in localStorage): beside the terminal from 80rem of
+  page width, as tall as it and scrolling on its own (`contain: size`), under it below that. It holds the connect
+  details, quick commands, and core's `statCards` and `statBlocks` slots, so other extensions' cards still show.
+  Core's three charts are dropped.
+- Quick commands: per server and browser (`xylo:commands:<uuid>`), at most 20 of 200 characters, one line each,
+  validated on read (console.ts). Shown only with `control.console`; a click sends one over the server's websocket
+  (`SocketRequest.SEND_COMMAND`) while it is connected and the server is not offline.
+- xterm.ts hooks every console, core's page and the popout included (`pages.server.console.xterm`): the init handler
+  sets the mono font (`MONO_STACKS`, core's when 'panel'), the line height and the palette (`terminalPalette`, with a
+  transparent background: app.css paints `--xylo-term-bg` on the card holding `.xterm` while `data-xylo-terminal`
+  is 'custom'). Core reassigns `term.options.theme` on every scheme change, so `theme` is redefined on that
+  terminal's options object (xterm 6 defines each key as a configurable accessor): core's value is kept and Xylo's
+  palette over it goes through, or core's own with the 'panel' scheme. A scheme attribute observer reapplies in case
+  that fails. `subscribeTheme` reapplies colours, font and line height on every theme change (Studio's drafts too),
+  then Xylo's own FitAddon refits; a web font that loads after the terminal opened triggers a remeasure.
+- With `consoleHighlight`, `term.write` is wrapped so new uncoloured warning and error lines are tinted
+  (lib/terminal.ts). Clear and download (`<server>-<date and time>.log`, the active buffer as plain text with soft
+  wrapped rows joined) are core header buttons (`terminalHeaderRightComponents`), finding their terminal through
+  the card they sit in.
+
 ## The editor
 
 `/admin/xylo` (permission `settings.read` or `xylo-theme.update`) and the extension's card page. It previews the
@@ -163,9 +201,25 @@ Saving sends the loaded `version` as `base`; a 409 offers to load the other save
 until the stored theme has loaded. Undo and redo are debounced whole drafts. Colour fields keep half typed text
 in the draft; the preview and drawings use the last valid normalized draft.
 
+- Sections: `SECTION_FIELDS` (elements/editor/fields.ts) lists each tab's theme fields with the label the search
+  shows; every field belongs to exactly one tab (a test checks it). It drives the dot on a tab whose fields differ
+  from the saved theme, "Reset section" (that tab's fields back to `DEFAULT_THEME`, one undo step; not on Presets)
+  and the settings search above the tab: every control carries its field as `data-xylo-setting`, and picking a
+  result opens its tab, scrolls the control into view and lights it once. A control hidden by another setting (blur
+  without glass) just opens the tab.
+- Compare: holding the compare button (pointer, Space or Enter) sends the saved theme to the frame, letting go the
+  draft again; it is off while nothing is unsaved.
+- Custom presets (`customPresets`): "Save current look" stores `pickLook()` of the draft under a name (`presetName()`,
+  unique, at most `MAX_CUSTOM_PRESETS`). They are saved, undone, exported and imported with the theme like any field,
+  so every visitor's theme JSON carries them; they hold looks only. "Reset to the default look" keeps them.
+- The preview's page picker lists the first server's overview and console (`/terminal` while the overview is on,
+  otherwise the console is the server's own page).
+- The Console tab: Xylo's console page, the terminal scheme (each tile a `TerminalMock` of `terminalPalette()` in
+  dark mode; Panel drawn as core's, on the surface), line height and log highlighting. The code font stays under Type.
+
 A new theme field needs: the `XyloTheme` field and default, a line in `normalizeTheme()`, its use in `buildCss()`
-or `themeAttributes()` plus `app.css`, a control in a section, its strings, and a test case. Add it to
-`PresetLook` only if it is part of a look rather than about the site.
+or `themeAttributes()` plus `app.css`, a control in a section (with its `field`), its entry in `SECTION_FIELDS`, its
+strings, and a test case. Add it to `PresetLook` only if it is part of a look rather than about the site.
 
 ## Constraints
 

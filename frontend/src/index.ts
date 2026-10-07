@@ -2,6 +2,9 @@ import { faGauge, faPalette } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { createElement, lazy } from 'react';
 import { Extension, type ExtensionContext } from 'shared';
+import { ConsoleSwitch } from './elements/console/Console.tsx';
+import TerminalButtons from './elements/console/TerminalButtons.tsx';
+import { closeTerminal, initTerminal, openTerminal, prepareTerminal } from './elements/console/xterm.ts';
 import Greeting from './elements/Greeting.tsx';
 import { HomeSwitch } from './elements/home/Home.tsx';
 import { ServerHome } from './elements/server/Overview.tsx';
@@ -47,11 +50,16 @@ class DevCaloptreyxXyloExtension extends Extension {
     // moves to `/terminal`, the next link. One route keeps `/` whichever is on, its name and icon read the theme when
     // the sidebar renders and its element when it mounts, so Studio's switch needs no reload. Core's console keeps
     // its own `/console/popout`, which `/terminal` does not own, so an egg's custom sidebar order leaves it reachable.
+    // `consolePage` (on by default): wherever the console shows (`/terminal`, or `/` with the overview off), it is
+    // Xylo's console page (elements/console), switched when it mounts as well; the popout stays core's.
     ctx.extensionRegistry.routes.addServerRouteInterceptor((routes) => {
       const index = routes.findIndex((route) => route.path === '/');
       if (index === -1) return;
       const consoleRoute = routes[index];
-      const Console = consoleRoute.element;
+      const CoreConsole = consoleRoute.element;
+      const Console = function XyloConsole() {
+        return createElement(ConsoleSwitch, { Core: CoreConsole });
+      };
       const overview = () => currentTheme().serverOverview;
       const consoleName = consoleRoute.name;
       const consoleIcon = consoleRoute.icon;
@@ -73,9 +81,26 @@ class DevCaloptreyxXyloExtension extends Extension {
             return createElement(ServerHome, { Console });
           },
         },
-        { ...consoleRoute, path: '/terminal', filter: () => overview() && (consoleRoute.filter?.() ?? true) },
+        {
+          ...consoleRoute,
+          path: '/terminal',
+          element: Console,
+          filter: () => overview() && (consoleRoute.filter?.() ?? true),
+        },
       );
     });
+
+    // every console (Xylo's page, core's, the popout): the theme's terminal colours, font and line height, live, the
+    // highlighting of uncoloured warnings and errors, and clear and download buttons in its header
+    ctx.extensionRegistry.pages.server.console
+      .enterXTerm((xterm) =>
+        xterm
+          .addInitHandler(initTerminal)
+          .addAfterPluginsHandler(prepareTerminal)
+          .addAfterOpenHandler(openTerminal)
+          .addOnUnmountHandler(closeTerminal),
+      )
+      .enterTerminalHeaderRightComponents((header) => header.appendComponent(TerminalButtons));
 
     // auth routes redirect signed in users, so the editor previews core's real login page here instead
     ctx.extensionRegistry.routes.addGlobalRoute({

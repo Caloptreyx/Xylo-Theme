@@ -1110,7 +1110,7 @@ html[data-xylo-titles="gradient"] .xylo-greeting-title {
   }
 }
 
-/* ---------- figures: a stat strip and usage bars (the server overview) ---------- */
+/* ---------- figures: a stat strip and usage bars (the server overview, the console page) ---------- */
 
 /* the stat strip: one card split by hairlines, not a card per figure */
 html[data-xylo] .xylo-stats {
@@ -1125,6 +1125,34 @@ html[data-xylo] .xylo-stat {
   gap: 4px;
   min-width: 0;
   padding: 16px 20px 18px;
+}
+
+html[data-xylo] .xylo-stat-value {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+@container page (width >= 40rem) {
+  html[data-xylo] .xylo-stat-value {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+}
+
+/* the console page's strip: the same figures at a size that leaves the height to the terminal */
+html[data-xylo] .xylo-stats[data-compact] .xylo-stat {
+  gap: 2px;
+  padding: 10px 16px 12px;
+}
+
+html[data-xylo] .xylo-stats[data-compact] .xylo-stat-value {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+html[data-xylo] .xylo-stats[data-compact] .xylo-meter-track {
+  margin-top: 4px;
+  height: 4px;
 }
 
 html[data-xylo] .xylo-stat:nth-child(even) {
@@ -1286,6 +1314,122 @@ html[data-xylo] .xylo-ov-copy {
 
 html[data-xylo] .xylo-ov-copy:active {
   transform: scale(0.99);
+}
+
+/* ---------- the console page (elements/console) and every console's terminal ---------- */
+
+/* the card holding a terminal (Xylo's page, core's console, the popout) in the theme's terminal scheme; core's
+   xterm.css keeps xterm's own layers transparent over it */
+html[data-xylo-terminal="custom"] .mantine-Card-root:has(.xterm) {
+  background: var(--xylo-term-bg);
+  color: var(--xylo-term-fg);
+}
+
+html[data-xylo] .xylo-con {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+html[data-xylo] .xylo-con-body {
+  display: grid;
+  gap: 16px;
+}
+
+/* the terminal runs from where it starts (`--xylo-con-top`, measured) to the viewport's bottom, never shorter than a
+   phone's useful console; with the on-screen keyboard up, short enough to keep the input above it, as core's */
+html[data-xylo] .xylo-con-term {
+  --xylo-con-fill: calc(100dvh - var(--xylo-con-top, 14rem) - 1.5rem);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: max(20rem, var(--xylo-con-fill));
+}
+
+html[data-xylo] .xylo-con-term[data-keyboard] {
+  height: max(8rem, min(var(--xylo-con-fill), calc(100dvh - var(--xylo-con-inset, 0px) - 7rem)));
+}
+
+/* the details panel: under the terminal, its cards side by side where they fit */
+html[data-xylo] .xylo-con-side {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  align-items: start;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* beside it on wide pages, as tall as the terminal and scrolling on its own; size containment keeps the panel's
+   content from growing the row */
+@container page (width >= 80rem) {
+  html[data-xylo] .xylo-con-body[data-panel] {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
+
+  html[data-xylo] .xylo-con-side {
+    display: flex;
+    flex-direction: column;
+    contain: size;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  html[data-xylo] .xylo-con-side > * {
+    flex-shrink: 0;
+  }
+}
+
+/* quick commands: one outlined monospace row each, the whole row sends it */
+html[data-xylo] .xylo-con-commands {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+html[data-xylo] .xylo-con-commands > li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+html[data-xylo] .xylo-con-command {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--xylo-hairline);
+  border-radius: var(--xylo-control-radius, 8px);
+  background-color: color-mix(in srgb, var(--mantine-color-text) 3%, transparent);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.8125rem;
+  text-align: left;
+  transition: border-color 160ms ease;
+}
+
+@media (hover: hover) {
+  html[data-xylo] .xylo-con-command:not(:disabled):hover {
+    border-color: color-mix(in srgb, var(--xylo-accent) 45%, var(--xylo-hairline));
+  }
+}
+
+html[data-xylo] .xylo-con-command:not(:disabled):active {
+  transform: scale(0.99);
+}
+
+html[data-xylo] .xylo-con-command:focus-visible {
+  outline: 2px solid var(--xylo-accent);
+  outline-offset: 2px;
+}
+
+html[data-xylo] .xylo-con-command:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 /* ---------- the servers page (elements/home) ---------- */
