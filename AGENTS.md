@@ -352,3 +352,13 @@ real path) `frontend/` at `calagopus-dev/frontend/extensions/dev_caloptreyx_zoro
 routes only exist in a panel built with the extension.
 
 Package with `python3 scripts/package.py` and check with `panel-rs extensions inspect`.
+
+## Releasing and the demo
+
+Set the new version in `backend/Cargo.toml`, commit, and push a tag `v<version>`: `.github/workflows/release.yml`
+runs the check, refuses a tag that doesn't match the version, packages the zip and attaches it to the GitHub release
+(notes generated; edit them into a changelog afterwards). README screenshots live in `docs/`, taken from the demo.
+
+The public demo (https://zoron-demo.caloptreyx.com, `/root/zoron-demo` on the VM, like the Mint demo) installs the
+newest release every 15 minutes (`update.sh`, systemd `zoron-demo-update.timer`) and resets to its clean snapshot
+every hour (`reset.sh`). Its sign in links (the demo login chip) are part of its saved theme.

@@ -1,8 +1,8 @@
 [package]
 name = "dev_caloptreyx_zoron"
-description = "A modern glass theme for Calagopus Panel with a live theme editor."
+description = "A Calagopus Panel theme with an icon rail, a console workspace and a live theme editor."
 authors = ["Caloptreyx"]
-version = "0.2.0"
+version = "1.0.0"
 edition = { workspace = true }
 
 [dependencies]
