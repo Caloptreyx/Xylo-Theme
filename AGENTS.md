@@ -55,7 +55,8 @@ rewritten only when they change, so the editor repaints its preview live without
 - The default look is the Carbon preset (`DEFAULT_THEME` spreads it): off-black, one muted accent whose second
   accent is only a lighter step, solid surfaces, no glow, Geist and Geist Mono. Aurora (the violet to cyan glass
   the theme started with) is a preset, and themes saved before keep their own values. Xylo's own pieces follow
-  the `design-taste-frontend` / `redesign-existing-projects` skills (taste-skill, installed in `~/.agents/skills`):
+  the `design-taste-frontend` / `redesign-existing-projects` skills (taste-skill, installed for every agent on this
+  VM in `~/.agents/skills`, `~/.claude/skills` and `~/.codex/skills`):
   the gradient only where a preset asks for it (buttons, the pill link, the rail's current area), a plain accent
   for bars and tints for chips, gradient text only with "Gradient page titles", sentence case labels instead of
   tracked capitals, no looping animation on idle content (a running server's dot does not pulse), one card per
