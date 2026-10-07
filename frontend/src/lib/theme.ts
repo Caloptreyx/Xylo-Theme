@@ -126,6 +126,19 @@ export type ConsoleInspector = (typeof CONSOLE_INSPECTORS)[number];
 export const MAX_SITE_COMMANDS = 12;
 export const MAX_SITE_COMMAND = 200;
 
+/** The login page's links (a demo login, docs, a Discord): their icons, how many, how long a label may be. */
+export const LOGIN_LINK_ICONS = ['link', 'github', 'discord', 'docs', 'status', 'mail'] as const;
+export type LoginLinkIcon = (typeof LOGIN_LINK_ICONS)[number];
+export const MAX_LOGIN_LINKS = 4;
+export const MAX_LOGIN_LINK_LABEL = 48;
+
+export interface LoginLink {
+  label: string;
+  /** http(s) or root relative, checked by SAFE_URL. */
+  url: string;
+  icon: LoginLinkIcon;
+}
+
 export interface ZoronTheme {
   accent: string;
   /** The gradient's second stop and the backdrop's second colour. */
@@ -218,6 +231,8 @@ export interface ZoronTheme {
   consoleQuickCommands: boolean;
   /** Quick commands the admins set for everyone who may use the console, shown before each visitor's own. */
   consoleCommands: string[];
+  /** Links shown as chips above the form on every sign in page (the login, the password reset). */
+  loginLinks: LoginLink[];
   /** Looks the admins saved in Studio, applied like the built in presets. */
   customPresets: CustomPreset[];
 }
@@ -362,6 +377,7 @@ export const DEFAULT_THEME: ZoronTheme = {
   consoleDensity: 'comfortable',
   consoleQuickCommands: true,
   consoleCommands: [],
+  loginLinks: [],
   customPresets: [],
 };
 
@@ -662,6 +678,25 @@ function siteCommands(v: unknown, fallback: string[]): string[] {
   return out;
 }
 
+/** Links with a label and a SAFE_URL address only, at most MAX_LOGIN_LINKS; an unknown icon becomes 'link'. */
+function loginLinks(v: unknown, fallback: LoginLink[]): LoginLink[] {
+  if (!Array.isArray(v)) return fallback;
+  const out: LoginLink[] = [];
+  for (const item of v) {
+    const r = record(item);
+    // by code points, so a cut never splits an emoji into a lone surrogate
+    const label =
+      typeof r?.label === 'string'
+        ? // biome-ignore lint/suspicious/noControlCharactersInRegex: control characters are what it removes
+          [...r.label.replace(/[\u0000-\u001f\u007f]/g, '').trim()].slice(0, MAX_LOGIN_LINK_LABEL).join('')
+        : '';
+    const url = typeof r?.url === 'string' && r.url.length <= MAX_URL && SAFE_URL.test(r.url) ? r.url : '';
+    if (label && url) out.push({ label, url, icon: choice(r?.icon, LOGIN_LINK_ICONS, 'link') });
+    if (out.length === MAX_LOGIN_LINKS) break;
+  }
+  return out;
+}
+
 /** The allow listed figures in `v`, each once, in CONSOLE_METRICS order. */
 function consoleMetrics(v: unknown, fallback: ConsoleMetric[]): ConsoleMetric[] {
   if (!Array.isArray(v)) return fallback;
@@ -776,6 +811,7 @@ export function normalizeTheme(raw: unknown, d: ZoronTheme = DEFAULT_THEME): Zor
     consoleDensity: choice(r.consoleDensity, DENSITIES, d.consoleDensity),
     consoleQuickCommands: flag(r.consoleQuickCommands, d.consoleQuickCommands),
     consoleCommands: siteCommands(r.consoleCommands, d.consoleCommands),
+    loginLinks: loginLinks(r.loginLinks, d.loginLinks),
     customPresets: customPresets(r.customPresets, d.customPresets),
   };
 }
@@ -796,8 +832,9 @@ export function sameTheme(a: ZoronTheme, b: ZoronTheme): boolean {
       );
     }
     const [x, y] = [a[key], b[key]];
+    // list items are strings or objects normalizeTheme() built, so their JSON is stable
     return Array.isArray(x) && Array.isArray(y)
-      ? x.length === y.length && x.every((item, i) => item === y[i])
+      ? x.length === y.length && x.every((item, i) => JSON.stringify(item) === JSON.stringify(y[i]))
       : x === y;
   });
 }

@@ -194,6 +194,28 @@ describe('normalizeTheme', () => {
     assert.deepEqual(normalizeTheme({ consoleCommands: 'list' }).consoleCommands, []);
   });
 
+  test('sign in links: a label and a safe address each, a known icon or link, at most four', () => {
+    const theme = normalizeTheme({
+      loginLinks: [
+        { label: ' Demo login: demo / zorondemo ', url: '/auth/login', icon: 'nope' },
+        { label: 'Docs', url: 'javascript:alert(1)', icon: 'docs' },
+        { label: '', url: 'https://example.com' },
+        { label: 'Quote', url: 'https://x.y/a") ;b' },
+        { label: 'GitHub', url: 'https://github.com/Caloptreyx/Zoron-Theme', icon: 'github', extra: 1 },
+        'https://example.com',
+      ],
+    });
+    assert.deepEqual(theme.loginLinks, [
+      { label: 'Demo login: demo / zorondemo', url: '/auth/login', icon: 'link' },
+      { label: 'GitHub', url: 'https://github.com/Caloptreyx/Zoron-Theme', icon: 'github' },
+    ]);
+    const many = Array.from({ length: 6 }, (_, i) => ({ label: `L${i}`, url: `/p${i}` }));
+    assert.equal(normalizeTheme({ loginLinks: many }).loginLinks.length, 4);
+    assert.equal(normalizeTheme({ loginLinks: [{ label: 'x'.repeat(60), url: '/x' }] }).loginLinks[0].label.length, 48);
+    assert.ok(!sameTheme(theme, normalizeTheme({ loginLinks: [theme.loginLinks[0]] })));
+    assert.ok(sameTheme(theme, normalizeTheme(JSON.parse(JSON.stringify(theme)))));
+  });
+
   test('custom presets: valid unique names, normalized looks, at most twelve', () => {
     const look = { ...PRESETS[1].look, accent: 'red;}', extra: 1, customPresets: [{ name: 'nested', look: {} }] };
     const theme = normalizeTheme({

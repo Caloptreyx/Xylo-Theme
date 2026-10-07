@@ -66,6 +66,7 @@ export const SECTION_FIELDS = {
     glow: 'layout.glowStrength',
     density: 'layout.density',
     uiScale: 'layout.scale',
+    loginLinks: 'layout.login',
   },
   typography: {
     font: 'typography.body',

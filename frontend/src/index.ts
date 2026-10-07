@@ -7,6 +7,7 @@ import TerminalButtons from './elements/console/TerminalButtons.tsx';
 import { closeTerminal, initTerminal, openTerminal, prepareTerminal } from './elements/console/xterm.ts';
 import Greeting from './elements/Greeting.tsx';
 import { HomeSwitch } from './elements/home/Home.tsx';
+import LoginLinks from './elements/LoginLinks.tsx';
 import { ServerHome } from './elements/server/Overview.tsx';
 import Shell from './elements/shell/Shell.tsx';
 import { AccountContentContainer, Sidebar } from './lib/core.ts';
@@ -34,6 +35,9 @@ class DevCaloptreyxZoronExtension extends Extension {
     ctx.extensionRegistry.pages.dashboard.home
       .enterContainerAll((container) => container.prependComponent(Greeting))
       .enterContainerGrouped((container) => container.prependComponent(Greeting));
+
+    // `loginLinks`: chips at the top of every sign in page (core renders the auth slot above its logo)
+    ctx.extensionRegistry.pages.auth.prependComponent(LoginLinks);
 
     // `homePage` (on by default): core's two server lists become Zoron's servers page (elements/home); the registries
     // are compared at render time, where core passes the merged ones

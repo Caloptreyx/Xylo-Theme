@@ -38,6 +38,8 @@ frontend/src/elements/console/    the console page: Console.tsx (the workspace, 
                                   download, and TerminalLook.tsx, the visitor's own scheme and frame), console.ts and
                                   telemetry.ts (pure)
 frontend/src/elements/Greeting.tsx  the greeting above the servers list
+frontend/src/elements/LoginLinks.tsx  `loginLinks`: chips at the top of every sign in page (core's `pages.auth` slot,
+                                  above the logo), e.g. a demo's shared login; edited in Studio's Layout tab
 frontend/src/translations.ts      every user facing string (English)
 tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, lib/terminal.ts, lib/tiles.ts,
                                   shell/folders.ts, home/home.ts, server/overview.ts, console/console.ts,

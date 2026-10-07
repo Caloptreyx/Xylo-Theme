@@ -33,6 +33,9 @@ const translations = defineTranslations({
       evening: 'Good evening, {name}',
       night: 'Working late, {name}?',
     },
+    login: {
+      links: 'Links',
+    },
     editor: {
       title: 'Zoron Studio',
       subtitle: 'Theme editor',
@@ -228,6 +231,24 @@ const translations = defineTranslations({
       home: 'Pages',
       homePage: "Zoron's servers page",
       homePageHint: "Search, filters and power controls in place of the panel's list.",
+      login: 'Sign in page links',
+      loginHint:
+        'Chips above the logo on the sign in pages, like a demo login or your docs. A link needs a label and an http(s) or /path address.',
+      loginIcon: 'Icon',
+      loginIcons: {
+        link: 'Link',
+        github: 'GitHub',
+        discord: 'Discord',
+        docs: 'Docs',
+        status: 'Status',
+        mail: 'Mail',
+      },
+      loginLabel: 'Label',
+      loginUrl: 'Address',
+      loginUrlPlaceholder: 'https://… or /auth/login',
+      loginUrlInvalid: 'Use an http(s) address or a path starting with /, without spaces or quotes.',
+      loginRemove: 'Remove this link',
+      loginAdd: 'Add a link',
     },
     typography: {
       body: 'Body',
