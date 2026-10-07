@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { parseTerminalPrefs, TERMINAL_PREFS_KEY, type TerminalPrefs, withTerminalPrefs } from './terminal.ts';
 import { buildCss, DEFAULT_THEME, normalizeTheme, sameTheme, themeAttributes, type XyloTheme } from './theme.ts';
 
 const STYLE_ID = 'xylo-theme';
@@ -13,14 +14,23 @@ export const READY_MSG = 'xylo:ready';
 const PENDING_MS = 1500;
 
 let saved: XyloTheme = DEFAULT_THEME;
+/** The theme given to paint (the site's, or a draft in the editor's preview), before the visitor's terminal look. */
+let base: XyloTheme = DEFAULT_THEME;
+/** What is on screen: `base` with the visitor's terminal look over it. */
 let current: XyloTheme = DEFAULT_THEME;
+let terminalPrefs: TerminalPrefs = {};
 let previewing = false;
 let pendingTimer: number | undefined;
 const listeners = new Set<() => void>();
+/** Studio's preview frame always shows the admin's terminal look, never the visitor's own. */
+export const inPreviewFrame = window.parent !== window;
 
 export const savedTheme = () => saved;
 
-/** Calls `listener` whenever the theme on screen changes (a draft included); returns the unsubscribe. */
+/**
+ * Calls `listener` whenever the theme on screen (a draft included), the site's or the visitor's terminal look
+ * changes; returns the unsubscribe.
+ */
 export function subscribeTheme(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -30,36 +40,68 @@ export function subscribeTheme(listener: () => void) {
 export const useXyloTheme = () => useSyncExternalStore(subscribeTheme, () => current);
 /** The theme on screen, for code that runs outside a component (route names and filters); no re-render. */
 export const currentTheme = () => current;
+/** The theme before the visitor's terminal look: what "Site default" shows. */
+export const useBaseTheme = () => useSyncExternalStore(subscribeTheme, () => base);
+export const useTerminalPrefs = () => useSyncExternalStore(subscribeTheme, () => terminalPrefs);
 
 /**
  * Writes only what changed: a new stylesheet restyles the whole page, so a repaint with the same theme (the fetch
  * after the cached paint) must not replace it.
  */
 function applyTheme(theme: XyloTheme) {
+  const shown = inPreviewFrame ? theme : withTerminalPrefs(theme, terminalPrefs);
   let el = document.getElementById(STYLE_ID);
   if (!el) {
     el = document.createElement('style');
     el.id = STYLE_ID;
     document.head.appendChild(el);
   }
-  const css = buildCss(theme);
+  const css = buildCss(shown);
   if (el.textContent !== css) el.textContent = css;
 
   const data = document.documentElement.dataset;
-  for (const [key, value] of Object.entries(themeAttributes(theme))) {
+  for (const [key, value] of Object.entries(themeAttributes(shown))) {
     if (data[key] !== value) data[key] = value;
   }
   if ('xyloPending' in data) delete data.xyloPending;
 
-  if (sameTheme(theme, current)) return;
-  current = theme;
-  for (const listener of listeners) listener();
+  let changed = false;
+  if (!sameTheme(theme, base)) {
+    base = theme;
+    changed = true;
+  }
+  if (!sameTheme(shown, current)) {
+    current = shown;
+    changed = true;
+  }
+  if (changed) for (const listener of listeners) listener();
+}
+
+/** Takes the visitor's terminal look (the picker, or another window's), repainting once the page is shown. */
+function takeTerminalPrefs(prefs: TerminalPrefs) {
+  terminalPrefs = prefs;
+  if ('xyloPending' in document.documentElement.dataset) return;
+  const before = current;
+  applyTheme(base);
+  // the picker shows the choice even when the look on screen stays the same (the site's own scheme picked)
+  if (current === before) for (const listener of listeners) listener();
+}
+
+/** Keeps the visitor's terminal look in this browser and paints it; empty prefs return to the site's. */
+export function setTerminalPrefs(prefs: TerminalPrefs) {
+  try {
+    if (prefs.scheme || prefs.skin) localStorage.setItem(TERMINAL_PREFS_KEY, JSON.stringify(prefs));
+    else localStorage.removeItem(TERMINAL_PREFS_KEY);
+  } catch {
+    // private mode or full storage: the choice lasts until the page closes
+  }
+  takeTerminalPrefs(prefs);
 }
 
 /** Ends the first visit guard with whatever is known by then. */
 function reveal() {
   window.clearTimeout(pendingTimer);
-  if ('xyloPending' in document.documentElement.dataset) applyTheme(previewing ? current : saved);
+  if ('xyloPending' in document.documentElement.dataset) applyTheme(previewing ? base : saved);
 }
 
 /** Makes `theme` the site theme on this page (the editor after a save) and caches it for the next load. */
@@ -73,14 +115,21 @@ export function rememberTheme(theme: XyloTheme) {
   if (!previewing) applyTheme(theme);
 }
 
-/** Paints the last known theme right away so the look never flashes in after the fetch. */
+/**
+ * Paints the last known theme right away so the look never flashes in after the fetch, with the visitor's terminal
+ * look, which other windows (the console popout) may change later.
+ */
 export function applyCachedTheme() {
   let cached: string | null = null;
   try {
     cached = localStorage.getItem(CACHE_KEY);
+    terminalPrefs = parseTerminalPrefs(localStorage.getItem(TERMINAL_PREFS_KEY));
   } catch {
     // storage blocked: nothing cached
   }
+  window.addEventListener('storage', (event) => {
+    if (event.key === TERMINAL_PREFS_KEY) takeTerminalPrefs(parseTerminalPrefs(event.newValue));
+  });
   if (cached !== null) {
     try {
       saved = normalizeTheme(JSON.parse(cached));

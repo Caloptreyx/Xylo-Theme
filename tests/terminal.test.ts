@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { highlightChunk, highlightLine, lineLevel } from '../frontend/src/lib/terminal.ts';
+import {
+  highlightChunk,
+  highlightLine,
+  lineLevel,
+  parseTerminalPrefs,
+  withTerminalPrefs,
+} from '../frontend/src/lib/terminal.ts';
+import { DEFAULT_THEME } from '../frontend/src/lib/theme.ts';
 
 const RED = '\x1b[31m';
 const YELLOW = '\x1b[33m';
@@ -49,5 +56,36 @@ describe('highlightLine', () => {
   test('a chunk is tinted line by line, newlines kept', () => {
     assert.equal(highlightChunk('\n[ERROR] a'), `\n${RED}[ERROR] a${END}`);
     assert.equal(highlightChunk('ok\n[WARN] b'), `ok\n${YELLOW}[WARN] b${END}`);
+  });
+});
+
+describe('parseTerminalPrefs', () => {
+  test('keeps allow listed choices', () => {
+    assert.deepEqual(parseTerminalPrefs('{"scheme":"amber","skin":"crt"}'), { scheme: 'amber', skin: 'crt' });
+    assert.deepEqual(parseTerminalPrefs('{"skin":"window"}'), { skin: 'window' });
+  });
+
+  test('drops unknown names, other types, broken JSON and nothing stored', () => {
+    assert.deepEqual(parseTerminalPrefs('{"scheme":"matrix","skin":"<b>","extra":1}'), {});
+    assert.deepEqual(parseTerminalPrefs('{"scheme":["nord"],"skin":3}'), {});
+    for (const raw of ['["nord"]', '"nord"', 'null', '{oops', '', null]) {
+      assert.deepEqual(parseTerminalPrefs(raw), {}, String(raw));
+    }
+  });
+});
+
+describe('withTerminalPrefs', () => {
+  test('lays the choices over the site scheme and frame', () => {
+    const shown = withTerminalPrefs(DEFAULT_THEME, { scheme: 'nord' });
+    assert.equal(shown.terminalScheme, 'nord');
+    assert.equal(shown.terminalSkin, DEFAULT_THEME.terminalSkin);
+    assert.equal(withTerminalPrefs(DEFAULT_THEME, { skin: 'neon' }).terminalSkin, 'neon');
+    assert.equal(shown.accent, DEFAULT_THEME.accent);
+  });
+
+  test('the site theme as it is with no choices, or when it does not let people choose', () => {
+    assert.equal(withTerminalPrefs(DEFAULT_THEME, {}), DEFAULT_THEME);
+    const locked = { ...DEFAULT_THEME, terminalUserChoice: false };
+    assert.equal(withTerminalPrefs(locked, { scheme: 'amber', skin: 'crt' }), locked);
   });
 });

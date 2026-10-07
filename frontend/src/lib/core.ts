@@ -43,6 +43,7 @@ export { default as ConfirmationModal } from '@/elements/modals/ConfirmationModa
 export { Modal, ModalFooter } from '@/elements/modals/Modal.tsx';
 export { default as Sidebar } from '@/elements/navigation/Sidebar.tsx';
 export { default as Menu } from '@/elements/overlays/Menu.tsx';
+export { default as Popover } from '@/elements/overlays/Popover.tsx';
 export { default as Tooltip } from '@/elements/overlays/Tooltip.tsx';
 export { default as QuickActionsTrigger } from '@/elements/quickActions/QuickActionsTrigger.tsx';
 export { isAdmin } from '@/lib/auth/permissions.ts';

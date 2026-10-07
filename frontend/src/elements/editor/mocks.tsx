@@ -11,6 +11,8 @@ import {
   type Sidebar,
   type Surface,
   type TerminalPalette,
+  type TerminalScheme,
+  type TerminalSkin,
   type Transition,
 } from '../../lib/theme.ts';
 
@@ -261,9 +263,9 @@ const PANEL_TERMINAL = {
   blue: '#3465a4',
 };
 
-/** A few log lines in a terminal scheme: a timestamped line, a success, a warning, an error and the prompt. */
-export function TerminalMock({ look, palette }: { look: Look; palette: TerminalPalette | null }) {
-  const c = palette
+/** The colours the drawings use from a scheme; core's own for 'panel'. */
+const terminalInk = (palette: TerminalPalette | null) =>
+  palette
     ? {
         foreground: palette.foreground,
         dim: palette.ansi[8],
@@ -273,30 +275,122 @@ export function TerminalMock({ look, palette }: { look: Look; palette: TerminalP
         blue: palette.ansi[4],
       }
     : PANEL_TERMINAL;
-  const bar = (color: string, width: string) => <div className='h-1 rounded-sm' style={{ width, background: color }} />;
+
+/** One log line's run of text; `glow` is the crt frame's. */
+const inkBar = (color: string, width: string, glow = false) => (
+  <div
+    className='h-1 rounded-sm'
+    style={{ width, background: color, boxShadow: glow ? `0 0 3px ${color}` : undefined }}
+  />
+);
+
+/** A few log lines in a terminal scheme: a timestamped line, a success, a warning, an error and the prompt. */
+export function TerminalMock({ look, palette }: { look: Look; palette: TerminalPalette | null }) {
+  const c = terminalInk(palette);
   return (
     <div
       className='flex h-full flex-col justify-center gap-1 px-2'
       style={{ background: palette?.background ?? look.surface }}
     >
       <div className='flex gap-1'>
-        {bar(c.dim, '22%')}
-        {bar(c.foreground, '50%')}
+        {inkBar(c.dim, '22%')}
+        {inkBar(c.foreground, '50%')}
       </div>
       <div className='flex gap-1'>
-        {bar(c.green, '30%')}
-        {bar(c.foreground, '28%')}
+        {inkBar(c.green, '30%')}
+        {inkBar(c.foreground, '28%')}
       </div>
-      <div className='flex gap-1'>{bar(c.yellow, '62%')}</div>
+      <div className='flex gap-1'>{inkBar(c.yellow, '62%')}</div>
       <div className='flex gap-1'>
-        {bar(c.red, '40%')}
-        {bar(c.foreground, '22%')}
+        {inkBar(c.red, '40%')}
+        {inkBar(c.foreground, '22%')}
       </div>
       <div className='flex items-center gap-1'>
         <div className='h-1 w-1.5 rounded-sm' style={{ background: c.blue }} />
         <div className='h-1.5 w-1 rounded-[1px]' style={{ background: c.foreground }} />
       </div>
     </div>
+  );
+}
+
+/**
+ * A terminal frame (`terminalSkin`) on the page's canvas around three log lines in `palette`, as app.css draws it:
+ * card, window (title bar), flush (no card; 'theme' and 'panel' on the canvas), glass, crt (scanlines, vignette,
+ * glow) and neon (accent outline and glow).
+ */
+export function TerminalSkinMock({
+  look,
+  palette,
+  scheme,
+  skin,
+}: {
+  look: Look;
+  palette: TerminalPalette | null;
+  scheme: TerminalScheme;
+  skin: TerminalSkin;
+}) {
+  const c = terminalInk(palette);
+  const radius = Math.max(3, (look.radius ?? 16) / 3);
+  const bg = palette?.background ?? look.surface;
+  const block: CSSProperties = {
+    inset: '16% 12%',
+    borderRadius: radius,
+    border: `1px solid ${alpha(look.text, 0.14)}`,
+    background: bg,
+  };
+  if (skin === 'flush') {
+    Object.assign(block, {
+      border: '1px solid transparent',
+      borderRadius: 0,
+      background: scheme === 'theme' || !palette ? 'transparent' : bg,
+    });
+  } else if (skin === 'glass') {
+    Object.assign(block, {
+      border: `1px solid ${alpha(c.foreground, 0.16)}`,
+      background: alpha(bg, 0.72),
+      backdropFilter: 'blur(3px)',
+    });
+  } else if (skin === 'crt') {
+    Object.assign(block, { borderRadius: radius * 2 + 2, boxShadow: `0 0 0 2px ${alpha('#000000', 0.45)}` });
+  } else if (skin === 'neon') {
+    Object.assign(block, { border: `1px solid ${look.accent}`, boxShadow: `0 0 8px ${alpha(look.accent, 0.55)}` });
+  }
+  const glow = skin === 'crt';
+  return frame(
+    look,
+    'spotlight',
+    <div className='absolute flex flex-col overflow-hidden' style={block}>
+      {skin === 'window' && (
+        <div
+          className='flex h-[26%] shrink-0 items-center gap-[2px] px-1'
+          style={{ borderBottom: `1px solid ${alpha(c.foreground, 0.14)}` }}
+        >
+          {[0, 1, 2].map((dot) => (
+            <span key={dot} className='size-[3px] rounded-full' style={{ background: alpha(c.foreground, 0.35) }} />
+          ))}
+        </div>
+      )}
+      <div className='flex flex-1 flex-col justify-center gap-1 px-1.5'>
+        <div className='flex gap-1'>
+          {inkBar(c.dim, '22%', glow)}
+          {inkBar(c.foreground, '46%', glow)}
+        </div>
+        <div className='flex gap-1'>
+          {inkBar(c.green, '30%', glow)}
+          {inkBar(c.foreground, '26%', glow)}
+        </div>
+        <div className='flex gap-1'>{inkBar(c.red, '40%', glow)}</div>
+      </div>
+      {glow && (
+        <div
+          className='pointer-events-none absolute inset-0'
+          style={{
+            background: `repeating-linear-gradient(to bottom, ${alpha('#000000', 0.22)} 0 1px, transparent 1px 3px)`,
+            boxShadow: `inset 0 0 10px ${alpha('#000000', 0.5)}`,
+          }}
+        />
+      )}
+    </div>,
   );
 }
 

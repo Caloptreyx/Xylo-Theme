@@ -77,8 +77,10 @@ export const SECTION_FIELDS = {
   console: {
     consolePage: 'consoleSection.consolePage',
     terminalScheme: 'consoleSection.scheme',
+    terminalSkin: 'consoleSection.frame',
     terminalLineHeight: 'consoleSection.lineHeight',
     consoleHighlight: 'consoleSection.highlight',
+    terminalUserChoice: 'consoleSection.userChoice',
   },
   motion: {
     motion: 'motion.level',

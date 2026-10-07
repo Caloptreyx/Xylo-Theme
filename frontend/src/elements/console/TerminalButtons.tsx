@@ -4,11 +4,13 @@ import type { MouseEvent } from 'react';
 import { ActionIcon, downloadTextFile, Tooltip, useServerStore } from '../../lib/core.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { type BufferLine, bufferText, logFileName } from './console.ts';
+import TerminalLook from './TerminalLook.tsx';
 import { terminalNear } from './xterm.ts';
 
 /**
- * Two buttons in core's terminal header (every console: Xylo's page, core's, the popout): clear the terminal, and
- * download what it holds as a plain text log. Styled as core's header buttons.
+ * Xylo's buttons in core's terminal header (every console: Xylo's page, core's, the popout): the visitor's terminal
+ * look while the theme allows it, clear the terminal, and download what it holds as a plain text log. Styled as
+ * core's header buttons.
  */
 export default function TerminalButtons() {
   const { t } = useExtTranslations();
@@ -28,6 +30,7 @@ export default function TerminalButtons() {
 
   return (
     <>
+      <TerminalLook />
       <Tooltip label={t('console.clear', {})}>
         <ActionIcon
           className='group'

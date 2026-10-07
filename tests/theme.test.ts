@@ -9,9 +9,12 @@ import {
   DEFAULT_THEME,
   generatePalette,
   MAX_CUSTOM_PRESETS,
+  NAMED_TERMINALS,
   normalizeTheme,
   PRESETS,
   sameTheme,
+  TERMINAL_SCHEME_GROUPS,
+  TERMINAL_SCHEMES,
   terminalPalette,
   themeAttributes,
 } from '../frontend/src/lib/theme.ts';
@@ -80,11 +83,16 @@ describe('normalizeTheme', () => {
     }
   });
 
-  test('console fields: scheme allow listed, line height clamped', () => {
+  test('console fields: scheme and frame allow listed, line height clamped, choice a flag', () => {
     assert.equal(normalizeTheme({ terminalScheme: 'dracula' }).terminalScheme, 'dracula');
+    assert.equal(normalizeTheme({ terminalScheme: 'kanagawa' }).terminalScheme, 'kanagawa');
     assert.equal(normalizeTheme({ terminalScheme: 'matrix' }).terminalScheme, DEFAULT_THEME.terminalScheme);
     assert.equal(normalizeTheme({ terminalLineHeight: 400 }).terminalLineHeight, 180);
     assert.equal(normalizeTheme({ terminalLineHeight: 50 }).terminalLineHeight, 100);
+    assert.equal(normalizeTheme({ terminalSkin: 'crt' }).terminalSkin, 'crt');
+    assert.equal(normalizeTheme({ terminalSkin: 'crt"]{}' }).terminalSkin, 'card');
+    assert.equal(normalizeTheme({ terminalUserChoice: false }).terminalUserChoice, false);
+    assert.equal(normalizeTheme({ terminalUserChoice: 'no' }).terminalUserChoice, true);
   });
 
   test('custom presets: valid unique names, normalized looks, at most twelve', () => {
@@ -243,6 +251,11 @@ describe('themeAttributes', () => {
     assert.equal(attrs.xyloBackdrop, 'image');
     assert.equal(attrs.xyloPattern, 'none');
   });
+
+  test('the terminal frame is its own attribute', () => {
+    assert.equal(themeAttributes(DEFAULT_THEME).xyloTermSkin, 'card');
+    assert.equal(themeAttributes({ ...DEFAULT_THEME, terminalSkin: 'neon' }).xyloTermSkin, 'neon');
+  });
 });
 
 describe('colour helpers', () => {
@@ -298,6 +311,41 @@ describe('terminalPalette', () => {
     assert.deepEqual(terminalPalette(theme, false), terminalPalette(theme, true));
     assert.equal(terminalPalette(theme, true)?.background, '#2e3440');
     assert.equal(themeAttributes(theme).xyloTerminal, 'custom');
+  });
+
+  test('every named scheme has sixteen colours, and the scheme groups list each scheme once', () => {
+    for (const [name, palette] of Object.entries(NAMED_TERMINALS)) {
+      assert.equal(palette.ansi.length, 16, name);
+      // Solarized Light's published text is the lowest, at 4.1:1
+      assert.ok(contrastRatio(palette.foreground, palette.background) >= 4, name);
+    }
+    const grouped = TERMINAL_SCHEME_GROUPS.flatMap((group) => [...group.schemes]);
+    assert.deepEqual([...grouped].sort(), [...TERMINAL_SCHEMES].sort());
+  });
+
+  test('the retro screens stay readable in every colour but black', () => {
+    for (const name of ['phosphor', 'amber'] as const) {
+      const palette = NAMED_TERMINALS[name];
+      palette.ansi.slice(1).forEach((colour, i) => {
+        assert.ok(contrastRatio(colour, palette.background) >= 4.5, `${name} ${i + 1}`);
+      });
+    }
+  });
+
+  test("the flush frame leaves 'theme' on the canvas and a named scheme on its own background", () => {
+    assert.match(buildCss(DEFAULT_THEME), /--xylo-term-flush:transparent;/);
+    assert.match(buildCss(normalizeTheme({ terminalScheme: 'githubLight' })), /--xylo-term-flush:#ffffff;/);
+  });
+
+  test('the crt glow lights a dark screen only, whatever the mode', () => {
+    const glow = (css: string, scheme: 'dark' | 'light') =>
+      css.match(new RegExp(`\\[data-mantine-color-scheme="${scheme}"\\]\\{[^}]*--xylo-term-glow:([^;]*);`))?.[1];
+    const themed = buildCss(DEFAULT_THEME);
+    assert.match(glow(themed, 'dark') ?? '', /currentColor/);
+    assert.equal(glow(themed, 'light'), 'none');
+    const light = buildCss(normalizeTheme({ terminalScheme: 'githubLight' }));
+    assert.equal(glow(light, 'dark'), 'none');
+    assert.match(glow(buildCss(normalizeTheme({ terminalScheme: 'panel' })), 'dark') ?? '', /currentColor/);
   });
 
   test("'theme' colours read on their background in both modes for every preset", () => {

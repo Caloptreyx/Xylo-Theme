@@ -1,7 +1,7 @@
 /**
  * Xylo's hooks into core's xterm (`pages.server.console.xterm`), for every console: Xylo's page, core's and the
  * popout. The theme's terminal colours, mono font and line height, live as the theme changes (the editor's drafts
- * included), and the highlighting of uncoloured warning and error lines.
+ * and the visitor's own terminal look included), and the highlighting of uncoloured warning and error lines.
  */
 
 import { FitAddon } from '@xterm/addon-fit';

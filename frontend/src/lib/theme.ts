@@ -39,10 +39,60 @@ export type Transition = (typeof TRANSITIONS)[number];
 
 /**
  * The console's colours: derived from the theme, core's own (no override), or a named scheme. Named schemes keep
- * their own dark background in light mode, as a terminal usually does.
+ * their own background in either mode, as a terminal usually does.
  */
-export const TERMINAL_SCHEMES = ['theme', 'panel', 'oneDark', 'dracula', 'nord', 'gruvbox', 'tokyoNight'] as const;
+export const TERMINAL_SCHEMES = [
+  'theme',
+  'panel',
+  'oneDark',
+  'dracula',
+  'nord',
+  'gruvbox',
+  'tokyoNight',
+  'catppuccin',
+  'solarized',
+  'monokai',
+  'githubDark',
+  'rosePine',
+  'everforest',
+  'kanagawa',
+  'githubLight',
+  'solarizedLight',
+  'phosphor',
+  'amber',
+] as const;
 export type TerminalScheme = (typeof TERMINAL_SCHEMES)[number];
+
+/** The schemes as Studio and the console's picker list them: matched to the panel, dark, light, retro. */
+export const TERMINAL_SCHEME_GROUPS = [
+  { id: 'matched', schemes: ['theme', 'panel'] },
+  {
+    id: 'dark',
+    schemes: [
+      'oneDark',
+      'dracula',
+      'nord',
+      'gruvbox',
+      'tokyoNight',
+      'catppuccin',
+      'solarized',
+      'monokai',
+      'githubDark',
+      'rosePine',
+      'everforest',
+      'kanagawa',
+    ],
+  },
+  { id: 'light', schemes: ['githubLight', 'solarizedLight'] },
+  { id: 'retro', schemes: ['phosphor', 'amber'] },
+] as const satisfies readonly { id: string; schemes: readonly TerminalScheme[] }[];
+
+/**
+ * The frame around every console (app.css, on the card holding `.xterm`): core's card, a window with a title bar,
+ * none, frosted glass, a CRT (static glow, scanlines, vignette) or a neon accent outline.
+ */
+export const TERMINAL_SKINS = ['card', 'window', 'flush', 'glass', 'crt', 'neon'] as const;
+export type TerminalSkin = (typeof TERMINAL_SKINS)[number];
 
 export interface XyloTheme {
   accent: string;
@@ -104,10 +154,16 @@ export interface XyloTheme {
   /** Xylo's console page (elements/console): a full height terminal, live readouts, a details panel. */
   consolePage: boolean;
   terminalScheme: TerminalScheme;
+  terminalSkin: TerminalSkin;
   /** Line height in percent of the font size. */
   terminalLineHeight: number;
   /** Tints uncoloured console lines that read as errors or warnings (lib/terminal.ts). */
   consoleHighlight: boolean;
+  /**
+   * A button in the terminal's header lets each visitor pick their own scheme and frame, kept in their browser
+   * (lib/terminal.ts, lib/store.ts).
+   */
+  terminalUserChoice: boolean;
   /** Looks the admins saved in Studio, applied like the built in presets. */
   customPresets: CustomPreset[];
 }
@@ -235,8 +291,10 @@ export const DEFAULT_THEME: XyloTheme = {
   serverOverview: true,
   consolePage: true,
   terminalScheme: 'theme',
+  terminalSkin: 'card',
   terminalLineHeight: 120,
   consoleHighlight: true,
+  terminalUserChoice: true,
   customPresets: [],
 };
 
@@ -593,8 +651,10 @@ export function normalizeTheme(raw: unknown, d: XyloTheme = DEFAULT_THEME): Xylo
     serverOverview: flag(r.serverOverview, d.serverOverview),
     consolePage: flag(r.consolePage, d.consolePage),
     terminalScheme: choice(r.terminalScheme, TERMINAL_SCHEMES, d.terminalScheme),
+    terminalSkin: choice(r.terminalSkin, TERMINAL_SKINS, d.terminalSkin),
     terminalLineHeight: int(r.terminalLineHeight, 100, 180, d.terminalLineHeight),
     consoleHighlight: flag(r.consoleHighlight, d.consoleHighlight),
+    terminalUserChoice: flag(r.terminalUserChoice, d.terminalUserChoice),
     customPresets: customPresets(r.customPresets, d.customPresets),
   };
 }
@@ -725,7 +785,12 @@ export interface TerminalPalette {
   ansi: string[];
 }
 
-/** The named schemes as their authors publish them. */
+/**
+ * The named schemes as their authors publish them (Catppuccin is Mocha, Everforest dark medium, Kanagawa Wave,
+ * GitHub the Primer defaults; Solarized dark's bright black is base01 rather than the background, as most ports do,
+ * so dim text stays visible). Phosphor and Amber are Xylo's own monochrome screens: every colour is a shade of the
+ * one hue, so coloured output stays readable.
+ */
 export const NAMED_TERMINALS: Record<Exclude<TerminalScheme, 'theme' | 'panel'>, TerminalPalette> = {
   oneDark: {
     background: '#282c34',
@@ -837,6 +902,248 @@ export const NAMED_TERMINALS: Record<Exclude<TerminalScheme, 'theme' | 'panel'>,
       '#c0caf5',
     ],
   },
+  catppuccin: {
+    background: '#1e1e2e',
+    foreground: '#cdd6f4',
+    ansi: [
+      '#45475a',
+      '#f38ba8',
+      '#a6e3a1',
+      '#f9e2af',
+      '#89b4fa',
+      '#f5c2e7',
+      '#94e2d5',
+      '#bac2de',
+      '#585b70',
+      '#f38ba8',
+      '#a6e3a1',
+      '#f9e2af',
+      '#89b4fa',
+      '#f5c2e7',
+      '#94e2d5',
+      '#a6adc8',
+    ],
+  },
+  solarized: {
+    background: '#002b36',
+    foreground: '#839496',
+    ansi: [
+      '#073642',
+      '#dc322f',
+      '#859900',
+      '#b58900',
+      '#268bd2',
+      '#d33682',
+      '#2aa198',
+      '#eee8d5',
+      '#586e75',
+      '#cb4b16',
+      '#586e75',
+      '#657b83',
+      '#839496',
+      '#6c71c4',
+      '#93a1a1',
+      '#fdf6e3',
+    ],
+  },
+  monokai: {
+    background: '#272822',
+    foreground: '#f8f8f2',
+    ansi: [
+      '#272822',
+      '#f92672',
+      '#a6e22e',
+      '#f4bf75',
+      '#66d9ef',
+      '#ae81ff',
+      '#a1efe4',
+      '#f8f8f2',
+      '#75715e',
+      '#f92672',
+      '#a6e22e',
+      '#f4bf75',
+      '#66d9ef',
+      '#ae81ff',
+      '#a1efe4',
+      '#f9f8f5',
+    ],
+  },
+  githubDark: {
+    background: '#0d1117',
+    foreground: '#e6edf3',
+    ansi: [
+      '#484f58',
+      '#ff7b72',
+      '#3fb950',
+      '#d29922',
+      '#58a6ff',
+      '#bc8cff',
+      '#39c5cf',
+      '#b1bac4',
+      '#6e7681',
+      '#ffa198',
+      '#56d364',
+      '#e3b341',
+      '#79c0ff',
+      '#d2a8ff',
+      '#56d4dd',
+      '#ffffff',
+    ],
+  },
+  rosePine: {
+    background: '#191724',
+    foreground: '#e0def4',
+    ansi: [
+      '#26233a',
+      '#eb6f92',
+      '#31748f',
+      '#f6c177',
+      '#9ccfd8',
+      '#c4a7e7',
+      '#ebbcba',
+      '#e0def4',
+      '#6e6a86',
+      '#eb6f92',
+      '#31748f',
+      '#f6c177',
+      '#9ccfd8',
+      '#c4a7e7',
+      '#ebbcba',
+      '#e0def4',
+    ],
+  },
+  everforest: {
+    background: '#2d353b',
+    foreground: '#d3c6aa',
+    ansi: [
+      '#475258',
+      '#e67e80',
+      '#a7c080',
+      '#dbbc7f',
+      '#7fbbb3',
+      '#d699b6',
+      '#83c092',
+      '#d3c6aa',
+      '#475258',
+      '#e67e80',
+      '#a7c080',
+      '#dbbc7f',
+      '#7fbbb3',
+      '#d699b6',
+      '#83c092',
+      '#d3c6aa',
+    ],
+  },
+  kanagawa: {
+    background: '#1f1f28',
+    foreground: '#dcd7ba',
+    ansi: [
+      '#090618',
+      '#c34043',
+      '#76946a',
+      '#c0a36e',
+      '#7e9cd8',
+      '#957fb8',
+      '#6a9589',
+      '#c8c093',
+      '#727169',
+      '#e82424',
+      '#98bb6c',
+      '#e6c384',
+      '#7fb4ca',
+      '#938aa9',
+      '#7aa89f',
+      '#dcd7ba',
+    ],
+  },
+  githubLight: {
+    background: '#ffffff',
+    foreground: '#1f2328',
+    ansi: [
+      '#24292f',
+      '#cf222e',
+      '#116329',
+      '#4d2d00',
+      '#0969da',
+      '#8250df',
+      '#1b7c83',
+      '#6e7781',
+      '#57606a',
+      '#a40e26',
+      '#1a7f37',
+      '#633c01',
+      '#218bff',
+      '#a475f9',
+      '#3192aa',
+      '#8c959f',
+    ],
+  },
+  solarizedLight: {
+    background: '#fdf6e3',
+    foreground: '#657b83',
+    ansi: [
+      '#073642',
+      '#dc322f',
+      '#859900',
+      '#b58900',
+      '#268bd2',
+      '#d33682',
+      '#2aa198',
+      '#eee8d5',
+      '#002b36',
+      '#cb4b16',
+      '#586e75',
+      '#657b83',
+      '#839496',
+      '#6c71c4',
+      '#93a1a1',
+      '#fdf6e3',
+    ],
+  },
+  phosphor: {
+    background: '#050c07',
+    foreground: '#5af58e',
+    ansi: [
+      '#1c3a27',
+      '#c2ffd6',
+      '#5af58e',
+      '#a0fbbc',
+      '#3dbd6b',
+      '#7fe3a2',
+      '#4fd69a',
+      '#a8f0c0',
+      '#4a8f62',
+      '#dcffe8',
+      '#8cffb2',
+      '#c9ffda',
+      '#5fd98a',
+      '#acf5c6',
+      '#7beec0',
+      '#eafff1',
+    ],
+  },
+  amber: {
+    background: '#0e0903',
+    foreground: '#ffb000',
+    ansi: [
+      '#3d2a0a',
+      '#ffdcaa',
+      '#ffb000',
+      '#ffcc66',
+      '#d98a00',
+      '#ffc27a',
+      '#e8a33a',
+      '#ffd699',
+      '#a8740f',
+      '#ffe8c7',
+      '#ffc23d',
+      '#ffdb8f',
+      '#f0a020',
+      '#ffd3a3',
+      '#f5bb5c',
+      '#fff2dc',
+    ],
+  },
 };
 
 /**
@@ -907,6 +1214,7 @@ export function themeAttributes(t: XyloTheme): Record<string, string> {
     xyloLift: t.hoverLift && t.motion !== 'none' ? 'on' : 'off',
     xyloTitles: t.gradientTitles ? 'gradient' : 'plain',
     xyloTerminal: t.terminalScheme === 'panel' ? 'panel' : 'custom',
+    xyloTermSkin: t.terminalSkin,
   };
 }
 
@@ -1044,13 +1352,27 @@ export function buildCss(t: XyloTheme): string {
     ['--chart-tick-color', 'var(--mantine-color-dimmed)'],
   ];
 
-  // the console's card behind the transparent xterm (app.css, `data-xylo-terminal='custom'`)
+  // the console's card behind the transparent xterm (app.css, `data-xylo-terminal='custom'`); the flush frame drops
+  // the card, which leaves 'theme' on the canvas (its palette is made for the page) and a named scheme on its own
+  // background, the one its colours read on. The crt frame's scanlines, vignette and glow are strong on a dark screen
+  // and faint on a light one, where a glow would only blur dark text ('panel' follows the mode, as core's does).
   for (const [block, dark] of [
     [darkScheme, true],
     [lightScheme, false],
   ] as const) {
     const palette = terminalPalette(t, dark);
-    if (palette) block.push(['--xylo-term-bg', palette.background], ['--xylo-term-fg', palette.foreground]);
+    const lit = palette ? luminance(palette.background) > 0.3 : !dark;
+    block.push(
+      ['--xylo-term-scan', lit ? 'rgba(0, 0, 0, 0.05)' : 'rgba(0, 0, 0, 0.2)'],
+      ['--xylo-term-vignette', lit ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.4)'],
+      ['--xylo-term-glow', lit ? 'none' : '0 0 1px currentColor, 0 0 6px currentColor'],
+    );
+    if (!palette) continue;
+    block.push(
+      ['--xylo-term-bg', palette.background],
+      ['--xylo-term-fg', palette.foreground],
+      ['--xylo-term-flush', t.terminalScheme === 'theme' ? 'transparent' : palette.background],
+    );
   }
 
   // status colours repaint their Mantine palette and the server state dots; the scales go in plain html:root, the

@@ -43,7 +43,8 @@ import {
   type Shadow,
   SIDEBARS,
   SURFACES,
-  TERMINAL_SCHEMES,
+  TERMINAL_SCHEME_GROUPS,
+  TERMINAL_SKINS,
   TRANSITIONS,
   terminalPalette,
   type XyloTheme,
@@ -60,6 +61,7 @@ import {
   SidebarMock,
   SurfaceMock,
   TerminalMock,
+  TerminalSkinMock,
   TransitionMock,
 } from './mocks.tsx';
 
@@ -811,19 +813,54 @@ export function ConsoleSection({ valid, set }: SectionProps) {
       </Group>
 
       <Group title={t('consoleSection.scheme', {})} hint={t('consoleSection.schemeHint', {})}>
+        {TERMINAL_SCHEME_GROUPS.map((group) => (
+          <ChoiceTiles
+            key={group.id}
+            field='terminalScheme'
+            label={t(`consoleSection.${group.id}`, {})}
+            columns={3}
+            value={valid.terminalScheme}
+            onChange={(terminalScheme) => set({ terminalScheme })}
+            options={group.schemes.map((scheme) => ({
+              value: scheme,
+              label: t(`consoleSection.${scheme}`, {}),
+              // drawn in dark mode, like every other drawing
+              preview: (
+                <TerminalMock look={valid} palette={terminalPalette({ ...valid, terminalScheme: scheme }, true)} />
+              ),
+            }))}
+          />
+        ))}
+      </Group>
+
+      <Group title={t('consoleSection.frame', {})} hint={t('consoleSection.frameHint', {})}>
         <ChoiceTiles
-          field='terminalScheme'
+          field='terminalSkin'
           columns={3}
-          value={valid.terminalScheme}
-          onChange={(terminalScheme) => set({ terminalScheme })}
-          options={TERMINAL_SCHEMES.map((scheme) => ({
-            value: scheme,
-            label: t(`consoleSection.${scheme}`, {}),
-            // drawn in dark mode, like every other drawing
+          value={valid.terminalSkin}
+          onChange={(terminalSkin) => set({ terminalSkin })}
+          options={TERMINAL_SKINS.map((skin) => ({
+            value: skin,
+            label: t(`consoleSection.${skin}`, {}),
             preview: (
-              <TerminalMock look={valid} palette={terminalPalette({ ...valid, terminalScheme: scheme }, true)} />
+              <TerminalSkinMock
+                look={valid}
+                palette={terminalPalette(valid, true)}
+                scheme={valid.terminalScheme}
+                skin={skin}
+              />
             ),
           }))}
+        />
+      </Group>
+
+      <Group title={t('consoleSection.choice', {})}>
+        <ToggleField
+          field='terminalUserChoice'
+          label={t('consoleSection.userChoice', {})}
+          description={t('consoleSection.userChoiceHint', {})}
+          checked={valid.terminalUserChoice}
+          onChange={(terminalUserChoice) => set({ terminalUserChoice })}
         />
       </Group>
 

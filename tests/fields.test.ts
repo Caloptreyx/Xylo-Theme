@@ -29,9 +29,18 @@ describe('sectionChanged', () => {
 
 describe('withSection', () => {
   test('resets one section and keeps the others', () => {
-    const theme = { ...DEFAULT_THEME, ...PRESETS[1].look, terminalScheme: 'nord' as const, terminalLineHeight: 150 };
+    const theme = {
+      ...DEFAULT_THEME,
+      ...PRESETS[1].look,
+      terminalScheme: 'nord' as const,
+      terminalSkin: 'crt' as const,
+      terminalLineHeight: 150,
+      terminalUserChoice: false,
+    };
     const reset = withSection(theme, 'console', DEFAULT_THEME);
     assert.equal(reset.terminalScheme, DEFAULT_THEME.terminalScheme);
+    assert.equal(reset.terminalSkin, DEFAULT_THEME.terminalSkin);
+    assert.equal(reset.terminalUserChoice, DEFAULT_THEME.terminalUserChoice);
     assert.equal(reset.terminalLineHeight, DEFAULT_THEME.terminalLineHeight);
     assert.equal(reset.accent, PRESETS[1].look.accent);
   });
