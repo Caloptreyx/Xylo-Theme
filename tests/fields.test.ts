@@ -36,12 +36,38 @@ describe('withSection', () => {
       terminalSkin: 'crt' as const,
       terminalLineHeight: 150,
       terminalUserChoice: false,
+      consoleMetrics: ['cpu' as const],
+      consoleInspector: 'off' as const,
+      consoleCommands: ['save-all'],
     };
     const reset = withSection(theme, 'console', DEFAULT_THEME);
     assert.equal(reset.terminalScheme, DEFAULT_THEME.terminalScheme);
     assert.equal(reset.terminalSkin, DEFAULT_THEME.terminalSkin);
     assert.equal(reset.terminalUserChoice, DEFAULT_THEME.terminalUserChoice);
     assert.equal(reset.terminalLineHeight, DEFAULT_THEME.terminalLineHeight);
+    assert.deepEqual(reset.consoleMetrics, DEFAULT_THEME.consoleMetrics);
+    assert.equal(reset.consoleInspector, DEFAULT_THEME.consoleInspector);
+    assert.deepEqual(reset.consoleCommands, []);
     assert.equal(reset.accent, PRESETS[1].look.accent);
+  });
+
+  test('resets the server page, the overview switch included', () => {
+    const theme = {
+      ...DEFAULT_THEME,
+      serverOverview: false,
+      overviewSections: ['glance' as const],
+      overviewLayout: 'wide' as const,
+      overviewUsage: 'graphs' as const,
+      overviewActivityCount: 15,
+      overviewHeader: 'banner' as const,
+      overviewDescription: false,
+      homePage: false,
+    };
+    assert.equal(sectionChanged('server', theme, DEFAULT_THEME), true);
+    const reset = withSection(theme, 'server', DEFAULT_THEME);
+    assert.equal(sectionChanged('server', reset, DEFAULT_THEME), false);
+    assert.deepEqual(reset.overviewSections, DEFAULT_THEME.overviewSections);
+    assert.equal(reset.serverOverview, true);
+    assert.equal(reset.homePage, false);
   });
 });

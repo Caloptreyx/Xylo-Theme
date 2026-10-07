@@ -3,9 +3,15 @@ import { alpha, mix } from '../../lib/color.ts';
 import {
   type Backdrop,
   type ButtonStyle,
+  type ConsoleGraph,
+  type ConsoleInspector,
   FONT_STACKS,
   type Font,
   type NavStyle,
+  type OverviewHeader,
+  type OverviewLayout,
+  type OverviewSection,
+  type OverviewUsage,
   type Pattern,
   type PresetLook,
   type Sidebar,
@@ -15,6 +21,9 @@ import {
   type TerminalSkin,
   type Transition,
 } from '../../lib/theme.ts';
+import { serverTile } from '../../lib/tiles.ts';
+import { sparkBars, sparkPath } from '../console/telemetry.ts';
+import { overviewRows } from '../server/overview.ts';
 
 /**
  * Small drawings of each option, painted with the draft's own colours, so a choice shows what it does before it is
@@ -394,6 +403,116 @@ export function TerminalSkinMock({
   );
 }
 
+/** A made up minute of load for the graph drawings, drawn with the console's own path builders. */
+const GRAPH_SAMPLE = [3, 4, 4, 6, 5, 7, 9, 8, 6, 7, 10, 12, 11, 9, 8, 10, 13, 15, 14, 12, 11, 13, 16, 15];
+
+/**
+ * One of the command bar's figures in a graph style (`consoleGraphs`), on the scheme's background: a label over a
+ * value, and beside it the line over a faint fill, the line, thin columns, or nothing.
+ */
+export function ConsoleGraphMock({
+  look,
+  palette,
+  graph,
+}: {
+  look: Look;
+  palette: TerminalPalette | null;
+  graph: ConsoleGraph;
+}) {
+  const c = terminalInk(palette);
+  const size = GRAPH_SAMPLE.length;
+  const path = sparkPath(GRAPH_SAMPLE, 60, 20, 0, size);
+  return (
+    <div
+      className='flex h-full items-center gap-1.5 px-2.5'
+      style={{ background: palette?.background ?? look.surface }}
+    >
+      <div className='flex shrink-0 flex-col gap-1'>
+        <div className='h-1 w-3.5 rounded-sm' style={{ background: c.dim }} />
+        <div className='h-1.5 w-6 rounded-sm' style={{ background: c.foreground }} />
+      </div>
+      {graph !== 'none' && (
+        <svg viewBox='0 0 60 20' preserveAspectRatio='none' className='h-5 min-w-0 flex-1' aria-hidden='true'>
+          {graph === 'bars' ? (
+            <path d={sparkBars(GRAPH_SAMPLE, 60, 20, 0, size, 12)} fill={alpha(look.accent, 0.75)} />
+          ) : (
+            <>
+              {graph === 'area' && <path d={path.area} fill={alpha(look.accent, 0.16)} />}
+              <path
+                d={path.line}
+                fill='none'
+                stroke={look.accent}
+                strokeWidth={1.25}
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                vectorEffect='non-scaling-stroke'
+              />
+            </>
+          )}
+        </svg>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The console workspace's layout (`consoleInspector`) on the page's canvas: the command bar along the top, the
+ * terminal's lines, and the inspector's column on the right, on the left, or none.
+ */
+export function ConsoleInspectorMock({
+  look,
+  palette,
+  side,
+}: {
+  look: Look;
+  palette: TerminalPalette | null;
+  side: ConsoleInspector;
+}) {
+  const c = terminalInk(palette);
+  const line = alpha(c.foreground, 0.14);
+  const step = alpha(c.foreground, 0.06);
+  const column = (
+    <div
+      className='flex w-[30%] shrink-0 flex-col gap-1 p-1'
+      style={{
+        background: step,
+        borderLeft: side === 'left' ? undefined : `1px solid ${line}`,
+        borderRight: side === 'left' ? `1px solid ${line}` : undefined,
+        order: side === 'left' ? -1 : 0,
+      }}
+    >
+      <div className='h-1 w-3/4 rounded-sm' style={{ background: alpha(c.foreground, 0.4) }} />
+      <div className='h-1 w-1/2 rounded-sm' style={{ background: alpha(c.foreground, 0.2) }} />
+    </div>
+  );
+  return frame(
+    look,
+    'spotlight',
+    <div
+      className='absolute flex flex-col overflow-hidden'
+      style={{
+        inset: '14% 10%',
+        borderRadius: Math.max(3, (look.radius ?? 16) / 3),
+        border: `1px solid ${alpha(look.text, 0.14)}`,
+        background: palette?.background ?? look.surface,
+      }}
+    >
+      <div className='flex h-[22%] shrink-0 items-center gap-1 px-1.5' style={{ background: step }}>
+        <div className='h-1 w-4 rounded-sm' style={{ background: alpha(c.foreground, 0.55) }} />
+        <div className='h-1 w-2 rounded-sm' style={{ background: c.green }} />
+      </div>
+      <div className='flex min-h-0 flex-1' style={{ borderTop: `1px solid ${line}` }}>
+        <div className='flex min-w-0 flex-1 flex-col justify-center gap-1 px-1.5'>
+          {inkBar(c.foreground, '70%')}
+          {inkBar(c.green, '45%')}
+          {inkBar(c.dim, '60%')}
+        </div>
+        {side !== 'off' && column}
+      </div>
+    </div>,
+  );
+}
+
 /** A whole preset at a glance: backdrop, sidebar, a card and a button. */
 export function PresetMock({ look }: { look: PresetLook }) {
   const fill =
@@ -440,5 +559,150 @@ export function PresetMock({ look }: { look: PresetLook }) {
         />
       </div>
     </>,
+  );
+}
+
+/** How tall each overview block draws, relative to the others. */
+const BLOCK_HEIGHT: Record<OverviewSection, number> = { usage: 1, activity: 3, connect: 2, glance: 1.5 };
+
+/**
+ * The overview's layout (`overviewLayout`) with the blocks the draft lists, in its order, laid out by the overview's
+ * own rules (overviewRows): the header's line, then the usage strip (a faint accent) and the cards.
+ */
+export function OverviewLayoutMock({
+  look,
+  layout,
+  blocks,
+}: {
+  look: Look;
+  layout: OverviewLayout;
+  blocks: readonly OverviewSection[];
+}) {
+  const radius = Math.max(2, (look.radius ?? 16) / 5);
+  return frame(
+    look,
+    'spotlight',
+    <div className='absolute inset-1.5 flex flex-col gap-[3px]'>
+      <div className='h-1.5 w-1/3 shrink-0 rounded-sm' style={{ background: alpha(look.text, 0.45) }} />
+      {overviewRows(blocks, layout).map((row) => (
+        <div
+          key={row.columns.flat().join()}
+          className='flex min-h-0 gap-[3px]'
+          style={{
+            flex: `${Math.max(...row.columns.map((column) => column.reduce((sum, b) => sum + BLOCK_HEIGHT[b], 0)))} 1 0`,
+          }}
+        >
+          {row.columns.map((column) => (
+            <div
+              key={column.join()}
+              className='flex min-w-0 flex-col gap-[3px]'
+              style={{ flex: `${row.kind === 'even' || !column.includes('activity') ? 2 : 3} 1 0` }}
+            >
+              {column.map((block) => (
+                <div
+                  key={block}
+                  style={{
+                    flex: `${BLOCK_HEIGHT[block]} 1 0`,
+                    borderRadius: radius,
+                    background: block === 'usage' ? alpha(look.accent, 0.22) : alpha(look.surface, 0.85),
+                    border: `1px solid ${alpha(look.text, 0.12)}`,
+                  }}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>,
+  );
+}
+
+/** A made up minute for the usage drawing's two figures. */
+const USAGE_SAMPLES = [
+  [4, 6, 5, 8, 7, 9, 12, 10, 9, 13, 15, 12],
+  [10, 10, 11, 11, 12, 12, 12, 13, 13, 13, 14, 14],
+];
+
+/**
+ * Two figures of the usage strip (`overviewUsage`) on one card split by a hairline: a label and a value over a bar
+ * against the limit, a sparkline drawn by the console's builders, or the value alone and larger.
+ */
+export function OverviewUsageMock({ look, usage }: { look: Look; usage: OverviewUsage }) {
+  const edge = alpha(look.text, 0.12);
+  return (
+    <div className='flex h-full' style={{ background: look.surface }}>
+      {USAGE_SAMPLES.map((samples, i) => {
+        const path = sparkPath(samples, 60, 20, 20, samples.length);
+        return (
+          <div
+            key={samples.join()}
+            className='flex min-w-0 flex-1 flex-col justify-center gap-1 px-2'
+            style={{ borderLeft: i > 0 ? `1px solid ${edge}` : undefined }}
+          >
+            <div className='h-1 w-4 rounded-sm' style={{ background: alpha(look.text, 0.3) }} />
+            <div
+              className={`${usage === 'numbers' ? 'h-2.5 w-9' : 'h-1.5 w-7'} rounded-sm`}
+              style={{ background: alpha(look.text, 0.8) }}
+            />
+            {usage === 'bars' && (
+              <div className='h-1 overflow-hidden rounded-full' style={{ background: alpha(look.text, 0.1) }}>
+                <div className='h-full rounded-full' style={{ width: `${45 + i * 20}%`, background: look.accent }} />
+              </div>
+            )}
+            {usage === 'graphs' && (
+              <svg viewBox='0 0 60 20' preserveAspectRatio='none' className='h-3 w-full' aria-hidden='true'>
+                <path d={path.area} fill={alpha(look.accent, 0.16)} />
+                <path
+                  d={path.line}
+                  fill='none'
+                  stroke={look.accent}
+                  strokeWidth={1.25}
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  vectorEffect='non-scaling-stroke'
+                />
+              </svg>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const SAMPLE_TILE = serverTile('Survival');
+
+/**
+ * The overview's head (`overviewHeader`): the server's tile, name, a status chip and the buttons on the page, or
+ * the same with a larger tile in a band tinted with the accent.
+ */
+export function OverviewHeaderMock({ look, header }: { look: Look; header: OverviewHeader }) {
+  const banner = header === 'banner';
+  return frame(
+    look,
+    'spotlight',
+    <div
+      className='absolute flex items-center gap-1.5 px-1.5'
+      style={{
+        inset: '22% 6%',
+        borderRadius: Math.max(3, (look.radius ?? 16) / 3),
+        background: banner ? mix(look.surface, look.accent, 0.12) : undefined,
+        border: banner ? `1px solid ${alpha(look.accent, 0.3)}` : undefined,
+      }}
+    >
+      <div
+        className={`${banner ? 'size-4' : 'size-3'} shrink-0 rounded-[4px]`}
+        style={{ background: SAMPLE_TILE.background }}
+      />
+      <div className='flex min-w-0 flex-1 flex-col gap-1'>
+        <div className='flex items-center gap-1'>
+          <div className='h-1.5 w-8 rounded-sm' style={{ background: alpha(look.text, 0.75) }} />
+          <div className='h-1.5 w-3 rounded-full' style={{ background: alpha('#22c55e', 0.5) }} />
+        </div>
+        <div className='h-1 w-10 rounded-sm' style={{ background: alpha(look.text, 0.25) }} />
+      </div>
+      <div className='h-2.5 w-4 shrink-0 rounded-[3px]' style={{ background: alpha(look.text, 0.18) }} />
+      <div className='h-2.5 w-4 shrink-0 rounded-[3px]' style={{ background: look.accent }} />
+    </div>,
   );
 }

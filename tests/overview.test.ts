@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { eventLabel, levelOf, newest, percentOf, timeAgo } from '../frontend/src/elements/server/overview.ts';
+import {
+  eventLabel,
+  levelOf,
+  newest,
+  overviewRows,
+  percentOf,
+  timeAgo,
+} from '../frontend/src/elements/server/overview.ts';
 
 describe('server overview', () => {
   test('activity events read as short labels', () => {
@@ -39,5 +46,44 @@ describe('server overview', () => {
     ];
     assert.equal(newest(items, (item) => item.at)?.name, 'c');
     assert.equal(newest([{ at: null }], (item) => item.at), null);
+  });
+
+  test("the split layout is today's page: usage across, activity beside the connect and glance cards", () => {
+    assert.deepEqual(overviewRows(['usage', 'activity', 'connect', 'glance'], 'split'), [
+      { kind: 'single', columns: [['usage']] },
+      { kind: 'mainSide', columns: [['activity'], ['connect', 'glance']] },
+    ]);
+  });
+
+  test('the split layout follows the order: side first puts the stack on the left, usage splits the rows', () => {
+    assert.deepEqual(overviewRows(['connect', 'activity', 'usage', 'glance'], 'split'), [
+      { kind: 'sideMain', columns: [['connect'], ['activity']] },
+      { kind: 'single', columns: [['usage']] },
+      { kind: 'single', columns: [['glance']] },
+    ]);
+    assert.deepEqual(overviewRows(['connect', 'glance'], 'split'), [
+      { kind: 'single', columns: [['connect', 'glance']] },
+    ]);
+    assert.deepEqual(overviewRows([], 'split'), []);
+  });
+
+  test('the stacked layout is one block a row', () => {
+    assert.deepEqual(overviewRows(['glance', 'usage'], 'stacked'), [
+      { kind: 'single', columns: [['glance']] },
+      { kind: 'single', columns: [['usage']] },
+    ]);
+  });
+
+  test('the wide layout gives usage and activity rows and pairs neighbouring side cards', () => {
+    assert.deepEqual(overviewRows(['usage', 'activity', 'connect', 'glance'], 'wide'), [
+      { kind: 'single', columns: [['usage']] },
+      { kind: 'single', columns: [['activity']] },
+      { kind: 'even', columns: [['connect'], ['glance']] },
+    ]);
+    assert.deepEqual(overviewRows(['connect', 'activity', 'glance'], 'wide'), [
+      { kind: 'single', columns: [['connect']] },
+      { kind: 'single', columns: [['activity']] },
+      { kind: 'single', columns: [['glance']] },
+    ]);
   });
 });

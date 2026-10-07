@@ -2,8 +2,9 @@ import { faAngleRight, faPen, faPlus, faXmark } from '@fortawesome/free-solid-sv
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { type FormEvent, useMemo, useState, useSyncExternalStore } from 'react';
 import { ActionIcon, Button, SocketRequest, TextInput, useServerCan, useServerStore } from '../../lib/core.ts';
+import { useXyloTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
-import { commandsKey, MAX_COMMAND, MAX_COMMANDS, parseCommands, withCommand } from './console.ts';
+import { commandOf, commandsKey, MAX_COMMAND, MAX_COMMANDS, parseCommands, withCommand } from './console.ts';
 
 /** Lists saved while storage refused them, kept for this load; they win over storage until the next save. */
 const unsaved = new Map<string, string>();
@@ -67,65 +68,104 @@ function useCommandSender() {
 }
 
 /**
- * The saved quick commands as a row of chips just above the prompt, a click sending one while the console can take
- * it (its title says why not otherwise), and a last chip opening the inspector at the list. With none saved, only
- * that chip, which says what it is. Needs `control.console`, as core's command input does.
+ * The quick commands as a row of chips just above the prompt, a click sending one while the console can take it
+ * (its title says why not otherwise): the site's (`consoleCommands`, set in Studio, marked quietly) first, then the
+ * visitor's own saved ones that are not already among them, and a last chip opening the inspector at the list. With
+ * none saved, only that chip, which says what it is. Without `onEdit` (the inspector is off) there is nowhere to
+ * manage one's own, so only the site's show. Needs `control.console`, as core's command input does, and
+ * `consoleQuickCommands`.
  */
-export function CommandChips({ onEdit }: { onEdit: () => void }) {
+export function CommandChips({ onEdit }: { onEdit?: () => void }) {
   const { t } = useExtTranslations();
+  const theme = useXyloTheme();
   const uuid = useServerStore((state) => state.server.uuid);
   const canConsole = useServerCan('control.console');
-  const [commands] = useQuickCommands(uuid);
+  const [saved] = useQuickCommands(uuid);
   const { ready, reason, send } = useCommandSender();
 
-  if (!canConsole) return null;
+  const site = theme.consoleCommands;
+  if (!canConsole || !theme.consoleQuickCommands || (!onEdit && site.length === 0)) return null;
+  const own = onEdit ? saved.filter((command) => !site.includes(command)) : [];
+
+  // the site's and the visitor's own never overlap, so the command is a unique key
+  const chip = (command: string, fromSite: boolean) => (
+    <button
+      key={command}
+      type='button'
+      className='xylo-con-chip'
+      data-site={fromSite || undefined}
+      disabled={!ready}
+      title={reason ?? t(fromSite ? 'console.sendSiteCommand' : 'console.sendCommand', { command })}
+      aria-label={t(fromSite ? 'console.sendSiteCommand' : 'console.sendCommand', { command })}
+      onClick={() => send(command)}
+    >
+      <FontAwesomeIcon icon={faAngleRight} className='xylo-con-chip-cue' />
+      <span className='truncate'>{command}</span>
+    </button>
+  );
 
   return (
     <div className='xylo-con-chips' role='group' aria-label={t('console.commands', {})}>
-      {commands.map((command) => (
+      {site.map((command) => chip(command, true))}
+      {own.map((command) => chip(command, false))}
+      {onEdit && (
         <button
-          key={command}
           type='button'
           className='xylo-con-chip'
-          disabled={!ready}
-          title={reason ?? t('console.sendCommand', { command })}
-          aria-label={t('console.sendCommand', { command })}
-          onClick={() => send(command)}
+          data-edit
+          data-xylo-inspector-toggle
+          title={t('console.editCommands', {})}
+          aria-label={t('console.editCommands', {})}
+          onClick={onEdit}
         >
-          <FontAwesomeIcon icon={faAngleRight} className='opacity-50' />
-          <span className='truncate'>{command}</span>
+          <FontAwesomeIcon icon={own.length > 0 ? faPen : faPlus} />
+          {own.length === 0 && <span>{t('console.addFirstCommand', {})}</span>}
         </button>
-      ))}
-      <button
-        type='button'
-        className='xylo-con-chip'
-        data-edit
-        data-xylo-inspector-toggle
-        title={t('console.editCommands', {})}
-        aria-label={t('console.editCommands', {})}
-        onClick={onEdit}
-      >
-        <FontAwesomeIcon icon={commands.length > 0 ? faPen : faPlus} />
-        {commands.length === 0 && <span>{t('console.addFirstCommand', {})}</span>}
-      </button>
+      )}
     </div>
   );
 }
 
+/** One row of the inspector's list: the whole row sends the command (same rules as the chips). */
+function CommandRow({
+  command,
+  title,
+  disabled,
+  onClick,
+}: {
+  command: string;
+  title: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button type='button' className='xylo-con-command' disabled={disabled} title={title} onClick={onClick}>
+      <FontAwesomeIcon icon={faAngleRight} className='shrink-0 opacity-50' />
+      <span className='truncate'>{command}</span>
+    </button>
+  );
+}
+
 /**
- * The inspector's list of quick commands: each one sends on a click (same rules as the chips) and has a remove
- * button; the field under them adds one. Keyed by the server, so a half typed command stays with its server.
+ * The inspector's list of quick commands: the site's first (under their own heading, no remove button), then the
+ * visitor's own, each with a remove button; each one sends on a click (same rules as the chips) and the field under
+ * them adds one (not one the site already has). Keyed by the server, so a half typed command stays with its server.
  */
 export function CommandsEditor() {
   const { t } = useExtTranslations();
+  const theme = useXyloTheme();
   const uuid = useServerStore((state) => state.server.uuid);
   const [commands, save] = useQuickCommands(uuid);
   const { ready, reason, send } = useCommandSender();
   const [draft, setDraft] = useState('');
 
+  const site = theme.consoleCommands;
+  const own = commands.filter((command) => !site.includes(command));
+  const typed = commandOf(draft);
+  const next = typed !== null && !site.includes(typed) ? withCommand(commands, typed) : null;
+
   const add = (event: FormEvent) => {
     event.preventDefault();
-    const next = withCommand(commands, draft);
     if (!next) return;
     save(next);
     setDraft('');
@@ -133,22 +173,38 @@ export function CommandsEditor() {
 
   return (
     <div className='flex flex-col gap-3'>
-      {commands.length === 0 ? (
-        <p className='text-sm text-(--mantine-color-dimmed)'>{t('console.commandsEmpty', {})}</p>
+      {site.length > 0 && (
+        <>
+          <h3 className='xylo-con-commands-head'>{t('console.siteCommands', {})}</h3>
+          <ul className='xylo-con-commands'>
+            {site.map((command) => (
+              <li key={command}>
+                <CommandRow
+                  command={command}
+                  title={reason ?? t('console.sendSiteCommand', { command })}
+                  disabled={!ready}
+                  onClick={() => send(command)}
+                />
+              </li>
+            ))}
+          </ul>
+          <h3 className='xylo-con-commands-head'>{t('console.ownCommands', {})}</h3>
+        </>
+      )}
+      {own.length === 0 ? (
+        <p className='text-sm text-(--mantine-color-dimmed)'>
+          {t(site.length > 0 ? 'console.ownEmpty' : 'console.commandsEmpty', {})}
+        </p>
       ) : (
         <ul className='xylo-con-commands'>
-          {commands.map((command) => (
+          {own.map((command) => (
             <li key={command}>
-              <button
-                type='button'
-                className='xylo-con-command'
-                disabled={!ready}
+              <CommandRow
+                command={command}
                 title={reason ?? t('console.sendCommand', { command })}
+                disabled={!ready}
                 onClick={() => send(command)}
-              >
-                <FontAwesomeIcon icon={faAngleRight} className='shrink-0 opacity-50' />
-                <span className='truncate'>{command}</span>
-              </button>
+              />
               <ActionIcon
                 variant='subtle'
                 color='gray'
@@ -162,7 +218,7 @@ export function CommandsEditor() {
           ))}
         </ul>
       )}
-      {reason && commands.length > 0 && <p className='text-xs text-(--mantine-color-dimmed)'>{reason}</p>}
+      {reason && site.length + own.length > 0 && <p className='text-xs text-(--mantine-color-dimmed)'>{reason}</p>}
       {commands.length >= MAX_COMMANDS ? (
         <p className='text-xs text-(--mantine-color-dimmed)'>
           {t('console.commandsFull', { count: `${MAX_COMMANDS}` })}
@@ -178,7 +234,7 @@ export function CommandsEditor() {
             maxLength={MAX_COMMAND}
             classNames={{ input: 'font-mono' }}
           />
-          <Button type='submit' variant='default' disabled={withCommand(commands, draft) === null}>
+          <Button type='submit' variant='default' disabled={next === null}>
             {t('console.addCommand', {})}
           </Button>
         </form>

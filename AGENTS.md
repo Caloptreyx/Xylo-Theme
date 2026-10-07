@@ -19,6 +19,7 @@ frontend/src/lib/store.ts         paints the theme (with the visitor's terminal 
                                   bridge, useXyloTheme()
 frontend/src/lib/core.ts          every core (`@/`) import, in one place
 frontend/src/lib/groups.ts        the server group queries the rail and the servers page share
+frontend/src/lib/tiles.ts         server tiles: the default look, each user's own look (normalizeTiles(), pure)
 frontend/src/app.css              static CSS keyed off html's data-xylo-* attributes, fonts
 frontend/src/pages/ThemeEditor.tsx  Xylo Studio
 frontend/src/elements/editor/     sections (one per editor tab), controls, mocks (the option drawings), fields.ts (each
@@ -26,6 +27,8 @@ frontend/src/elements/editor/     sections (one per editor tab), controls, mocks
 frontend/src/elements/shell/      the rail layout: Shell.tsx (context panel, phone top bar and drawer), Rail.tsx (the
                                   rail, folders, drag and drop), nav.ts (core's sidebar nodes), folders.ts (pure rules)
 frontend/src/elements/home/       the servers page: Home.tsx (page, HomeSwitch), ServerCard.tsx, home.ts (pure rules)
+frontend/src/elements/tiles/      server tiles everywhere: useTiles.ts (the user setting), TileFace.tsx (icons, the
+                                  glyph, a lone tile, the console's heading), TileEditor.tsx ("Customize tile")
 frontend/src/elements/server/     the server overview: Overview.tsx (page, ServerHome), parts.tsx (the usage strip,
                                   status chip, section card, and the connect details the console's inspector shares),
                                   overview.ts (pure helpers)
@@ -36,9 +39,9 @@ frontend/src/elements/console/    the console page: Console.tsx (the workspace, 
                                   telemetry.ts (pure)
 frontend/src/elements/Greeting.tsx  the greeting above the servers list
 frontend/src/translations.ts      every user facing string (English)
-tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, lib/terminal.ts, shell/folders.ts,
-                                  home/home.ts, server/overview.ts, console/console.ts, console/telemetry.ts,
-                                  editor/fields.ts (not shipped)
+tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, lib/terminal.ts, lib/tiles.ts,
+                                  shell/folders.ts, home/home.ts, server/overview.ts, console/console.ts,
+                                  console/telemetry.ts, editor/fields.ts (not shipped)
 scripts/package.py                builds dist/dev_caloptreyx_xylo.c7s.zip
 ```
 
@@ -85,9 +88,22 @@ the other layouts and on `/oobe` (the setup wizard's sidebar lists its steps), a
 navigation from the props core gave the Sidebar.
 
 - The rail: app icon, search (core's quick actions store, `setOpen`), Home and Admin (`isAdmin`), the user's server
-  groups as folders, then up to 8 servers in no group (`getServers(1)` minus every group's `serverOrder`; tiles
-  coloured from a hash of the name), the panel toggle (`xylo:panel` in localStorage) and the account avatar. Home is
-  not lit on `/account` pages; the avatar is.
+  groups as folders, then up to 8 servers in no group (`getServers(1)` minus every group's `serverOrder`), the panel
+  toggle (`xylo:panel` in localStorage) and the account avatar. Home is not lit on `/account` pages; the avatar is.
+- Server tiles (lib/tiles.ts, elements/tiles/): by default the initials on a muted gradient of a hue hashed from the
+  real name (`serverTile`). Each user may give a server their own name (1 to 32 characters, one line, no control
+  or bidi characters), icon (`TILE_ICONS`, FontAwesome solid, mapped in TileFace.tsx; or the initials) and colour
+  (`TILE_SWATCHES`, the tiles' own range, or any `#rrggbb`), in core's user settings, account scope, under
+  `xylo::server_tiles` (uuid to `{ name?, color?, icon? }`, at most 300 servers, the oldest edit dropped). Core's
+  `useUserSetting` reads it through a zod schema that is `normalizeTiles()`, so a missing or malformed value reads as
+  defaults. Core's setter only logs a refusal (a value over the panel's size limit, 16 KiB by default; an
+  impersonating admin), so `useSaveTile` shows the new map at once from its own pending copy, sends it with
+  `updateUserSettings`, then hands it to core's store (`setUserSetting`, which syncs it once more); a refusal drops
+  the pending copy, so the saved map shows again, with core's toast. The look applies to rail tiles, folder previews
+  and the drag ghost, the servers page cards, the overview header and the console's command bar; tooltips and menus
+  use the custom name; core's own UI keeps the real one. "Customize tile" (TileEditor.tsx: live preview, name with
+  the real one as placeholder, searchable icon grid, swatches and a custom hex, Reset to default) opens from a rail
+  tile's menu, a servers page card's menu and the overview header's tile.
 - Folders are core's own server groups (also made on the dashboard's Grouped Servers tab), Discord style: closed, a
   rounded square previewing the first four tiles and ringed while one of its servers is open; open (`xylo:folders`
   in localStorage, uuids), the folder head and its servers on a tinted pill. The rail fetches the groups into core's
@@ -104,8 +120,8 @@ navigation from the props core gave the Sidebar.
   server over the folder around it over the free space, and a dragged folder only sees folders. A ring marks "onto",
   a bar in the gap marks a place. `useGroupEdits` writes core's store first, then the API, and reloads the groups
   on failure. A drag swallows the click that ends it. A folder's menu (Rename, 2 to 31 characters as core allows;
-  Ungroup, confirmed) opens on right click, or when a finger holds a folder and lets go without moving (iOS sends
-  no contextmenu).
+  Ungroup, confirmed) and a server's (Customize tile) open on right click, or when a finger holds one and lets go
+  without moving (iOS sends no contextmenu).
 - The context panel (`id='sidebar-content'`, so app.css's link styles apply) lists `panelNodes(header, children)`:
   core's header and menu flattened (Mint's `flatten`), in core's order, wrappers kept (`ServerCan`, `AdminCan`),
   minus what the rail covers (the logo `NavLink`, `QuickActionsTrigger`, links to `/` and `/admin`) and the plain
@@ -139,10 +155,12 @@ its first page; that is the cost of not owning the route.
 - home.ts: `phaseOf` (suspended, failed, installing, restoring, transferring outrank the power state; no usage reads
   offline), the status filters and their counts, and the sorts (`xylo:home-sort`).
 - ServerCard: the name is the link, stretched over the card (`::after`), so the controls above it (`.xylo-home-raise`)
-  stay real buttons. Power buttons follow core's rules: the server's permissions plus the role's, nothing while
-  installing, restoring, transferring, suspended or in node maintenance; kill only while stopping, confirmed. Power
-  goes through core's `useBulkPowerActions` (its toasts), add to group through core's `ServerAddGroupModal`. The
-  tile turns into a check box; any selection brings up core's `BulkActionBar`.
+  stay real buttons. A name of the user's own (server tiles, above) is the title, the real one quiet before the game;
+  the search matches both and the name sort uses the shown one. Power buttons follow core's rules: the server's
+  permissions plus the role's, nothing while installing, restoring, transferring, suspended or in node maintenance;
+  kill only while stopping, confirmed. Power goes through core's `useBulkPowerActions` (its toasts), add to group
+  through core's `ServerAddGroupModal`. The tile turns into a check box; any selection brings up core's
+  `BulkActionBar`.
 
 ## The server overview
 
@@ -157,16 +175,29 @@ once the admin adds `/terminal` to that order (core's editor lists it, since it 
 - Data: the server, its power state and its live stats are core's server store (`useServerStore`, fed by the
   server's websocket). Activity, backups, schedules and allocations are fetched under core's query keys plus
   `'xylo-overview'`, so core's own pages' changes refresh them; each needs its page's permission (`useServerCan`)
-  and its part is left out without it. Databases are not fetched (core's list includes passwords).
+  and its part is left out without it, and nothing is fetched for a block the theme hides. Databases are not
+  fetched (core's list includes passwords).
 - Power is core's own `ServerPowerControls` (websocket, kill confirmation, other extensions' power buttons).
+- The theme shapes the page, read with `useXyloTheme()` so Studio's preview follows each draft:
+  `overviewSections` (the blocks usage, activity, connect and glance, in order; one left out is hidden; allow listed
+  and de-duplicated, order kept), `overviewLayout` (`overviewRows` in overview.ts: 'split', today's, gives usage a
+  row and sets activity beside a narrower stack of the blocks listed next to it, on the side it was listed; 'stacked'
+  is one block a row; 'wide' gives usage and activity rows and pairs neighbouring connect and glance cards at equal
+  widths; every row is one column under 64rem), `overviewUsage` ('bars' against the limits; 'graphs', sparklines of
+  the last minute from the console's `useTelemetry` and `sparkPath`, the network then as rates; 'numbers', the
+  figures alone and larger), `overviewActivityCount` (3 to 20 of the 25 core's first page holds),
+  `overviewHeader` ('plain', or 'banner': the head in a card tinted with the accent and a larger tile; the tint runs
+  between the two accents only with gradient buttons) and `overviewDescription`.
 - overview.ts: `eventLabel` (`server:power.start` reads "Power start"), `timeAgo`, `percentOf`/`levelOf` for the
-  bars, `newest`.
+  bars, `newest`, `overviewRows`.
 
 ## The console
 
 `consolePage` (on by default) replaces core's console page wherever core shows it: `/terminal`, and `/` when the
 overview is off. The route interceptor in index.ts gives both a `ConsoleSwitch` around core's element, read with the
-theme hook so Studio switches it live; `/console/popout` stays core's.
+theme hook so Studio switches it live; `/console/popout` stays core's. The page's own settings (`consoleMetrics`,
+`consoleGraphs`, `consoleInspector`, `consoleInspectorOpen`, `consoleDensity`, `consoleQuickCommands`,
+`consoleCommands`) are read with `useXyloTheme()` in the components, so Studio's preview follows each draft.
 
 - The page is one workspace: a single surface (`.xylo-con`) from where it starts (`--xylo-con-top`, measured when the
   page's height or the window changes) to the viewport's bottom, at least 24rem, shrinking above the on-screen
@@ -174,14 +205,22 @@ theme hook so Studio switches it live; `/console/popout` stays core's.
   `ServerContentContainer` with core's title and container registry, so other extensions' container slots stay.
   Core's three charts are dropped.
 - The command bar (its top strip): the name (truncated), the state as text in its status colour (`phaseOf`, the
-  status chip's colours) and the uptime while it runs; the telemetry (Telemetry.tsx: CPU, memory, disk, network in
-  and out as rates, each a dimmed label, a tabular value and a sparkline of the last 60 samples, limits and totals
-  in the title; flat and muted while offline); core's `ServerPowerControls` (in core's `ServerCan`) restyled as one
-  segmented group by CSS on core's markup; the inspector toggle. One row, two (figures under) when the workspace is
-  under 60rem (`@container xylo-con`). `useTelemetry` subscribes to core's server store (`useServerStoreApi`) and
-  feeds telemetry.ts: `pushSample` (a 60 sample window), `ratesOf` (bytes per second from the running totals, none
-  across a restart), `withReading` (an offline reading starts the curves over, the disk's excepted), `sparkPath`
-  (the line and area paths, newest sample at the right edge, scaled to the limit or the largest sample).
+  status chip's colours) and the uptime while it runs; the telemetry (Telemetry.tsx: the figures of
+  `consoleMetrics`, of CPU, memory, disk, network in and out as rates, in `CONSOLE_METRICS` order, each a dimmed
+  label, a tabular value and a sparkline of the last 60 samples, limits and totals in the title; flat and muted
+  while offline; none leaves the telemetry out and the bar closes up); core's `ServerPowerControls` (in core's
+  `ServerCan`) restyled as one segmented group by CSS on core's markup; the inspector toggle. One row, two (figures
+  under) when the workspace is under 60rem (`@container xylo-con`; the grid drops the missing figures or toggle by
+  `:has`). The sparkline style is `consoleGraphs` (`data-graph` on the figures): 'area' (the line over a faint
+  fill, the default), 'line', 'bars' (thin columns) or 'none' (label over value only). `useTelemetry` subscribes
+  to core's server store (`useServerStoreApi`) and feeds telemetry.ts: `pushSample` (a 60 sample window), `ratesOf`
+  (bytes per second from the running totals, none across a restart), `withReading` (an offline reading starts the
+  curves over, the disk's excepted), `sparkPath` (the line and area paths, newest sample at the right edge, scaled to
+  the limit or the largest sample) and `sparkBars` (`BARS` columns, each the highest of its share of the samples,
+  half a slot wide, a one unit stub for nothing; same scale). Studio's graph drawings use the same builders.
+- Spacing: `consoleDensity` (`data-density` on the workspace) sets CSS variables there (`--xylo-con-edge`, the inset
+  every row starts at, and the bar's padding, gap and control height, the toolbar's, chip row's and prompt's heights;
+  'comfortable' is the original spacing). Phones keep their own touch sizes.
 - Core's own terminal (`terminal/Console.tsx`: search, history, SSH, popout, features, input row slots) fills the
   middle. Its card is `display: contents` inside `.xylo-con-term`, so its children lay out in that column: the header
   is a slim toolbar (its connection dot small and still), the output inset, the input row (`order: 2`) a prompt along
@@ -191,24 +230,31 @@ theme hook so Studio switches it live; `/console/popout` stays core's.
   sets Mantine's text, dimmed, default and border colours and `--xylo-hairline` from it, so a dark scheme in light
   mode (or the reverse) reads; the bar and the inspector sit a step off it (the scheme's text mixed in).
 - The inspector (Inspector.tsx): tabs Connect (the description, then parts.tsx's `ConnectDetails`), Commands (with
-  `control.console`) and More (core's `statCards` and `statBlocks` slots, only when one is filled; mounted while that
-  tab shows). From 80rem of page width (`usePageSize`, measured as core's `usePageBreakpoint` does: the virtual
-  window, else the body; that hook only exists from panel 1.2.2, and biome bans `useMediaQuery`) it docks as a 20rem
-  column behind a hairline and the terminal narrows; open state in `xylo:console-panel` ('hidden' when closed).
-  Below, it slides over the terminal from the right edge (transform and opacity; none with the motion setting off or
-  reduced motion), opens on demand only, and closes on Escape and a press outside it (toggles and portals excepted).
+  `control.console` and `consoleQuickCommands`) and More (core's `statCards` and `statBlocks` slots, only when one
+  is filled; mounted while that tab shows). It sits on the `consoleInspector` side ('right', or 'left': `data-side`
+  on the workspace) or is 'off': no column, toggle, sheet, edit chip or personal commands (the site's still show).
+  From 80rem of page width (`usePageSize`, measured as core's `usePageBreakpoint` does: the virtual window, else
+  the body; that hook only exists from panel 1.2.2, and biome bans `useMediaQuery`) it docks as a 20rem column
+  behind a hairline and the terminal narrows; open state in `xylo:console-panel` ('shown' or 'hidden', written when
+  the visitor toggles it), else `consoleInspectorOpen` (open by default). Below, it slides over the terminal from
+  its side's edge (transform and opacity; none with the motion setting off or reduced motion), opens on demand only,
+  and closes on Escape and a press outside it (toggles and portals excepted).
 - Phones (`data-phone` under 64rem, the shell's top bar width): the workspace bleeds to the canvas's edges (core's
   `px-4` and `mb-4`), the bar is identity and the inspector button, power a full width segmented row, the figures
   one sideways scrolling line with smaller sparklines (power and figures hide while the keyboard is up); the
   toolbar's buttons 40px scrolling sideways; the prompt at 16px so the browser doesn't zoom. The inspector is a
-  Mantine `Drawer` from the bottom (at most 85dvh, safe area padded) with the same tabs. Touch targets are at least
-  40px; nothing depends on hover.
-- Quick commands: per server and browser (`xylo:commands:<uuid>`), at most 20 of 200 characters, one line each,
-  validated on read (console.ts). `useQuickCommands` reads them through `useSyncExternalStore`, so the chips and the
-  inspector stay in step (a list storage refuses is kept for that load). Shown only with `control.console`; a click
-  sends one over the server's websocket (`SocketRequest.SEND_COMMAND`) while it is connected and the server is not
-  offline, the disabled chips' title saying why. The last chip opens the inspector at Commands; with none saved it
-  is the only one, labelled.
+  Mantine `Drawer` from the bottom (at most 85dvh, safe area padded) with the same tabs, on either side setting.
+  Touch targets are at least 40px; nothing depends on hover.
+- Quick commands (`consoleQuickCommands`, on by default; off hides the chip row and the Commands tab): the site's
+  (`consoleCommands`, set in Studio: control characters dropped, trimmed, 1 to 200 characters, unique, at most 12,
+  by normalizeTheme()'s `siteCommand()`) first, then the visitor's own, per server and browser
+  (`xylo:commands:<uuid>`), at most 20 of 200 characters, one line each, validated on read (console.ts); an own one
+  the site already has is not shown twice, nor can it be added. Site chips carry `data-site` (a faint accent edge
+  and cue) and the inspector lists them under their own heading without a remove button. `useQuickCommands` reads
+  the own ones through `useSyncExternalStore`, so the chips and the inspector stay in step (a list storage refuses
+  is kept for that load). Shown only with `control.console`; a click sends one over the server's websocket
+  (`SocketRequest.SEND_COMMAND`) while it is connected and the server is not offline, the disabled chips' title
+  saying why. The last chip opens the inspector at Commands; with no own commands saved it is labelled.
 - xterm.ts hooks every console, core's page and the popout included (`pages.server.console.xterm`): the init handler
   sets the mono font (`MONO_STACKS`, core's when 'panel'), the line height and the palette (`terminalPalette`, with a
   transparent background: app.css paints `--xylo-term-bg` on the card holding `.xterm`, or on Xylo's workspace,
@@ -266,14 +312,24 @@ in the draft; the preview and drawings use the last valid normalized draft.
   so every visitor's theme JSON carries them; they hold looks only. "Reset to the default look" keeps them.
 - The preview's page picker lists the first server's overview and console (`/terminal` while the overview is on,
   otherwise the console is the server's own page).
-- The Console tab: Xylo's console page, the terminal scheme in groups (matched to the panel, dark, light, retro;
-  each tile a `TerminalMock` of `terminalPalette()` in dark mode; Panel drawn as core's, on the surface), the frame
-  (`TerminalSkinMock`, the draft's scheme in each frame), whether visitors may pick their own, line height and log
-  highlighting. The code font stays under Type.
+- The Server page tab: Page (`serverOverview`, moved here from Layout), then, only while the overview is on, Blocks
+  (`BlockList` in sections.tsx: a switch and move up and down buttons per block, those on in order, then those off;
+  one switched on joins the end), Layout (each tile an `OverviewLayoutMock` of the draft's blocks laid out by
+  `overviewRows`), Usage figures (`OverviewUsageMock`, the graphs drawn with telemetry.ts's `sparkPath`) with the
+  activity entries slider, and Header (`OverviewHeaderMock`) with the description switch.
+- The Console tab: Page (Xylo's console page, and with it its spacing), then, only while that page is on, Command
+  bar (the figures as toggle chips, `ToggleChips`; the graph style, each tile a `ConsoleGraphMock` drawn with
+  telemetry.ts's builders), Inspector (the side, each tile a `ConsoleInspectorMock` of the workspace's layout; open
+  by default unless 'off') and Quick commands (the switch, and the site's commands as an editable list: add with
+  Enter or the button, move up and down, remove, with normalizeTheme()'s limits and a count); then the terminal
+  scheme in groups (matched to the panel, dark, light, retro; each tile a `TerminalMock` of `terminalPalette()` in
+  dark mode; Panel drawn as core's, on the surface), the frame (`TerminalSkinMock`, the draft's scheme in each
+  frame), whether visitors may pick their own, line height and log highlighting. The code font stays under Type.
 
 A new theme field needs: the `XyloTheme` field and default, a line in `normalizeTheme()`, its use in `buildCss()`
-or `themeAttributes()` plus `app.css`, a control in a section (with its `field`), its entry in `SECTION_FIELDS`, its
-strings, and a test case. Add it to `PresetLook` only if it is part of a look rather than about the site.
+or `themeAttributes()` plus `app.css` (or in a component, read with `useXyloTheme()`), a control in a section (with
+its `field`), its entry in `SECTION_FIELDS`, its strings, and a test case. `sameTheme()` compares list fields by
+value. Add it to `PresetLook` only if it is part of a look rather than about the site.
 
 ## Constraints
 

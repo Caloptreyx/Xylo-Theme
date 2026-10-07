@@ -22,6 +22,7 @@ import { useGroupServers, useLoadServerGroups } from '../../lib/groups.ts';
 import { useXyloTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { folderColor } from '../shell/folders.ts';
+import { useServerTiles } from '../tiles/useTiles.ts';
 import { SORTS, type Sort, STATUS_FILTERS, type StatusFilter, statusCounts, visibleServers } from './home.ts';
 import ServerCard from './ServerCard.tsx';
 
@@ -116,6 +117,7 @@ export default function Home() {
   const usage = useUserStore((state) => state.serverResourceUsage);
   const subscribeToNode = useUserStore((state) => state.subscribeToNode);
   const { handleBulkPowerAction, bulkActionLoading } = useBulkPowerActions();
+  const tiles = useServerTiles();
   useLoadServerGroups();
 
   const [query, setQuery] = useState('');
@@ -153,8 +155,8 @@ export default function Home() {
     };
   }, [nodes, subscribeToNode]);
 
-  const shown = visibleServers(pool, usage, { query, status, sort });
-  const counts = statusCounts(pool, usage, query);
+  const shown = visibleServers(pool, usage, { query, status, sort }, tiles);
+  const counts = statusCounts(pool, usage, query, tiles);
   const filtered = query.trim() !== '' || status !== 'all' || group !== null;
   const shownUuids = shown.map((server) => server.uuid);
   const allShownSelected = shownUuids.length > 0 && shownUuids.every((uuid) => selected.includes(uuid));

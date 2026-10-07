@@ -6,6 +6,7 @@ import {
   ratesOf,
   SAMPLES,
   type StatsReading,
+  sparkBars,
   sparkPath,
   withReading,
 } from '../frontend/src/elements/console/telemetry.ts';
@@ -85,5 +86,17 @@ describe('console telemetry', () => {
     assert.equal(sparkPath([Number.NaN, -1, 2], 10, 12, 0, 3).line, 'M0 11L5 11L10 1');
     // more samples than slots: only the newest are drawn
     assert.equal(sparkPath([9, 9, 0, 0, 0], 10, 12, 0, 3).line, 'M0 11L5 11L10 11');
+  });
+
+  test('bars: half slot wide columns from the right, each the highest of its group, a stub for nothing', () => {
+    assert.equal(sparkBars([], 60, 20), '');
+    // 3 slots across 12 wide: columns 2 wide in the middle of each 4 wide slot; same scale as the line
+    assert.equal(sparkBars([0, 5, 10], 12, 12, 10, 3, 3), 'M1 11H3V12H1ZM5 6H7V12H5ZM9 1H11V12H9Z');
+    // a short history fills in from the right
+    assert.equal(sparkBars([10], 12, 12, 0, 3, 3), 'M9 1H11V12H9Z');
+    // six samples in three columns: pairs from the newest back, each column its pair's highest
+    assert.equal(sparkBars([1, 4, 2, 2, 0, 8], 12, 12, 8, 6, 3), 'M1 6H3V12H1ZM5 8.5H7V12H5ZM9 1H11V12H9Z');
+    // nothing at all still draws a row of stubs, and bad values count as nothing
+    assert.equal(sparkBars([0, Number.NaN, -1], 12, 12, 0, 3, 3), 'M1 11H3V12H1ZM5 11H7V12H5ZM9 11H11V12H9Z');
   });
 });

@@ -1,6 +1,6 @@
 import { faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ColorInput, Slider } from '@mantine/core';
+import { Chip, ColorInput, Slider } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { HEX, toHexColor } from '../../lib/color.ts';
 import { ActionIcon, Switch } from '../../lib/core.ts';
@@ -172,6 +172,40 @@ export function ToggleField({
         onChange={(e) => onChange(e.currentTarget.checked)}
       />
     </Setting>
+  );
+}
+
+/** A row of chips, any number of them on; `onChange` gets the picked values in the order `options` lists them. */
+export function ToggleChips<T extends string>({
+  field,
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  field: keyof XyloTheme;
+  label: string;
+  value: readonly T[];
+  options: { value: T; label: string }[];
+  onChange: (value: T[]) => void;
+}) {
+  return (
+    <div className='flex flex-col gap-1.5' data-xylo-setting={field}>
+      <span className='text-sm'>{label}</span>
+      <Chip.Group
+        multiple
+        value={[...value]}
+        onChange={(next) => onChange(options.map((option) => option.value).filter((v) => next.includes(v)))}
+      >
+        <div className='flex flex-wrap gap-1.5' role='group' aria-label={label}>
+          {options.map((option) => (
+            <Chip key={option.value} value={option.value} size='xs' variant='outline'>
+              {option.label}
+            </Chip>
+          ))}
+        </div>
+      </Chip.Group>
+    </div>
   );
 }
 

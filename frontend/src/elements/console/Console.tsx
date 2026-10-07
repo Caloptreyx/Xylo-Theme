@@ -17,11 +17,15 @@ import {
 import { useXyloTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { phaseOf } from '../home/home.ts';
+import { TileHeading } from '../tiles/TileFace.tsx';
 import { Inspector, type InspectorTab } from './Inspector.tsx';
 import { CommandChips } from './QuickCommands.tsx';
 import { Telemetry } from './Telemetry.tsx';
 
-/** Whether the docked inspector is open, per browser ('hidden' when closed). */
+/**
+ * The visitor's own open state of the docked inspector, per browser ('shown' or 'hidden'); without one the theme's
+ * `consoleInspectorOpen` decides.
+ */
 const PANEL_KEY = 'xylo:console-panel';
 
 /**
@@ -92,26 +96,30 @@ function usePageSize(node: RefObject<HTMLElement | null>): PageSize {
   return size;
 }
 
-function readDocked() {
+function readPanel(): boolean | null {
   try {
-    return localStorage.getItem(PANEL_KEY) !== 'hidden';
+    const value = localStorage.getItem(PANEL_KEY);
+    return value === 'hidden' ? false : value === 'shown' ? true : null;
   } catch {
-    return true;
+    return null;
   }
 }
 
 /**
  * Xylo's console page: one workspace from where it starts down to the viewport's bottom, painted in the terminal
  * scheme and worn by the terminal frame (app.css). Along its top the command bar: the server's name, state and
- * uptime, live telemetry with sparklines, core's power controls and the inspector toggle. Under it core's own
- * terminal (search, history, SSH, popout, its features and input row slots), its card dissolved into the
- * workspace: its header a toolbar, its input the prompt along the bottom, the quick command chips just above that.
- * The inspector (connect details, quick commands, other extensions' stat cards) docks on the right of wide pages,
- * slides over the terminal on narrower ones and is a sheet on phones. Core's three charts are left out.
+ * uptime, live telemetry with sparklines (the theme's figures and graph style), core's power controls and the
+ * inspector toggle. Under it core's own terminal (search, history, SSH, popout, its features and input row slots),
+ * its card dissolved into the workspace: its header a toolbar, its input the prompt along the bottom, the quick
+ * command chips just above that, all spaced by `consoleDensity`. The inspector (connect details, quick commands,
+ * other extensions' stat cards) docks on the theme's side of wide pages, slides over the terminal from that side on
+ * narrower ones and is a sheet on phones; `consoleInspector: 'off'` leaves it and its toggle out. Core's three
+ * charts are left out. The theme is read here, so Studio's drafts change it live.
  */
 function ConsolePage() {
   const { t } = useExtTranslations();
   const { t: coreT } = useCoreTranslations();
+  const theme = useXyloTheme();
   const server = useServerStore((state) => state.server);
   const state = useServerStore((state) => state.state);
   const uptime = useServerStore((state) => state.stats?.uptime ?? 0);
@@ -119,7 +127,8 @@ function ConsolePage() {
   const root = useRef<HTMLElement>(null);
   const aside = useRef<HTMLElement>(null);
   const size = usePageSize(root);
-  const [docked, setDocked] = useState(readDocked);
+  // the visitor's own choice, null until they toggle it (the theme's default applies until then)
+  const [docked, setDocked] = useState(readPanel);
   // the sliding panel and the phone's sheet open on demand, never on load, and only at the size they were opened
   // at: a window crossing to a phone's width doesn't pop the sheet up
   const [shownAt, setShownAt] = useState<PageSize | null>(null);
@@ -129,7 +138,8 @@ function ConsolePage() {
 
   const phone = size === 'phone';
   const wide = size === 'wide';
-  const open = wide ? docked : shown;
+  const inspector = theme.consoleInspector !== 'off';
+  const open = inspector && (wide ? (docked ?? theme.consoleInspectorOpen) : shown);
 
   // the sliding panel closes on Escape and on a press outside it (its toggles and anything in a portal, a menu
   // or tooltip it opened, excepted)
@@ -160,8 +170,7 @@ function ConsolePage() {
     }
     setDocked(next);
     try {
-      if (next) localStorage.removeItem(PANEL_KEY);
-      else localStorage.setItem(PANEL_KEY, 'hidden');
+      localStorage.setItem(PANEL_KEY, next ? 'shown' : 'hidden');
     } catch {
       // storage blocked: the state lasts until the next load
     }
@@ -186,15 +195,15 @@ function ConsolePage() {
         ref={root}
         className='xylo-con'
         data-phone={phone || undefined}
-        data-inspector={phone ? undefined : wide ? 'docked' : 'over'}
+        data-inspector={phone || !inspector ? undefined : wide ? 'docked' : 'over'}
+        data-side={theme.consoleInspector === 'left' ? 'left' : undefined}
+        data-density={theme.consoleDensity}
         data-keyboard={keyboardInset > 0 || undefined}
         style={{ '--xylo-con-inset': `${keyboardInset}px` } as CSSProperties}
       >
         <header className='xylo-con-bar'>
           <div className='xylo-con-id'>
-            <h1 className='xylo-con-name' title={server.name}>
-              {server.name}
-            </h1>
+            <TileHeading server={server} size={22} className='xylo-con-name' />
             <span className='xylo-con-state' data-phase={phase}>
               {t(`home.${phase}`, {})}
             </span>
@@ -204,35 +213,39 @@ function ConsolePage() {
               </span>
             )}
           </div>
-          <Telemetry key={server.uuid} live={live} />
+          {theme.consoleMetrics.length > 0 && (
+            <Telemetry key={server.uuid} live={live} metrics={theme.consoleMetrics} graph={theme.consoleGraphs} />
+          )}
           <ServerCan action={['control.start', 'control.stop', 'control.restart']} matchAny>
             <div className='xylo-con-power'>
               <ServerPowerControls />
             </div>
           </ServerCan>
-          <Tooltip label={toggleLabel}>
-            <ActionIcon
-              className='xylo-con-toggle'
-              variant={open && !phone ? 'light' : 'subtle'}
-              color='gray'
-              size={phone ? 'xl' : 'lg'}
-              data-xylo-inspector-toggle
-              aria-label={toggleLabel}
-              aria-expanded={open}
-              aria-haspopup={phone ? 'dialog' : undefined}
-              onClick={() => setOpen(!open)}
-            >
-              <FontAwesomeIcon icon={phone ? faCircleInfo : faTableColumns} />
-            </ActionIcon>
-          </Tooltip>
+          {inspector && (
+            <Tooltip label={toggleLabel}>
+              <ActionIcon
+                className='xylo-con-toggle'
+                variant={open && !phone ? 'light' : 'subtle'}
+                color='gray'
+                size={phone ? 'xl' : 'lg'}
+                data-xylo-inspector-toggle
+                aria-label={toggleLabel}
+                aria-expanded={open}
+                aria-haspopup={phone ? 'dialog' : undefined}
+                onClick={() => setOpen(!open)}
+              >
+                <FontAwesomeIcon icon={phone ? faCircleInfo : faTableColumns} />
+              </ActionIcon>
+            </Tooltip>
+          )}
         </header>
 
         <div className='xylo-con-main'>
           <div className='xylo-con-term'>
             <CoreTerminal />
-            <CommandChips onEdit={() => openAt('commands')} />
+            <CommandChips onEdit={inspector ? () => openAt('commands') : undefined} />
           </div>
-          {!phone && (
+          {!phone && inspector && (
             <aside
               ref={aside}
               className='xylo-con-aside'
@@ -246,7 +259,7 @@ function ConsolePage() {
           )}
         </div>
 
-        {phone && (
+        {phone && inspector && (
           <Drawer
             opened={shown}
             onClose={() => setShownAt(null)}

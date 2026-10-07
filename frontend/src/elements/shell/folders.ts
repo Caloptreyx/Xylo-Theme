@@ -1,4 +1,5 @@
 import { hsl } from '../../lib/color.ts';
+import { hueOf } from '../../lib/tiles.ts';
 
 /**
  * The rail's server folders: core's server groups (made on the dashboard's grouped tab), shown the way Discord shows
@@ -121,36 +122,6 @@ export function looseServers<S extends RailServer>(
 ): S[] {
   const grouped = new Set(groups.flatMap((group) => group.serverOrder));
   return servers.filter((server) => !grouped.has(server.uuid)).slice(0, limit);
-}
-
-/** A name's hue, so a server tile or folder keeps its colour wherever it shows. */
-export function hueOf(name: string): number {
-  let hash = 0;
-  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
-  return Math.abs(hash) % 360;
-}
-
-/** Up to two initials from a name's words, `?` when it has none. */
-export function initialsOf(name: string): string {
-  const initials = name
-    .split(/[\s_-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0].toUpperCase())
-    .join('');
-  return initials || '?';
-}
-
-/**
- * A server's tile: its initials on a muted two step gradient of one hue from its name, the same in the rail and on
- * the page. Kept under 55% saturation so a column of them reads as identity, not a rainbow beside the one accent.
- */
-export function serverTile(name: string) {
-  const hue = hueOf(name);
-  return {
-    initials: initialsOf(name),
-    background: `linear-gradient(135deg,${hsl(hue, 50, 48)},${hsl(hue + 18, 54, 36)})`,
-  };
 }
 
 /** A folder's colour, from its group's name like a server tile's, as muted as the tiles. */

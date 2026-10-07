@@ -3,6 +3,7 @@ import {
   faCopy,
   faEllipsis,
   faFolderPlus,
+  faPalette,
   faPlay,
   faRotateRight,
   faSkull,
@@ -27,14 +28,17 @@ import {
   useBulkPowerActions,
 } from '../../lib/core.ts';
 import { useExtTranslations } from '../../translations.ts';
-import { serverTile } from '../shell/folders.ts';
+import { TileEditor } from '../tiles/TileEditor.tsx';
+import { TileGlyph } from '../tiles/TileFace.tsx';
+import { useServerTile } from '../tiles/useTiles.ts';
 import { addressOf, type Phase, phaseOf } from './home.ts';
 
 type PowerAction = 'start' | 'stop' | 'restart' | 'kill';
 /**
- * A server on the servers page: its tile, name, game and status, its address (click to copy), uptime, and power
- * controls for what the user may do. The name is the link, stretched over the card, so the controls on top stay
- * real buttons. A right click opens the menu.
+ * A server on the servers page: its tile (the user's own look, lib/tiles.ts), name, game and status, its address
+ * (click to copy), uptime, and power controls for what the user may do. A name of the user's own is the title, the
+ * real one quiet beside the game. The name is the link, stretched over the card, so the controls on top stay real
+ * buttons. A right click opens the menu.
  */
 export default function ServerCard({
   server,
@@ -54,10 +58,10 @@ export default function ServerCard({
   const { user } = useAuth();
   const { handleBulkPowerAction, bulkActionLoading } = useBulkPowerActions();
   const [menu, setMenu] = useState(false);
-  const [dialog, setDialog] = useState<'group' | 'kill' | null>(null);
+  const [dialog, setDialog] = useState<'group' | 'kill' | 'tile' | null>(null);
 
   const phase: Phase = phaseOf(server, usage);
-  const tile = serverTile(server.name);
+  const tile = useServerTile(server);
   const address = addressOf(server);
   const permissions = new Set([...server.permissions, ...(user?.role?.serverPermissions ?? [])]);
   const may = (permission: string) => permissions.has('*') || permissions.has(permission);
@@ -113,18 +117,20 @@ export default function ServerCard({
             className='xylo-home-tile xylo-home-raise'
             data-selecting={selecting || undefined}
             aria-pressed={selected}
-            aria-label={t('home.select', { name: server.name })}
+            aria-label={t('home.select', { name: tile.label })}
             style={{ background: tile.background }}
             onClick={() => onSelect(!selected)}
           >
-            <span className='xylo-home-tile-initials'>{tile.initials}</span>
+            <span className='xylo-home-tile-initials'>
+              <TileGlyph tile={tile} />
+            </span>
             <span className='xylo-home-tile-check'>
               <FontAwesomeIcon icon={faCheck} />
             </span>
           </button>
           <div className='min-w-0 flex-1'>
             <Link to={`/server/${server.uuidShort}`} className='xylo-home-card-link'>
-              {server.name}
+              {tile.label}
             </Link>
             <p className='flex items-center gap-1.5 truncate text-xs text-(--mantine-color-dimmed)'>
               {!server.isOwner && (
@@ -132,6 +138,8 @@ export default function ServerCard({
                   <FontAwesomeIcon icon={faUsers} className='xylo-home-raise text-(--mantine-color-yellow-filled)' />
                 </Tooltip>
               )}
+              {tile.custom && <span className='truncate'>{server.name}</span>}
+              {tile.custom && <span aria-hidden>·</span>}
               <span className='truncate'>{server.egg.name}</span>
             </p>
           </div>
@@ -175,7 +183,7 @@ export default function ServerCard({
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
-              <Menu.Label>{server.name}</Menu.Label>
+              <Menu.Label>{tile.label}</Menu.Label>
               {can.start && (
                 <Menu.Item leftSection={<FontAwesomeIcon icon={faPlay} />} onClick={() => power('start')}>
                   {t('home.start', {})}
@@ -199,16 +207,20 @@ export default function ServerCard({
               <Menu.Item leftSection={<FontAwesomeIcon icon={faFolderPlus} />} onClick={() => setDialog('group')}>
                 {t('home.addToGroup', {})}
               </Menu.Item>
+              <Menu.Item leftSection={<FontAwesomeIcon icon={faPalette} />} onClick={() => setDialog('tile')}>
+                {t('tiles.customize', {})}
+              </Menu.Item>
             </Menu.Dropdown>
           </Menu>
         </div>
       </Card>
 
       <ServerAddGroupModal server={server} opened={dialog === 'group'} onClose={() => setDialog(null)} />
+      {dialog === 'tile' && <TileEditor server={server} onClose={() => setDialog(null)} />}
       <ConfirmationModal
         opened={dialog === 'kill'}
         onClose={() => setDialog(null)}
-        title={t('home.killTitle', { name: server.name })}
+        title={t('home.killTitle', { name: tile.label })}
         confirm={t('home.kill', {})}
         onConfirmed={async () => {
           setDialog(null);

@@ -6,11 +6,17 @@ import {
   applyPreset,
   buildCss,
   contrastIssues,
+  CONSOLE_METRICS,
   DEFAULT_THEME,
   generatePalette,
   MAX_CUSTOM_PRESETS,
+  MAX_SITE_COMMAND,
+  MAX_SITE_COMMANDS,
+  MAX_OVERVIEW_ACTIVITY,
+  MIN_OVERVIEW_ACTIVITY,
   NAMED_TERMINALS,
   normalizeTheme,
+  OVERVIEW_SECTIONS,
   PRESETS,
   sameTheme,
   TERMINAL_SCHEME_GROUPS,
@@ -83,6 +89,50 @@ describe('normalizeTheme', () => {
     }
   });
 
+  test("server page fields: today's look by default", () => {
+    assert.deepEqual(DEFAULT_THEME.overviewSections, ['usage', 'activity', 'connect', 'glance']);
+    assert.equal(DEFAULT_THEME.overviewLayout, 'split');
+    assert.equal(DEFAULT_THEME.overviewUsage, 'bars');
+    assert.equal(DEFAULT_THEME.overviewActivityCount, 8);
+    assert.equal(DEFAULT_THEME.overviewHeader, 'plain');
+    assert.equal(DEFAULT_THEME.overviewDescription, true);
+  });
+
+  test('overview blocks: allow listed, each once, in the order given; none is a choice', () => {
+    assert.deepEqual(
+      normalizeTheme({ overviewSections: ['glance', 'usage', 'chat', 'glance', 3, null, 'activity'] }).overviewSections,
+      ['glance', 'usage', 'activity'],
+    );
+    assert.deepEqual(normalizeTheme({ overviewSections: [] }).overviewSections, []);
+    assert.deepEqual(normalizeTheme({ overviewSections: 'usage' }).overviewSections, [...OVERVIEW_SECTIONS]);
+    assert.deepEqual(normalizeTheme({ overviewSections: { 0: 'usage' } }).overviewSections, [...OVERVIEW_SECTIONS]);
+  });
+
+  test('overview layout, usage and header are allow listed', () => {
+    assert.equal(normalizeTheme({ overviewLayout: 'wide' }).overviewLayout, 'wide');
+    assert.equal(normalizeTheme({ overviewLayout: 'stacked' }).overviewLayout, 'stacked');
+    assert.equal(normalizeTheme({ overviewLayout: 'grid"]' }).overviewLayout, 'split');
+    assert.equal(normalizeTheme({ overviewUsage: 'graphs' }).overviewUsage, 'graphs');
+    assert.equal(normalizeTheme({ overviewUsage: 'numbers' }).overviewUsage, 'numbers');
+    assert.equal(normalizeTheme({ overviewUsage: 'pie' }).overviewUsage, 'bars');
+    assert.equal(normalizeTheme({ overviewHeader: 'banner' }).overviewHeader, 'banner');
+    assert.equal(normalizeTheme({ overviewHeader: 'hero' }).overviewHeader, 'plain');
+  });
+
+  test('overview activity entries: whole numbers clamped to 3..20', () => {
+    assert.equal(normalizeTheme({ overviewActivityCount: 12 }).overviewActivityCount, 12);
+    assert.equal(normalizeTheme({ overviewActivityCount: 12.6 }).overviewActivityCount, 13);
+    assert.equal(normalizeTheme({ overviewActivityCount: 0 }).overviewActivityCount, MIN_OVERVIEW_ACTIVITY);
+    assert.equal(normalizeTheme({ overviewActivityCount: 500 }).overviewActivityCount, MAX_OVERVIEW_ACTIVITY);
+    assert.equal(normalizeTheme({ overviewActivityCount: '12' }).overviewActivityCount, 8);
+    assert.equal(normalizeTheme({ overviewActivityCount: Number.NaN }).overviewActivityCount, 8);
+  });
+
+  test('overview description is a flag', () => {
+    assert.equal(normalizeTheme({ overviewDescription: false }).overviewDescription, false);
+    assert.equal(normalizeTheme({ overviewDescription: 'no' }).overviewDescription, true);
+  });
+
   test('console fields: scheme and frame allow listed, line height clamped, choice a flag', () => {
     assert.equal(normalizeTheme({ terminalScheme: 'dracula' }).terminalScheme, 'dracula');
     assert.equal(normalizeTheme({ terminalScheme: 'kanagawa' }).terminalScheme, 'kanagawa');
@@ -93,6 +143,55 @@ describe('normalizeTheme', () => {
     assert.equal(normalizeTheme({ terminalSkin: 'crt"]{}' }).terminalSkin, 'card');
     assert.equal(normalizeTheme({ terminalUserChoice: false }).terminalUserChoice, false);
     assert.equal(normalizeTheme({ terminalUserChoice: 'no' }).terminalUserChoice, true);
+  });
+
+  test("console page fields: today's look by default, choices allow listed, flags flags", () => {
+    assert.deepEqual(DEFAULT_THEME.consoleMetrics, [...CONSOLE_METRICS]);
+    assert.equal(DEFAULT_THEME.consoleGraphs, 'area');
+    assert.equal(DEFAULT_THEME.consoleInspector, 'right');
+    assert.equal(DEFAULT_THEME.consoleInspectorOpen, true);
+    assert.equal(DEFAULT_THEME.consoleDensity, 'comfortable');
+    assert.equal(DEFAULT_THEME.consoleQuickCommands, true);
+    assert.deepEqual(DEFAULT_THEME.consoleCommands, []);
+    assert.equal(normalizeTheme({ consoleGraphs: 'bars' }).consoleGraphs, 'bars');
+    assert.equal(normalizeTheme({ consoleGraphs: 'pie' }).consoleGraphs, 'area');
+    assert.equal(normalizeTheme({ consoleInspector: 'left' }).consoleInspector, 'left');
+    assert.equal(normalizeTheme({ consoleInspector: 'top"]{}' }).consoleInspector, 'right');
+    assert.equal(normalizeTheme({ consoleDensity: 'spacious' }).consoleDensity, 'spacious');
+    assert.equal(normalizeTheme({ consoleDensity: 'huge' }).consoleDensity, 'comfortable');
+    assert.equal(normalizeTheme({ consoleInspectorOpen: false }).consoleInspectorOpen, false);
+    assert.equal(normalizeTheme({ consoleInspectorOpen: 0 }).consoleInspectorOpen, true);
+    assert.equal(normalizeTheme({ consoleQuickCommands: false }).consoleQuickCommands, false);
+    assert.equal(normalizeTheme({ consoleQuickCommands: 'no' }).consoleQuickCommands, true);
+  });
+
+  test('console figures: allow listed, each once, in their own order; none is a choice', () => {
+    assert.deepEqual(normalizeTheme({ consoleMetrics: ['netOut', 'cpu', 'gpu', 'cpu', 3, null] }).consoleMetrics, [
+      'cpu',
+      'netOut',
+    ]);
+    assert.deepEqual(normalizeTheme({ consoleMetrics: [] }).consoleMetrics, []);
+    assert.deepEqual(normalizeTheme({ consoleMetrics: 'cpu' }).consoleMetrics, [...CONSOLE_METRICS]);
+  });
+
+  test('site commands: strings only, control characters dropped, trimmed, 1 to 200 characters, unique, at most 12', () => {
+    const theme = normalizeTheme({
+      consoleCommands: [
+        '  save-all ',
+        'say\u0000 hi\n',
+        'save-all',
+        '',
+        ' \u0007 ',
+        42,
+        { command: 'x' },
+        'x'.repeat(MAX_SITE_COMMAND),
+        'y'.repeat(MAX_SITE_COMMAND + 1),
+        ...Array.from({ length: 20 }, (_, i) => `cmd ${i}`),
+      ],
+    });
+    assert.equal(theme.consoleCommands.length, MAX_SITE_COMMANDS);
+    assert.deepEqual(theme.consoleCommands.slice(0, 4), ['save-all', 'say hi', 'x'.repeat(MAX_SITE_COMMAND), 'cmd 0']);
+    assert.deepEqual(normalizeTheme({ consoleCommands: 'list' }).consoleCommands, []);
   });
 
   test('custom presets: valid unique names, normalized looks, at most twelve', () => {
@@ -287,6 +386,13 @@ describe('sameTheme', () => {
     const reversed = Object.fromEntries(Object.entries(DEFAULT_THEME).reverse()) as typeof DEFAULT_THEME;
     assert.ok(sameTheme(reversed, DEFAULT_THEME));
     assert.ok(!sameTheme({ ...DEFAULT_THEME, greeting: false }, DEFAULT_THEME));
+  });
+
+  test('compares the console lists by value, order included', () => {
+    const a = normalizeTheme({ consoleCommands: ['list', 'save-all'], consoleMetrics: ['cpu'] });
+    assert.ok(sameTheme(a, normalizeTheme({ consoleCommands: ['list', 'save-all'], consoleMetrics: ['cpu'] })));
+    assert.ok(!sameTheme(a, normalizeTheme({ consoleCommands: ['save-all', 'list'], consoleMetrics: ['cpu'] })));
+    assert.ok(!sameTheme(a, normalizeTheme({ consoleCommands: ['list', 'save-all'], consoleMetrics: ['disk'] })));
   });
 
   test('compares custom presets by value', () => {

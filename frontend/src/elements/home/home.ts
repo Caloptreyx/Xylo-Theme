@@ -67,9 +67,18 @@ export function addressOf(server: HomeServer): string | null {
   return allocation ? `${allocation.ipAlias || allocation.ip}:${allocation.port}` : null;
 }
 
-function matchesQuery(server: HomeServer, query: string): boolean {
+/** The user's own names for servers (lib/tiles.ts), by uuid; the search matches them and the name sort uses them. */
+export type CustomNames = Readonly<Record<string, { name?: string } | undefined>>;
+
+function matchesQuery(server: HomeServer, query: string, names: CustomNames): boolean {
   if (!query) return true;
-  const haystack = [server.name, server.egg.name, addressOf(server) ?? '', server.allocation?.ip ?? ''];
+  const haystack = [
+    server.name,
+    names[server.uuid]?.name ?? '',
+    server.egg.name,
+    addressOf(server) ?? '',
+    server.allocation?.ip ?? '',
+  ];
   return haystack.some((field) => field.toLowerCase().includes(query));
 }
 
@@ -82,12 +91,16 @@ export function visibleServers<S extends HomeServer>(
   servers: readonly S[],
   usage: Readonly<Record<string, HomeUsage | undefined>>,
   { query, status, sort }: { query: string; status: StatusFilter; sort: Sort },
+  names: CustomNames = {},
 ): S[] {
   const needle = query.trim().toLowerCase();
   const shown = servers.filter(
-    (server) => matchesQuery(server, needle) && matchesStatus(phaseOf(server, usage[server.uuid]), status),
+    (server) => matchesQuery(server, needle, names) && matchesStatus(phaseOf(server, usage[server.uuid]), status),
   );
-  if (sort === 'name') return shown.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  if (sort === 'name') {
+    const shownName = (server: S) => names[server.uuid]?.name ?? server.name;
+    return shown.sort((a, b) => shownName(a).localeCompare(shownName(b), undefined, { numeric: true }));
+  }
   if (sort === 'status') {
     return shown.sort((a, b) => PHASE_RANK[phaseOf(a, usage[a.uuid])] - PHASE_RANK[phaseOf(b, usage[b.uuid])]);
   }
@@ -99,11 +112,12 @@ export function statusCounts(
   servers: readonly HomeServer[],
   usage: Readonly<Record<string, HomeUsage | undefined>>,
   query: string,
+  names: CustomNames = {},
 ): Record<StatusFilter, number> {
   const needle = query.trim().toLowerCase();
   const counts: Record<StatusFilter, number> = { all: 0, online: 0, offline: 0, attention: 0 };
   for (const server of servers) {
-    if (!matchesQuery(server, needle)) continue;
+    if (!matchesQuery(server, needle, names)) continue;
     const phase = phaseOf(server, usage[server.uuid]);
     counts.all++;
     for (const status of STATUS_FILTERS) if (status !== 'all' && matchesStatus(phase, status)) counts[status]++;

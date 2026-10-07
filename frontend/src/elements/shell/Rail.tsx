@@ -21,6 +21,7 @@ import {
   faFolderOpen,
   faHouse,
   faMagnifyingGlass,
+  faPalette,
   faPen,
   faShieldHalved,
   type IconDefinition,
@@ -54,7 +55,11 @@ import {
   useUserStore,
 } from '../../lib/core.ts';
 import { useGroupServers, useLoadServerGroups } from '../../lib/groups.ts';
+import { serverTile } from '../../lib/tiles.ts';
 import { useExtTranslations } from '../../translations.ts';
+import { TileEditor } from '../tiles/TileEditor.tsx';
+import { TileGlyph } from '../tiles/TileFace.tsx';
+import { useServerTile, useServerTiles } from '../tiles/useTiles.ts';
 import {
   type DropPart,
   dropAction,
@@ -69,7 +74,6 @@ import {
   type RailDropTarget,
   type RailGroup,
   type RailServer,
-  serverTile,
 } from './folders.ts';
 import type { Area } from './nav.ts';
 
@@ -145,37 +149,85 @@ function useRailDrop(id: string, target: RailDropTarget) {
   return { ref: setNodeRef, part: hover?.id === id ? hover.part : undefined };
 }
 
-/** A server's tile, draggable. Loose, it is a target that makes a folder of the two; in a folder, a place in it. */
-function ServerButton({ server, current, from }: { server: Server; current: string | null; from: string | null }) {
-  const tile = serverTile(server.name);
+/** A rail server's drag id, which also names its open menu: `loose` or its folder, then the server. */
+const serverDragId = (server: Server, from: string | null) => `${from ?? 'loose'}:${server.uuid}`;
+
+/**
+ * A server's tile (the user's own look, lib/tiles.ts), draggable. Loose, it is a target that makes a folder of the
+ * two; in a folder, a place in it. A right click, or a finger held on it and let go, opens its menu (customize tile).
+ */
+function ServerButton({
+  server,
+  current,
+  from,
+  menu,
+  onMenu,
+}: {
+  server: Server;
+  current: string | null;
+  from: string | null;
+  menu: boolean;
+  onMenu: (open: boolean) => void;
+}) {
+  const { t } = useExtTranslations();
+  const tile = useServerTile(server);
+  const [editing, setEditing] = useState(false);
   const data: DragData = { drag: { kind: 'server', serverUuid: server.uuid, from }, name: server.name };
-  const drag = useDraggable({ id: `${from ?? 'loose'}:${server.uuid}`, data });
+  const drag = useDraggable({ id: serverDragId(server, from), data });
   const drop = useRailDrop(
     from ? `member:${from}:${server.uuid}` : `server:${server.uuid}`,
     from ? { kind: 'member', groupUuid: from, serverUuid: server.uuid } : { kind: 'server', serverUuid: server.uuid },
   );
   return (
-    <div
-      ref={(node) => {
-        drag.setNodeRef(node);
-        drop.ref(node);
-      }}
-      {...drag.listeners}
-      className='xylo-rail-drag'
-      data-dragging={drag.isDragging || undefined}
-      data-drop={drop.part}
-    >
-      <RailButton
-        label={server.name}
-        to={`/server/${server.uuidShort}`}
-        // core's routes take a server's short or full uuid
-        active={current === server.uuidShort || current === server.uuid}
-        className={`xylo-rail-server${server.isSuspended ? ' opacity-50' : ''}`}
-        style={{ background: tile.background }}
+    <>
+      {/* opened only by a right click or a held finger; the tile's own click opens the server */}
+      <Menu
+        opened={menu}
+        onChange={(opened) => {
+          if (!opened) onMenu(false);
+        }}
+        position='right-start'
+        withinPortal
       >
-        <span className='text-sm font-semibold text-white'>{tile.initials}</span>
-      </RailButton>
-    </div>
+        <Menu.Target>
+          <div
+            ref={(node) => {
+              drag.setNodeRef(node);
+              drop.ref(node);
+            }}
+            {...drag.listeners}
+            className='xylo-rail-drag'
+            data-dragging={drag.isDragging || undefined}
+            data-drop={drop.part}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              onMenu(true);
+            }}
+          >
+            <RailButton
+              label={tile.label}
+              to={`/server/${server.uuidShort}`}
+              // core's routes take a server's short or full uuid
+              active={current === server.uuidShort || current === server.uuid}
+              quiet={menu}
+              className={`xylo-rail-server${server.isSuspended ? ' opacity-50' : ''}`}
+              style={{ background: tile.background }}
+            >
+              <span className='text-sm font-semibold text-white'>
+                <TileGlyph tile={tile} />
+              </span>
+            </RailButton>
+          </div>
+        </Menu.Target>
+        <Menu.Dropdown>
+          <Menu.Label>{tile.label}</Menu.Label>
+          <Menu.Item leftSection={<FontAwesomeIcon icon={faPalette} />} onClick={() => setEditing(true)}>
+            {t('tiles.customize', {})}
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+      {editing && <TileEditor server={server} onClose={() => setEditing(false)} />}
+    </>
   );
 }
 
@@ -252,7 +304,7 @@ function useGroupEdits(): GroupEdits {
  * One of core's server groups as a Discord style folder: closed, a tile previewing its first servers, lit while the
  * page shows one of them; open, its servers on a tinted pill under the folder's head. Either is a drop target and
  * draggable (by the head when open) to reorder the folders. A right click, or a finger held on it and let go, opens
- * its menu (rename, ungroup). Empty groups are left out.
+ * its menu (rename, ungroup); `serverMenu` is the drag id of its server whose menu is open. Empty groups are left out.
  */
 function RailFolder({
   group,
@@ -260,6 +312,8 @@ function RailFolder({
   current,
   menu,
   onMenu,
+  serverMenu,
+  onServerMenu,
   onToggle,
   edits,
 }: {
@@ -268,6 +322,8 @@ function RailFolder({
   current: string | null;
   menu: boolean;
   onMenu: (open: boolean) => void;
+  serverMenu: string | null;
+  onServerMenu: (id: string | null) => void;
   onToggle: () => void;
   edits: GroupEdits;
 }) {
@@ -277,6 +333,7 @@ function RailFolder({
   const data: DragData = { drag: { kind: 'folder', groupUuid: group.uuid }, name: group.name };
   const drag = useDraggable({ id: `folder:${group.uuid}`, data });
   const { servers, loaded } = useGroupServers(group);
+  const tiles = useServerTiles();
   if (group.serverOrder.length === 0 || (loaded && servers.length === 0)) return null;
 
   const color = folderColor(group.name);
@@ -293,7 +350,14 @@ function RailFolder({
         </RailButton>
       </div>
       {servers.map((server) => (
-        <ServerButton key={server.uuid} server={server} current={current} from={group.uuid} />
+        <ServerButton
+          key={server.uuid}
+          server={server}
+          current={current}
+          from={group.uuid}
+          menu={serverMenu === serverDragId(server, group.uuid)}
+          onMenu={(open) => onServerMenu(open ? serverDragId(server, group.uuid) : null)}
+        />
       ))}
     </div>
   ) : (
@@ -319,10 +383,10 @@ function RailFolder({
         {servers.length > 0 ? (
           <span className='xylo-rail-folder-grid'>
             {servers.slice(0, FOLDER_PREVIEW).map((server) => {
-              const tile = serverTile(server.name);
+              const tile = serverTile(server.name, tiles[server.uuid]);
               return (
                 <span key={server.uuid} style={{ background: tile.background }}>
-                  {tile.initials[0]}
+                  <TileGlyph tile={tile} letters={1} />
                 </span>
               );
             })}
@@ -499,7 +563,9 @@ function RailServers({ current, signedIn }: { current: string | null; signedIn: 
   const edits = useGroupEdits();
   const [dragging, setDragging] = useState<DragData | null>(null);
   const [hover, setHover] = useState<Hover>(null);
+  // a folder's group uuid, or a server's drag id (serverDragId)
   const [menuFor, setMenuFor] = useState<string | null>(null);
+  const tiles = useServerTiles();
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 6 } }),
@@ -545,9 +611,9 @@ function RailServers({ current, signedIn }: { current: string | null; signedIn: 
     swallowNextClick();
     // set by useDraggable in this file
     const data = event.active.data.current as DragData | undefined;
-    // a finger held on a folder and let go where it was opens the folder's menu, the touch right click
-    if (data?.drag.kind === 'folder' && touchOf(event.activatorEvent) && Math.hypot(event.delta.x, event.delta.y) < 8) {
-      setMenuFor(data.drag.groupUuid);
+    // a finger held on a folder or a server and let go where it was opens its menu, the touch right click
+    if (data && touchOf(event.activatorEvent) && Math.hypot(event.delta.x, event.delta.y) < 8) {
+      setMenuFor(data.drag.kind === 'folder' ? data.drag.groupUuid : String(event.active.id));
       return;
     }
     if (drop) void edits.apply(drop.action);
@@ -557,7 +623,8 @@ function RailServers({ current, signedIn }: { current: string | null; signedIn: 
     setHover(null);
   };
 
-  const ghostTile = dragging?.drag.kind === 'server' ? serverTile(dragging.name) : null;
+  const ghostTile =
+    dragging?.drag.kind === 'server' ? serverTile(dragging.name, tiles[dragging.drag.serverUuid]) : null;
   const ghostColor = dragging?.drag.kind === 'folder' ? folderColor(dragging.name) : null;
 
   return (
@@ -583,6 +650,8 @@ function RailServers({ current, signedIn }: { current: string | null; signedIn: 
                 current={current}
                 menu={menuFor === group.uuid}
                 onMenu={(open) => setMenuFor(open ? group.uuid : null)}
+                serverMenu={menuFor}
+                onServerMenu={setMenuFor}
                 onToggle={() => toggleFolder(group.uuid)}
                 edits={edits}
               />
@@ -590,7 +659,14 @@ function RailServers({ current, signedIn }: { current: string | null; signedIn: 
           {/* until the groups load, a grouped server can't be told from a loose one */}
           {groupsLoaded &&
             looseServers(servers.data?.data ?? [], groups, RAIL_SERVERS).map((server) => (
-              <ServerButton key={server.uuid} server={server} current={current} from={null} />
+              <ServerButton
+                key={server.uuid}
+                server={server}
+                current={current}
+                from={null}
+                menu={menuFor === serverDragId(server, null)}
+                onMenu={(open) => setMenuFor(open ? serverDragId(server, null) : null)}
+              />
             ))}
         </LooseZone>
       </HoverContext.Provider>
@@ -602,7 +678,9 @@ function RailServers({ current, signedIn }: { current: string | null; signedIn: 
               className='xylo-rail-btn xylo-rail-server xylo-rail-ghost'
               style={{ background: ghostTile.background }}
             >
-              <span className='text-sm font-semibold text-white'>{ghostTile.initials}</span>
+              <span className='text-sm font-semibold text-white'>
+                <TileGlyph tile={ghostTile} />
+              </span>
             </div>
           )}
           {ghostColor && (

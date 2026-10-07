@@ -10,6 +10,9 @@ glass looks (Aurora's drifting violet and cyan, and the rest) are a click away i
 
 On a phone the rail and panel open from a top bar.
 
+Everyone can give a server their own tile (an icon, a colour, a name only they see), from the rail tile's or the
+server card's menu or the overview header; it follows their account to every device.
+
 Needs panel **1.2.0 or newer**.
 
 ## Features
@@ -28,7 +31,12 @@ Needs panel **1.2.0 or newer**.
   and power controls; select several for bulk power actions. Can be switched back to the panel's own list.
 - **Server overview**: a server opens on its status, live CPU, memory, disk and network, recent activity, how to
   connect (address, SFTP, ID) and its backups, schedules and addresses at a glance; the console is the next link.
-  Can be switched off in Studio.
+  Studio's Server page tab picks its blocks and their order, the layout, bars, graphs or plain figures for usage, how
+  much activity, a plain or banner header and the description, or switches it off.
+- **Console**: one full height workspace with live figures, the terminal, quick commands and the server's details.
+  In Studio: which figures show and their graph style (area, line, bars or none), the inspector on the right, the
+  left or off and whether it starts open, spacing, quick commands on or off and commands for everyone; terminal
+  colours, frames, line height and error highlighting, and whether visitors may pick their own look.
 - **Type**: Geist, Inter, Plus Jakarta Sans, Space Grotesk, Outfit, system or the panel's font, separately for
   headings; heading weight; gradient page titles (the greeting follows them); Geist Mono or JetBrains Mono for code.
 - **Motion**: full, subtle or none (reduced motion is always respected); rise, fade or zoom page transitions;

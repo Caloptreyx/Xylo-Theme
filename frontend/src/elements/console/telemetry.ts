@@ -104,3 +104,38 @@ export function sparkPath(
   const line = `M${points.join('L')}`;
   return { line, area: `${line}L${round(width)} ${height}L${round(start)} ${height}Z` };
 }
+
+/** How many columns the bar sparkline draws: each the highest of its share of the samples (three seconds). */
+export const BARS = 20;
+
+/**
+ * A sparkline as thin columns, SVG path data in a `width` by `height` box: the samples grouped from the newest back
+ * (`size / bars` to a column), each column the highest of its group, as wide as half its slot and centred in it, so
+ * a short history fills in from the right as sparkPath's does. Same scale as sparkPath; a column of nothing keeps a
+ * one unit stub, so an idle server still shows its row. None, as an empty path.
+ */
+export function sparkBars(
+  values: readonly number[],
+  width: number,
+  height: number,
+  max = 0,
+  size = SAMPLES,
+  bars = BARS,
+): string {
+  if (values.length === 0 || bars < 1) return '';
+  const samples = values.slice(-size).map((value) => (Number.isFinite(value) && value > 0 ? value : 0));
+  const group = Math.max(1, Math.floor(size / bars));
+  const columns: number[] = [];
+  for (let end = samples.length; end > 0 && columns.length < bars; end -= group) {
+    columns.unshift(Math.max(...samples.slice(Math.max(0, end - group), end)));
+  }
+  const top = Math.max(max, ...columns);
+  const slot = width / bars;
+  return columns
+    .map((value, i) => {
+      const x = round(width - slot * (columns.length - i) + slot / 4);
+      const y = round(top > 0 ? Math.min(height - 1, 1 + (1 - value / top) * (height - 2)) : height - 1);
+      return `M${x} ${y}H${round(x + slot / 2)}V${height}H${x}Z`;
+    })
+    .join('');
+}

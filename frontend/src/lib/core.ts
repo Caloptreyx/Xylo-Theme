@@ -21,6 +21,7 @@ export { default as getServerGroupServers } from '@/api/me/servers/groups/getSer
 export { default as getServerGroups } from '@/api/me/servers/groups/getServerGroups.ts';
 export { default as updateServerGroup } from '@/api/me/servers/groups/updateServerGroup.ts';
 export { default as updateServerGroupsOrder } from '@/api/me/servers/groups/updateServerGroupsOrder.ts';
+export { default as updateUserSettings } from '@/api/me/settings/updateUserSettings.ts';
 export { default as getAllocations } from '@/api/server/allocations/getAllocations.ts';
 export { default as getBackups } from '@/api/server/backups/getBackups.ts';
 export { default as getServerActivity } from '@/api/server/getServerActivity.ts';
@@ -51,6 +52,7 @@ export { downloadTextFile } from '@/lib/download/download.ts';
 export { bytesToString, mbToBytes } from '@/lib/format/size.ts';
 export { formatMilliseconds } from '@/lib/format/time.ts';
 export { queryKeys } from '@/lib/queryKeys.ts';
+export { getUserSetting, removeUserSetting, setUserSetting, useUserSetting } from '@/lib/userSettings.ts';
 export { default as BulkActionBar } from '@/pages/dashboard/home/BulkActionBar.tsx';
 export { default as ServerAddGroupModal } from '@/pages/dashboard/home/modals/ServerAddGroupModal.tsx';
 export { default as ServerPowerControls } from '@/pages/server/console/stats/ServerPowerControls.tsx';

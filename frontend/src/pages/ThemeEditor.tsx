@@ -12,6 +12,7 @@ import {
   faMobileScreen,
   faMoon,
   faRotateRight,
+  faServer,
   faSun,
   faSwatchbook,
   faTableColumns,
@@ -45,6 +46,7 @@ import {
   MotionSection,
   PresetsSection,
   type SectionProps,
+  ServerSection,
   SurfacesSection,
   TypographySection,
 } from '../elements/editor/sections.tsx';
@@ -77,6 +79,7 @@ const SECTIONS: Record<SectionId, { icon: IconDefinition; Component: FC<SectionP
   surfaces: { icon: faLayerGroup, Component: SurfacesSection },
   layout: { icon: faTableColumns, Component: LayoutSection },
   typography: { icon: faFont, Component: TypographySection },
+  server: { icon: faServer, Component: ServerSection },
   console: { icon: faTerminal, Component: ConsoleSection },
   motion: { icon: faWandMagicSparkles, Component: MotionSection },
 };

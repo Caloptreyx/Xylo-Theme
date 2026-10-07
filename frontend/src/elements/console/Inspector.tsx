@@ -2,6 +2,7 @@ import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { type KeyboardEvent, useId } from 'react';
 import { ActionIcon, ExtensionSlot, useServerCan, useServerStore } from '../../lib/core.ts';
+import { useXyloTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { ConnectDetails } from '../server/parts.tsx';
 import { CommandsEditor } from './QuickCommands.tsx';
@@ -16,9 +17,9 @@ const TAB_LABEL = {
 
 /**
  * The console's inspector: tabs for how to connect (the server's description first), the quick commands (with
- * `control.console`), and More, core's `statCards` and `statBlocks` slots (only when another extension fills one;
- * they mount while that tab shows). The same in the workspace's side panel and the phone's sheet; `onClose` adds a
- * close button where the panel has no other.
+ * `control.console` and `consoleQuickCommands`), and More, core's `statCards` and `statBlocks` slots (only when
+ * another extension fills one; they mount while that tab shows). The same in the workspace's side panel and the
+ * phone's sheet; `onClose` adds a close button where the panel has no other.
  */
 export function Inspector({
   tab,
@@ -33,10 +34,11 @@ export function Inspector({
   const id = useId();
   const server = useServerStore((state) => state.server);
   const canConsole = useServerCan('control.console');
+  const quickCommands = useXyloTheme().consoleQuickCommands;
   const registry = window.extensionContext.extensionRegistry.pages.server.console;
 
   const tabs: InspectorTab[] = ['connect'];
-  if (canConsole) tabs.push('commands');
+  if (canConsole && quickCommands) tabs.push('commands');
   if (registry.statCards.length > 0 || registry.statBlocks.length > 0) tabs.push('more');
   const current = tabs.includes(tab) ? tab : 'connect';
 

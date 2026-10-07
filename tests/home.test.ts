@@ -63,4 +63,16 @@ describe('servers page', () => {
     assert.deepEqual(statusCounts(servers, usage, 'a'), { all: 4, online: 2, offline: 1, attention: 1 });
     assert.deepEqual(statusCounts(servers, usage, 'zz'), { all: 0, online: 0, offline: 0, attention: 0 });
   });
+
+  test("the user's own names match the search and order the name sort, the real ones still match", () => {
+    const servers = [server('zeta'), server('alpha'), server('beta')];
+    const custom = { zeta: { name: 'Aardvark' }, beta: {} };
+    const real = (list: HomeServer[]) => list.map((s) => s.name);
+    const opts = { status: 'all', sort: 'name' } as const;
+    assert.deepEqual(real(visibleServers(servers, {}, { ...opts, query: 'aard' }, custom)), ['zeta']);
+    assert.deepEqual(real(visibleServers(servers, {}, { ...opts, query: 'zeta' }, custom)), ['zeta']);
+    // sorted by the shown names: Aardvark (zeta), alpha, beta
+    assert.deepEqual(real(visibleServers(servers, {}, { ...opts, query: '' }, custom)), ['zeta', 'alpha', 'beta']);
+    assert.equal(statusCounts(servers, {}, 'aard', custom).all, 1);
+  });
 });

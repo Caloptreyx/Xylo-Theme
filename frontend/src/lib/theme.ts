@@ -37,6 +37,25 @@ export type Motion = (typeof MOTIONS)[number];
 export const TRANSITIONS = ['rise', 'fade', 'zoom', 'none'] as const;
 export type Transition = (typeof TRANSITIONS)[number];
 
+/** The server overview's blocks: live usage, recent activity, how to connect, and backups, schedules, addresses. */
+export const OVERVIEW_SECTIONS = ['usage', 'activity', 'connect', 'glance'] as const;
+export type OverviewSection = (typeof OVERVIEW_SECTIONS)[number];
+/**
+ * How the overview lays its blocks out: activity beside a column of the connect and glance cards (usage across the
+ * top), one column, or every block across with the connect and glance cards side by side.
+ */
+export const OVERVIEW_LAYOUTS = ['split', 'stacked', 'wide'] as const;
+export type OverviewLayout = (typeof OVERVIEW_LAYOUTS)[number];
+/** The usage figures: a bar against the limit, a sparkline of the last minute, or the figures alone. */
+export const OVERVIEW_USAGE = ['bars', 'graphs', 'numbers'] as const;
+export type OverviewUsage = (typeof OVERVIEW_USAGE)[number];
+/** The overview's head: the name on the page, or a tinted band with the server's tile. */
+export const OVERVIEW_HEADERS = ['plain', 'banner'] as const;
+export type OverviewHeader = (typeof OVERVIEW_HEADERS)[number];
+/** How many activity entries the overview may list; one page of core's activity holds 25. */
+export const MIN_OVERVIEW_ACTIVITY = 3;
+export const MAX_OVERVIEW_ACTIVITY = 20;
+
 /**
  * The console's colours: derived from the theme, core's own (no override), or a named scheme. Named schemes keep
  * their own background in either mode, as a terminal usually does.
@@ -93,6 +112,19 @@ export const TERMINAL_SCHEME_GROUPS = [
  */
 export const TERMINAL_SKINS = ['card', 'window', 'flush', 'glass', 'crt', 'neon'] as const;
 export type TerminalSkin = (typeof TERMINAL_SKINS)[number];
+
+/** The figures the console's command bar can show, in the order it shows them. */
+export const CONSOLE_METRICS = ['cpu', 'memory', 'disk', 'netIn', 'netOut'] as const;
+export type ConsoleMetric = (typeof CONSOLE_METRICS)[number];
+/** The command bar's sparklines: a line over a faint fill, the line alone, thin columns, or none (figures only). */
+export const CONSOLE_GRAPHS = ['area', 'line', 'bars', 'none'] as const;
+export type ConsoleGraph = (typeof CONSOLE_GRAPHS)[number];
+/** Where the console's inspector sits (docked or sliding in from that side), or 'off' for none at all. */
+export const CONSOLE_INSPECTORS = ['right', 'left', 'off'] as const;
+export type ConsoleInspector = (typeof CONSOLE_INSPECTORS)[number];
+/** Site wide quick commands: at most this many, each at most MAX_SITE_COMMAND characters. */
+export const MAX_SITE_COMMANDS = 12;
+export const MAX_SITE_COMMAND = 200;
 
 export interface XyloTheme {
   accent: string;
@@ -151,6 +183,15 @@ export interface XyloTheme {
   homePage: boolean;
   /** Xylo's server overview (elements/server) as the page a server opens on; the console moves to `/terminal`. */
   serverOverview: boolean;
+  /** The overview's blocks in the order they show; one left out is hidden (each also needs its permission). */
+  overviewSections: OverviewSection[];
+  overviewLayout: OverviewLayout;
+  overviewUsage: OverviewUsage;
+  /** How many recent activity entries the overview lists, MIN_OVERVIEW_ACTIVITY to MAX_OVERVIEW_ACTIVITY. */
+  overviewActivityCount: number;
+  overviewHeader: OverviewHeader;
+  /** Whether the overview shows the server's description under its name. */
+  overviewDescription: boolean;
   /** Xylo's console page (elements/console): a full height terminal, live readouts, a details panel. */
   consolePage: boolean;
   terminalScheme: TerminalScheme;
@@ -164,6 +205,19 @@ export interface XyloTheme {
    * (lib/terminal.ts, lib/store.ts).
    */
   terminalUserChoice: boolean;
+  /** The figures the console's command bar shows; none hides the telemetry. */
+  consoleMetrics: ConsoleMetric[];
+  /** How the command bar draws each figure's last minute. */
+  consoleGraphs: ConsoleGraph;
+  consoleInspector: ConsoleInspector;
+  /** Whether the docked inspector starts open for visitors who never toggled it (`xylo:console-panel` wins). */
+  consoleInspectorOpen: boolean;
+  /** The spacing of the console's command bar, toolbar, chip row and prompt. */
+  consoleDensity: Density;
+  /** Quick commands at all: the chip row above the prompt and the inspector's Commands tab. */
+  consoleQuickCommands: boolean;
+  /** Quick commands the admins set for everyone who may use the console, shown before each visitor's own. */
+  consoleCommands: string[];
   /** Looks the admins saved in Studio, applied like the built in presets. */
   customPresets: CustomPreset[];
 }
@@ -289,12 +343,25 @@ export const DEFAULT_THEME: XyloTheme = {
   greeting: true,
   homePage: true,
   serverOverview: true,
+  overviewSections: [...OVERVIEW_SECTIONS],
+  overviewLayout: 'split',
+  overviewUsage: 'bars',
+  overviewActivityCount: 8,
+  overviewHeader: 'plain',
+  overviewDescription: true,
   consolePage: true,
   terminalScheme: 'theme',
   terminalSkin: 'card',
   terminalLineHeight: 120,
   consoleHighlight: true,
   terminalUserChoice: true,
+  consoleMetrics: [...CONSOLE_METRICS],
+  consoleGraphs: 'area',
+  consoleInspector: 'right',
+  consoleInspectorOpen: true,
+  consoleDensity: 'comfortable',
+  consoleQuickCommands: true,
+  consoleCommands: [],
   customPresets: [],
 };
 
@@ -575,6 +642,42 @@ export function presetName(v: unknown): string | null {
 export const pickLook = (t: XyloTheme): PresetLook =>
   Object.fromEntries(LOOK_KEYS.map((key) => [key, t[key]])) as PresetLook;
 
+/** A site command as shown and sent: control characters dropped, trimmed; null when nothing or too much is left. */
+export function siteCommand(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: control characters are what it removes
+  const command = v.replace(/[\u0000-\u001f\u007f]/g, '').trim();
+  return command.length > 0 && command.length <= MAX_SITE_COMMAND ? command : null;
+}
+
+/** Valid site commands only, no repeats, at most MAX_SITE_COMMANDS. */
+function siteCommands(v: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(v)) return fallback;
+  const out: string[] = [];
+  for (const item of v) {
+    const command = siteCommand(item);
+    if (command && !out.includes(command)) out.push(command);
+    if (out.length === MAX_SITE_COMMANDS) break;
+  }
+  return out;
+}
+
+/** The allow listed figures in `v`, each once, in CONSOLE_METRICS order. */
+function consoleMetrics(v: unknown, fallback: ConsoleMetric[]): ConsoleMetric[] {
+  if (!Array.isArray(v)) return fallback;
+  return CONSOLE_METRICS.filter((metric) => v.includes(metric));
+}
+
+/** The allow listed overview blocks in `v`, each once, in the order given. */
+function overviewSections(v: unknown, fallback: OverviewSection[]): OverviewSection[] {
+  if (!Array.isArray(v)) return fallback;
+  const out: OverviewSection[] = [];
+  for (const item of v) {
+    if (OVERVIEW_SECTIONS.includes(item) && !out.includes(item)) out.push(item);
+  }
+  return out;
+}
+
 /** At most MAX_CUSTOM_PRESETS entries with a valid, unique name; each look normalized like a theme. */
 function customPresets(v: unknown, fallback: CustomPreset[]): CustomPreset[] {
   if (!Array.isArray(v)) return fallback;
@@ -649,12 +752,30 @@ export function normalizeTheme(raw: unknown, d: XyloTheme = DEFAULT_THEME): Xylo
     greeting: flag(r.greeting, d.greeting),
     homePage: flag(r.homePage, d.homePage),
     serverOverview: flag(r.serverOverview, d.serverOverview),
+    overviewSections: overviewSections(r.overviewSections, d.overviewSections),
+    overviewLayout: choice(r.overviewLayout, OVERVIEW_LAYOUTS, d.overviewLayout),
+    overviewUsage: choice(r.overviewUsage, OVERVIEW_USAGE, d.overviewUsage),
+    overviewActivityCount: int(
+      r.overviewActivityCount,
+      MIN_OVERVIEW_ACTIVITY,
+      MAX_OVERVIEW_ACTIVITY,
+      d.overviewActivityCount,
+    ),
+    overviewHeader: choice(r.overviewHeader, OVERVIEW_HEADERS, d.overviewHeader),
+    overviewDescription: flag(r.overviewDescription, d.overviewDescription),
     consolePage: flag(r.consolePage, d.consolePage),
     terminalScheme: choice(r.terminalScheme, TERMINAL_SCHEMES, d.terminalScheme),
     terminalSkin: choice(r.terminalSkin, TERMINAL_SKINS, d.terminalSkin),
     terminalLineHeight: int(r.terminalLineHeight, 100, 180, d.terminalLineHeight),
     consoleHighlight: flag(r.consoleHighlight, d.consoleHighlight),
     terminalUserChoice: flag(r.terminalUserChoice, d.terminalUserChoice),
+    consoleMetrics: consoleMetrics(r.consoleMetrics, d.consoleMetrics),
+    consoleGraphs: choice(r.consoleGraphs, CONSOLE_GRAPHS, d.consoleGraphs),
+    consoleInspector: choice(r.consoleInspector, CONSOLE_INSPECTORS, d.consoleInspector),
+    consoleInspectorOpen: flag(r.consoleInspectorOpen, d.consoleInspectorOpen),
+    consoleDensity: choice(r.consoleDensity, DENSITIES, d.consoleDensity),
+    consoleQuickCommands: flag(r.consoleQuickCommands, d.consoleQuickCommands),
+    consoleCommands: siteCommands(r.consoleCommands, d.consoleCommands),
     customPresets: customPresets(r.customPresets, d.customPresets),
   };
 }
@@ -667,12 +788,17 @@ export function applyPreset(base: XyloTheme, look: PresetLook): XyloTheme {
 /** Field by field equality; comparing JSON would depend on key order, which differs between sources. */
 export function sameTheme(a: XyloTheme, b: XyloTheme): boolean {
   return (Object.keys(DEFAULT_THEME) as (keyof XyloTheme)[]).every((key) => {
-    if (key !== 'customPresets') return a[key] === b[key];
-    const [x, y] = [a.customPresets, b.customPresets];
-    return (
-      x.length === y.length &&
-      x.every((p, i) => p.name === y[i].name && LOOK_KEYS.every((look) => p.look[look] === y[i].look[look]))
-    );
+    if (key === 'customPresets') {
+      const [x, y] = [a.customPresets, b.customPresets];
+      return (
+        x.length === y.length &&
+        x.every((p, i) => p.name === y[i].name && LOOK_KEYS.every((look) => p.look[look] === y[i].look[look]))
+      );
+    }
+    const [x, y] = [a[key], b[key]];
+    return Array.isArray(x) && Array.isArray(y)
+      ? x.length === y.length && x.every((item, i) => item === y[i])
+      : x === y;
   });
 }
 
