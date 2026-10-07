@@ -392,7 +392,7 @@ export default function ThemeEditor() {
             className='grid size-8 shrink-0 place-items-center rounded-lg text-sm font-bold text-(--zoron-accent-ink) shadow-[0_6px_18px_-8px_var(--zoron-glow-color)]'
             style={{ background: 'var(--zoron-gradient)' }}
           >
-            X
+            Z
           </div>
           <div className='hidden min-w-0 flex-col leading-tight sm:flex'>
             <span className='truncate text-sm font-semibold'>{t('editor.title', {})}</span>
