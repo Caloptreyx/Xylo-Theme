@@ -1,5 +1,5 @@
 /**
- * Xylo's hooks into core's xterm (`pages.server.console.xterm`), for every console: Xylo's page, core's and the
+ * Zoron's hooks into core's xterm (`pages.server.console.xterm`), for every console: Zoron's page, core's and the
  * popout. The theme's terminal colours, mono font and line height, live as the theme changes (the editor's drafts
  * and the visitor's own terminal look included), and the highlighting of uncoloured warning and error lines.
  */
@@ -28,14 +28,14 @@ const tracked = new Map<Terminal, Tracked>();
 let pending: { theme: ITheme | undefined; font: string | undefined } = { theme: undefined, font: undefined };
 let schemeObserver: MutationObserver | null = null;
 
-/** The terminal theme for core's `core` theme: Xylo's palette over it, or core's own with the 'panel' scheme. */
+/** The terminal theme for core's `core` theme: Zoron's palette over it, or core's own with the 'panel' scheme. */
 function themeOver(core: ITheme | undefined): ITheme | undefined {
   const dark = document.documentElement.getAttribute('data-mantine-color-scheme') === 'dark';
   const palette = terminalPalette(currentTheme(), dark);
   if (!palette) return core;
   const theme: ITheme = {
     ...core,
-    // core's xterm.css forces the layers transparent; the card behind paints `--xylo-term-bg` (app.css)
+    // core's xterm.css forces the layers transparent; the card behind paints `--zoron-term-bg` (app.css)
     background: '#00000000',
     foreground: palette.foreground,
     selectionBackground: `${palette.foreground}4d`,
@@ -87,7 +87,7 @@ function apply(term: Terminal, entry: Tracked) {
 /**
  * Core sets `term.options.theme` again whenever the colour scheme changes. xterm 6's `options` is a plain object
  * whose keys are accessors defined on it, configurable, so `theme` is redefined on this one terminal: what core
- * assigns is kept as its theme and Xylo's palette over it is what reaches xterm. Where that is not possible, the
+ * assigns is kept as its theme and Zoron's palette over it is what reaches xterm. Where that is not possible, the
  * scheme observer reapplies after core.
  */
 function interceptTheme(term: Terminal, entry: Tracked) {
@@ -135,7 +135,7 @@ export function initTerminal(options: ITerminalOptions & ITerminalInitOnlyOption
   options.theme = themeOver(options.theme);
 }
 
-/** Before it opens: highlighting on writes, and a fit addon of Xylo's own for font and line height changes. */
+/** Before it opens: highlighting on writes, and a fit addon of Zoron's own for font and line height changes. */
 export function prepareTerminal(term: Terminal) {
   const fit = new FitAddon();
   term.loadAddon(fit);

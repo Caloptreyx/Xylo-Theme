@@ -1,5 +1,5 @@
 /**
- * Every core (`@/`) import Xylo uses, so a core module move is a one-file edit here. Each path exists since panel
+ * Every core (`@/`) import Zoron uses, so a core module move is a one-file edit here. Each path exists since panel
  * 1.2.0, the floor in Metadata.toml (check with `git show release-1.2.0:<path>` in a panel checkout).
  */
 

@@ -4,14 +4,14 @@ import { getServerGroupServers, getServerGroups, queryKeys, useAuth, useUserStor
 
 /**
  * Loads the user's server groups into core's store, which the dashboard's grouped tab edits in place, so a new,
- * renamed, reordered or deleted group shows wherever Xylo reads the store (the rail, the servers page) at once.
+ * renamed, reordered or deleted group shows wherever Zoron reads the store (the rail, the servers page) at once.
  * Every caller shares the one query. Returns whether the groups have loaded (or failed to).
  */
 export function useLoadServerGroups(): boolean {
   const { user } = useAuth();
   const setServerGroups = useUserStore((state) => state.setServerGroups);
   const query = useQuery({
-    queryKey: ['xylo', 'rail-groups', user?.uuid],
+    queryKey: ['zoron', 'rail-groups', user?.uuid],
     queryFn: async () => {
       const result = await getServerGroups();
       setServerGroups(result);
@@ -31,7 +31,7 @@ export function useLoadServerGroups(): boolean {
 export function useGroupServers(group: RailGroup | null) {
   const members = group?.serverOrder ?? [];
   const query = useQuery({
-    queryKey: [...queryKeys.user.servers.all(), group?.uuid, 'xylo-rail', [...members].sort().join(',')],
+    queryKey: [...queryKeys.user.servers.all(), group?.uuid, 'zoron-rail', [...members].sort().join(',')],
     queryFn: () => getServerGroupServers(group?.uuid ?? '', 1, undefined, GROUP_MAX),
     enabled: !!group && members.length > 0,
     placeholderData: keepPreviousData,

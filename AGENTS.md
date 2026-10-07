@@ -1,6 +1,6 @@
 # Working on this theme
 
-Xylo is a Calagopus Panel extension (`dev.caloptreyx.xylo`, panel **1.2.0 or newer**): a Rust crate that stores
+Zoron is a Calagopus Panel extension (`dev.caloptreyx.zoron`, panel **1.2.0 or newer**): a Rust crate that stores
 the theme, and a TypeScript frontend the panel compiles into itself.
 
 ## Layout
@@ -9,19 +9,19 @@ the theme, and a TypeScript frontend the panel compiles into itself.
 Metadata.toml                     package name, display name, panel version range
 backend/src/lib.rs                Extension impl: routers, permissions, settings deserializer
 backend/src/settings.rs           one opaque setting, `theme` (the editor's JSON, empty for the default look)
-backend/src/routes.rs             GET /xylo/theme (public, `{ theme, version }`, ETag, 304) and the admin PUT
-backend/src/permissions.rs        the `xylo-theme.update` admin permission; the PUT takes it or settings.update
+backend/src/routes.rs             GET /zoron/theme (public, `{ theme, version }`, ETag, 304) and the admin PUT
+backend/src/permissions.rs        the `zoron-theme.update` admin permission; the PUT takes it or settings.update
 frontend/src/index.ts             entry: applies the theme, greeting, servers page, server routes, console hooks, login
                                   preview route, admin route
 frontend/src/lib/theme.ts         the theme model, presets, normalizeTheme(), buildCss(), themeAttributes()
 frontend/src/lib/color.ts         hex colour maths (mix, contrast, shades, hsl, toHexColor)
 frontend/src/lib/store.ts         paints the theme (with the visitor's terminal look), caches it, the editor's preview
-                                  bridge, useXyloTheme()
+                                  bridge, useZoronTheme()
 frontend/src/lib/core.ts          every core (`@/`) import, in one place
 frontend/src/lib/groups.ts        the server group queries the rail and the servers page share
 frontend/src/lib/tiles.ts         server tiles: the default look, each user's own look (normalizeTiles(), pure)
-frontend/src/app.css              static CSS keyed off html's data-xylo-* attributes, fonts
-frontend/src/pages/ThemeEditor.tsx  Xylo Studio
+frontend/src/app.css              static CSS keyed off html's data-zoron-* attributes, fonts
+frontend/src/pages/ThemeEditor.tsx  Zoron Studio
 frontend/src/elements/editor/     sections (one per editor tab), controls, mocks (the option drawings), fields.ts (each
                                   section's theme fields and their search labels)
 frontend/src/elements/shell/      the rail layout: Shell.tsx (context panel, phone top bar and drawer), Rail.tsx (the
@@ -42,18 +42,18 @@ frontend/src/translations.ts      every user facing string (English)
 tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, lib/terminal.ts, lib/tiles.ts,
                                   shell/folders.ts, home/home.ts, server/overview.ts, console/console.ts,
                                   console/telemetry.ts, editor/fields.ts (not shipped)
-scripts/package.py                builds dist/dev_caloptreyx_xylo.c7s.zip
+scripts/package.py                builds dist/dev_caloptreyx_zoron.c7s.zip
 ```
 
 ## How the theming works
 
 Nothing is baked in at build time. `buildCss(theme)` turns the saved JSON into CSS variables in one
-`<style id="xylo-theme">`, and `themeAttributes(theme)` sets `data-xylo-*` attributes on html that pick the
+`<style id="zoron-theme">`, and `themeAttributes(theme)` sets `data-zoron-*` attributes on html that pick the
 variants in `app.css` (backdrop, texture, surface, sidebar, buttons, current link, motion, transitions, terminal
 frame). Both are rewritten only when they change, so the editor repaints its preview live without a reload.
 
 - The panel loads every extension's `app.css` even when the extension is disabled, so every rule there is scoped
-  to `html[data-xylo…]`, which only a running Xylo sets.
+  to `html[data-zoron…]`, which only a running Zoron sets.
 - Selectors in `buildCss` use `html:root` and `html:root[data-mantine-color-scheme=…]` to outrank Mantine's `:root`
   and core's pinned scheme overrides. Colours come from five values (two accents, background, surface, text);
   light mode derives its own palette (`lightBase()`) unless overridden.
@@ -65,10 +65,10 @@ frame). Both are rewritten only when they change, so the editor repaints its pre
   `html::after`; body is transparent. Glass blur is applied to outermost cards only; nested cards become wells.
 - Page transitions animate the routed page element inside core's Container (`#…-root > div > div:first-child`),
   without fill mode; the editor (fixed, full screen) is excluded because a transform would pin it to the column.
-- A first visit with no cached theme hides the page (`data-xylo-pending`) until the fetch settles, at most 1.5s.
+- A first visit with no cached theme hides the page (`data-zoron-pending`) until the fetch settles, at most 1.5s.
 - The default look is the Carbon preset (`DEFAULT_THEME` spreads it): off-black, one muted accent whose second
   accent is only a lighter step, solid surfaces, no glow, Geist and Geist Mono. Aurora (the violet to cyan glass
-  the theme started with) is a preset, and themes saved before keep their own values. Xylo's own pieces follow
+  the theme started with) is a preset, and themes saved before keep their own values. Zoron's own pieces follow
   the `design-taste-frontend` / `redesign-existing-projects` skills (taste-skill, installed for every agent on this
   VM in `~/.agents/skills`, `~/.claude/skills` and `~/.codex/skills`):
   the gradient only where a preset asks for it (buttons, the pill link, the rail's current area), a plain accent
@@ -89,12 +89,12 @@ navigation from the props core gave the Sidebar.
 
 - The rail: app icon, search (core's quick actions store, `setOpen`), Home and Admin (`isAdmin`), the user's server
   groups as folders, then up to 8 servers in no group (`getServers(1)` minus every group's `serverOrder`), the panel
-  toggle (`xylo:panel` in localStorage) and the account avatar. Home is not lit on `/account` pages; the avatar is.
+  toggle (`zoron:panel` in localStorage) and the account avatar. Home is not lit on `/account` pages; the avatar is.
 - Server tiles (lib/tiles.ts, elements/tiles/): by default the initials on a muted gradient of a hue hashed from the
   real name (`serverTile`). Each user may give a server their own name (1 to 32 characters, one line, no control
   or bidi characters), icon (`TILE_ICONS`, FontAwesome solid, mapped in TileFace.tsx; or the initials) and colour
   (`TILE_SWATCHES`, the tiles' own range, or any `#rrggbb`), in core's user settings, account scope, under
-  `xylo::server_tiles` (uuid to `{ name?, color?, icon? }`, at most 300 servers, the oldest edit dropped). Core's
+  `zoron::server_tiles` (uuid to `{ name?, color?, icon? }`, at most 300 servers, the oldest edit dropped). Core's
   `useUserSetting` reads it through a zod schema that is `normalizeTiles()`, so a missing or malformed value reads as
   defaults. Core's setter only logs a refusal (a value over the panel's size limit, 16 KiB by default; an
   impersonating admin), so `useSaveTile` shows the new map at once from its own pending copy, sends it with
@@ -105,7 +105,7 @@ navigation from the props core gave the Sidebar.
   the real one as placeholder, searchable icon grid, swatches and a custom hex, Reset to default) opens from a rail
   tile's menu, a servers page card's menu and the overview header's tile.
 - Folders are core's own server groups (also made on the dashboard's Grouped Servers tab), Discord style: closed, a
-  rounded square previewing the first four tiles and ringed while one of its servers is open; open (`xylo:folders`
+  rounded square previewing the first four tiles and ringed while one of its servers is open; open (`zoron:folders`
   in localStorage, uuids), the folder head and its servers on a tinted pill. The rail fetches the groups into core's
   `useUserStore().serverGroups`, which the dashboard edits in place, so renames, reorders, moves and new groups show
   at once; each folder's servers are fetched under `[...queryKeys.user.servers.all(), groupUuid, …]`, the prefix
@@ -133,8 +133,8 @@ navigation from the props core gave the Sidebar.
 - Below lg (a `page` container query, like core's) a sticky top bar (menu, app, search) replaces it; its menu opens
   rail and panel in a Mantine Drawer (`min(340px, 100vw - 3rem)`, the panel filling what the rail leaves), closed
   on navigation and when quick actions open, as core's drawer is.
-- app.css makes the router's content column (`.xylo-shell ~ #…-root` or `.xylo-topbar ~ …`, so virtual windows
-  without a sidebar are untouched) a rounded canvas (`--xylo-canvas`) with `overflow: clip`, which rounds the
+- app.css makes the router's content column (`.zoron-shell ~ #…-root` or `.zoron-topbar ~ …`, so virtual windows
+  without a sidebar are untouched) a rounded canvas (`--zoron-canvas`) with `overflow: clip`, which rounds the
   sticky page headers without making it a scroller. Page tabs (core's SubNavigation and others) become a pill bar.
 
 ## The servers page
@@ -143,7 +143,7 @@ navigation from the props core gave the Sidebar.
 start page) with one page. Core's routes are not interceptable, but both lists render `AccountContentContainer`
 (hookable) with their own registries: the render interceptor in index.ts matches those registries
 (`window.extensionContext…pages.dashboard.home.containerAll`/`containerGrouped`, read at render time) and
-`HomeSwitch` clones core's element with `hideTitleComponent` and Xylo's page as its children, so the page title,
+`HomeSwitch` clones core's element with `hideTitleComponent` and Zoron's page as its children, so the page title,
 padding and every extension's slots (the greeting among them) stay. Core's list component still mounts and fetches
 its first page; that is the cost of not owning the route.
 
@@ -153,8 +153,8 @@ its first page; that is the cost of not owning the route.
   (`serverResourceUsage`); the page subscribes to every node its servers live on while it is open. No resource
   usage on this page, by request: that lives on the server overview.
 - home.ts: `phaseOf` (suspended, failed, installing, restoring, transferring outrank the power state; no usage reads
-  offline), the status filters and their counts, and the sorts (`xylo:home-sort`).
-- ServerCard: the name is the link, stretched over the card (`::after`), so the controls above it (`.xylo-home-raise`)
+  offline), the status filters and their counts, and the sorts (`zoron:home-sort`).
+- ServerCard: the name is the link, stretched over the card (`::after`), so the controls above it (`.zoron-home-raise`)
   stay real buttons. A name of the user's own (server tiles, above) is the title, the real one quiet before the game;
   the search matches both and the name sort uses the shown one. Power buttons follow core's rules: the server's
   permissions plus the role's, nothing while installing, restoring, transferring, suspended or in node maintenance;
@@ -164,7 +164,7 @@ its first page; that is the cost of not owning the route.
 
 ## The server overview
 
-`serverOverview` (on by default) makes Xylo's overview the page a server opens on. A server route interceptor in
+`serverOverview` (on by default) makes Zoron's overview the page a server opens on. A server route interceptor in
 index.ts replaces core's console route at `/` with one route whose element is `ServerHome` (the overview, or core's
 console when the setting is off, read with the theme hook so Studio switches it live) and whose name and icon are
 getters on `currentTheme()` (resolved when the sidebar renders), and adds core's console again at `/terminal`,
@@ -174,11 +174,11 @@ once the admin adds `/terminal` to that order (core's editor lists it, since it 
 
 - Data: the server, its power state and its live stats are core's server store (`useServerStore`, fed by the
   server's websocket). Activity, backups, schedules and allocations are fetched under core's query keys plus
-  `'xylo-overview'`, so core's own pages' changes refresh them; each needs its page's permission (`useServerCan`)
+  `'zoron-overview'`, so core's own pages' changes refresh them; each needs its page's permission (`useServerCan`)
   and its part is left out without it, and nothing is fetched for a block the theme hides. Databases are not
   fetched (core's list includes passwords).
 - Power is core's own `ServerPowerControls` (websocket, kill confirmation, other extensions' power buttons).
-- The theme shapes the page, read with `useXyloTheme()` so Studio's preview follows each draft:
+- The theme shapes the page, read with `useZoronTheme()` so Studio's preview follows each draft:
   `overviewSections` (the blocks usage, activity, connect and glance, in order; one left out is hidden; allow listed
   and de-duplicated, order kept), `overviewLayout` (`overviewRows` in overview.ts: 'split', today's, gives usage a
   row and sets activity beside a narrower stack of the blocks listed next to it, on the side it was listed; 'stacked'
@@ -197,9 +197,9 @@ once the admin adds `/terminal` to that order (core's editor lists it, since it 
 overview is off. The route interceptor in index.ts gives both a `ConsoleSwitch` around core's element, read with the
 theme hook so Studio switches it live; `/console/popout` stays core's. The page's own settings (`consoleMetrics`,
 `consoleGraphs`, `consoleInspector`, `consoleInspectorOpen`, `consoleDensity`, `consoleQuickCommands`,
-`consoleCommands`) are read with `useXyloTheme()` in the components, so Studio's preview follows each draft.
+`consoleCommands`) are read with `useZoronTheme()` in the components, so Studio's preview follows each draft.
 
-- The page is one workspace: a single surface (`.xylo-con`) from where it starts (`--xylo-con-top`, measured when the
+- The page is one workspace: a single surface (`.zoron-con`) from where it starts (`--zoron-con-top`, measured when the
   page's height or the window changes) to the viewport's bottom, at least 24rem, shrinking above the on-screen
   keyboard as core's terminal does (`useVisualViewportBottomInset`); no cards around or inside it. It is wrapped in
   `ServerContentContainer` with core's title and container registry, so other extensions' container slots stay.
@@ -210,7 +210,7 @@ theme hook so Studio switches it live; `/console/popout` stays core's. The page'
   label, a tabular value and a sparkline of the last 60 samples, limits and totals in the title; flat and muted
   while offline; none leaves the telemetry out and the bar closes up); core's `ServerPowerControls` (in core's
   `ServerCan`) restyled as one segmented group by CSS on core's markup; the inspector toggle. One row, two (figures
-  under) when the workspace is under 60rem (`@container xylo-con`; the grid drops the missing figures or toggle by
+  under) when the workspace is under 60rem (`@container zoron-con`; the grid drops the missing figures or toggle by
   `:has`). The sparkline style is `consoleGraphs` (`data-graph` on the figures): 'area' (the line over a faint
   fill, the default), 'line', 'bars' (thin columns) or 'none' (label over value only). `useTelemetry` subscribes
   to core's server store (`useServerStoreApi`) and feeds telemetry.ts: `pushSample` (a 60 sample window), `ratesOf`
@@ -218,16 +218,16 @@ theme hook so Studio switches it live; `/console/popout` stays core's. The page'
   curves over, the disk's excepted), `sparkPath` (the line and area paths, newest sample at the right edge, scaled to
   the limit or the largest sample) and `sparkBars` (`BARS` columns, each the highest of its share of the samples,
   half a slot wide, a one unit stub for nothing; same scale). Studio's graph drawings use the same builders.
-- Spacing: `consoleDensity` (`data-density` on the workspace) sets CSS variables there (`--xylo-con-edge`, the inset
+- Spacing: `consoleDensity` (`data-density` on the workspace) sets CSS variables there (`--zoron-con-edge`, the inset
   every row starts at, and the bar's padding, gap and control height, the toolbar's, chip row's and prompt's heights;
   'comfortable' is the original spacing). Phones keep their own touch sizes.
 - Core's own terminal (`terminal/Console.tsx`: search, history, SSH, popout, features, input row slots) fills the
-  middle. Its card is `display: contents` inside `.xylo-con-term`, so its children lay out in that column: the header
+  middle. Its card is `display: contents` inside `.zoron-con-term`, so its children lay out in that column: the header
   is a slim toolbar (its connection dot small and still), the output inset, the input row (`order: 2`) a prompt along
   the bottom edge (a `›` cue, or core's prefix button where the panel has one, 1.2.4; mono, no box, focus lights its
   edge), and the quick command chips (`order: 1`) just above it. xterm.ts and TerminalButtons still find the card.
-- The workspace paints the scheme (`--xylo-term-bg`, the solid card colour with 'panel') and, with a named scheme,
-  sets Mantine's text, dimmed, default and border colours and `--xylo-hairline` from it, so a dark scheme in light
+- The workspace paints the scheme (`--zoron-term-bg`, the solid card colour with 'panel') and, with a named scheme,
+  sets Mantine's text, dimmed, default and border colours and `--zoron-hairline` from it, so a dark scheme in light
   mode (or the reverse) reads; the bar and the inspector sit a step off it (the scheme's text mixed in).
 - The inspector (Inspector.tsx): tabs Connect (the description, then parts.tsx's `ConnectDetails`), Commands (with
   `control.console` and `consoleQuickCommands`) and More (core's `statCards` and `statBlocks` slots, only when one
@@ -235,7 +235,7 @@ theme hook so Studio switches it live; `/console/popout` stays core's. The page'
   on the workspace) or is 'off': no column, toggle, sheet, edit chip or personal commands (the site's still show).
   From 80rem of page width (`usePageSize`, measured as core's `usePageBreakpoint` does: the virtual window, else
   the body; that hook only exists from panel 1.2.2, and biome bans `useMediaQuery`) it docks as a 20rem column
-  behind a hairline and the terminal narrows; open state in `xylo:console-panel` ('shown' or 'hidden', written when
+  behind a hairline and the terminal narrows; open state in `zoron:console-panel` ('shown' or 'hidden', written when
   the visitor toggles it), else `consoleInspectorOpen` (open by default). Below, it slides over the terminal from
   its side's edge (transform and opacity; none with the motion setting off or reduced motion), opens on demand only,
   and closes on Escape and a press outside it (toggles and portals excepted).
@@ -248,7 +248,7 @@ theme hook so Studio switches it live; `/console/popout` stays core's. The page'
 - Quick commands (`consoleQuickCommands`, on by default; off hides the chip row and the Commands tab): the site's
   (`consoleCommands`, set in Studio: control characters dropped, trimmed, 1 to 200 characters, unique, at most 12,
   by normalizeTheme()'s `siteCommand()`) first, then the visitor's own, per server and browser
-  (`xylo:commands:<uuid>`), at most 20 of 200 characters, one line each, validated on read (console.ts); an own one
+  (`zoron:commands:<uuid>`), at most 20 of 200 characters, one line each, validated on read (console.ts); an own one
   the site already has is not shown twice, nor can it be added. Site chips carry `data-site` (a faint accent edge
   and cue) and the inspector lists them under their own heading without a remove button. `useQuickCommands` reads
   the own ones through `useSyncExternalStore`, so the chips and the inspector stay in step (a list storage refuses
@@ -257,31 +257,31 @@ theme hook so Studio switches it live; `/console/popout` stays core's. The page'
   saying why. The last chip opens the inspector at Commands; with no own commands saved it is labelled.
 - xterm.ts hooks every console, core's page and the popout included (`pages.server.console.xterm`): the init handler
   sets the mono font (`MONO_STACKS`, core's when 'panel'), the line height and the palette (`terminalPalette`, with a
-  transparent background: app.css paints `--xylo-term-bg` on the card holding `.xterm`, or on Xylo's workspace,
-  while `data-xylo-terminal` is 'custom'). Core reassigns `term.options.theme` on every scheme change, so `theme` is
+  transparent background: app.css paints `--zoron-term-bg` on the card holding `.xterm`, or on Zoron's workspace,
+  while `data-zoron-terminal` is 'custom'). Core reassigns `term.options.theme` on every scheme change, so `theme` is
   redefined on that terminal's options object (xterm 6 defines each key as a configurable accessor): core's value is
-  kept and Xylo's palette over it goes through, or core's own with the 'panel' scheme. A scheme attribute observer
+  kept and Zoron's palette over it goes through, or core's own with the 'panel' scheme. A scheme attribute observer
   reapplies in case that fails. `subscribeTheme` reapplies colours, font and line height on every theme change
-  (Studio's drafts too), then Xylo's own FitAddon refits; a web font that loads after the terminal opened triggers a
+  (Studio's drafts too), then Zoron's own FitAddon refits; a web font that loads after the terminal opened triggers a
   remeasure.
 - With `consoleHighlight`, `term.write` is wrapped so new uncoloured warning and error lines are tinted
   (lib/terminal.ts). Clear and download (`<server>-<date and time>.log`, the active buffer as plain text with soft
   wrapped rows joined) are core header buttons (`terminalHeaderRightComponents`), finding their terminal through
   the card they sit in.
-- Frames (`terminalSkin`, `data-xylo-term-skin`; app.css's "terminal frames" section) style the card holding
-  `.xterm` on core's console and the popout, and the whole workspace on Xylo's page (the card rules that would draw
-  around the dissolved card skip `.xylo-con-term > *`): card (plain), window (core's card: a title bar of `::before`
+- Frames (`terminalSkin`, `data-zoron-term-skin`; app.css's "terminal frames" section) style the card holding
+  `.xterm` on core's console and the popout, and the whole workspace on Zoron's page (the card rules that would draw
+  around the dissolved card skip `.zoron-con-term > *`): card (plain), window (core's card: a title bar of `::before`
   dots, core's header moved down by a margin, since core's `p-2!` is a layered `!important`; the workspace: the dots
   at the left of the command bar, which turns title bar), flush (no surface: 'theme' and 'panel' on the canvas, a
-  named scheme on its own background, `--xylo-term-flush`), glass (the scheme's background translucent,
-  `--xylo-blur`), crt (scanlines and vignette in a `::after` that clicks pass through, over the workspace's terminal
-  column; text glow on the DOM renderer's row spans, still; `--xylo-term-scan/vignette/glow` from buildCss are faint
+  named scheme on its own background, `--zoron-term-flush`), glass (the scheme's background translucent,
+  `--zoron-blur`), crt (scanlines and vignette in a `::after` that clicks pass through, over the workspace's terminal
+  column; text glow on the DOM renderer's row spans, still; `--zoron-term-scan/vignette/glow` from buildCss are faint
   on a light screen), neon (accent outline and glow, the workspace's edge). They paint with currentColor and fall
-  back to the card's colour without `--xylo-term-bg`, so each works with every scheme in both modes. The selectors
+  back to the card's colour without `--zoron-term-bg`, so each works with every scheme in both modes. The selectors
   double the html attribute to outrank the glass surfaces' blur rule.
 - Personal looks (`terminalUserChoice`, on by default): a palette button in core's terminal header (TerminalLook.tsx,
   rendered by TerminalButtons) opens a popover of every scheme (grouped as `TERMINAL_SCHEME_GROUPS`) and frame, "Site
-  default" first in each. The pick is this browser's: `xylo:terminal` in localStorage, `{ scheme?, skin? }`, allow
+  default" first in each. The pick is this browser's: `zoron:terminal` in localStorage, `{ scheme?, skin? }`, allow
   listed on read (`parseTerminalPrefs`, lib/terminal.ts). lib/store.ts keeps the theme it was given as `base` and
   paints `withTerminalPrefs(base, prefs)`; `setTerminalPrefs` repaints and notifies, so xterm.ts recolours at once,
   and a `storage` event carries a pick to the other windows (the popout). The editor's preview frame ignores the
@@ -289,11 +289,11 @@ theme hook so Studio switches it live; `/console/popout` stays core's. The page'
 
 ## The editor
 
-`/admin/xylo` (permission `settings.read` or `xylo-theme.update`) and the extension's card page. It previews the
-panel in an iframe: the frame's Xylo posts `xylo:ready`, the editor posts each draft (`xylo:preview`, debounced
+`/admin/zoron` (permission `settings.read` or `zoron-theme.update`) and the extension's card page. It previews the
+panel in an iframe: the frame's Zoron posts `zoron:ready`, the editor posts each draft (`zoron:preview`, debounced
 50ms) with the scheme to show. Inside the frame the scheme and the theme cache are never written to localStorage,
 which the frame shares with the editor. Auth routes redirect signed in users, so the login preview is core's
-`Login` at `/xylo-preview/login`.
+`Login` at `/zoron-preview/login`.
 
 Saving sends the loaded `version` as `base`; a 409 offers to load the other save or overwrite it. Saving is off
 until the stored theme has loaded. Undo and redo are debounced whole drafts. Colour fields keep half typed text
@@ -302,7 +302,7 @@ in the draft; the preview and drawings use the last valid normalized draft.
 - Sections: `SECTION_FIELDS` (elements/editor/fields.ts) lists each tab's theme fields with the label the search
   shows; every field belongs to exactly one tab (a test checks it). It drives the dot on a tab whose fields differ
   from the saved theme, "Reset section" (that tab's fields back to `DEFAULT_THEME`, one undo step; not on Presets)
-  and the settings search above the tab: every control carries its field as `data-xylo-setting`, and picking a
+  and the settings search above the tab: every control carries its field as `data-zoron-setting`, and picking a
   result opens its tab, scrolls the control into view and lights it once. A control hidden by another setting (blur
   without glass) just opens the tab.
 - Compare: holding the compare button (pointer, Space or Enter) sends the saved theme to the frame, letting go the
@@ -317,7 +317,7 @@ in the draft; the preview and drawings use the last valid normalized draft.
   one switched on joins the end), Layout (each tile an `OverviewLayoutMock` of the draft's blocks laid out by
   `overviewRows`), Usage figures (`OverviewUsageMock`, the graphs drawn with telemetry.ts's `sparkPath`) with the
   activity entries slider, and Header (`OverviewHeaderMock`) with the description switch.
-- The Console tab: Page (Xylo's console page, and with it its spacing), then, only while that page is on, Command
+- The Console tab: Page (Zoron's console page, and with it its spacing), then, only while that page is on, Command
   bar (the figures as toggle chips, `ToggleChips`; the graph style, each tile a `ConsoleGraphMock` drawn with
   telemetry.ts's builders), Inspector (the side, each tile a `ConsoleInspectorMock` of the workspace's layout; open
   by default unless 'off') and Quick commands (the switch, and the site's commands as an editable list: add with
@@ -326,8 +326,8 @@ in the draft; the preview and drawings use the last valid normalized draft.
   dark mode; Panel drawn as core's, on the surface), the frame (`TerminalSkinMock`, the draft's scheme in each
   frame), whether visitors may pick their own, line height and log highlighting. The code font stays under Type.
 
-A new theme field needs: the `XyloTheme` field and default, a line in `normalizeTheme()`, its use in `buildCss()`
-or `themeAttributes()` plus `app.css` (or in a component, read with `useXyloTheme()`), a control in a section (with
+A new theme field needs: the `ZoronTheme` field and default, a line in `normalizeTheme()`, its use in `buildCss()`
+or `themeAttributes()` plus `app.css` (or in a component, read with `useZoronTheme()`), a control in a section (with
 its `field`), its entry in `SECTION_FIELDS`, its strings, and a test case. `sameTheme()` compares list fields by
 value. Add it to `PresetLook` only if it is part of a look rather than about the site.
 
@@ -342,11 +342,11 @@ value. Add it to `PresetLook` only if it is part of a look rather than about the
 
 `node --test "tests/*.test.ts"` runs the model tests. Everything else runs in CI: `.github/workflows/check.yml`
 calls the org's shared extension check, which stages the extension into the newest panel release and runs
-typecheck, biome, the frontend build, the node tests and `cargo test -p dev_caloptreyx_xylo`. Push and read that
+typecheck, biome, the frontend build, the node tests and `cargo test -p dev_caloptreyx_zoron`. Push and read that
 run; do not build the panel on the development VM.
 
 For a quick visual check against the local dev panel, bind mount (not symlink: vite resolves `shared` from the
-real path) `frontend/` at `calagopus-dev/frontend/extensions/dev_caloptreyx_xylo` and run vite there; the backend
+real path) `frontend/` at `calagopus-dev/frontend/extensions/dev_caloptreyx_zoron` and run vite there; the backend
 routes only exist in a panel built with the extension.
 
 Package with `python3 scripts/package.py` and check with `panel-rs extensions inspect`.

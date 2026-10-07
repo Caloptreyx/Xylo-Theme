@@ -19,7 +19,7 @@ import {
   useUserStore,
 } from '../../lib/core.ts';
 import { useGroupServers, useLoadServerGroups } from '../../lib/groups.ts';
-import { useXyloTheme } from '../../lib/store.ts';
+import { useZoronTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { folderColor } from '../shell/folders.ts';
 import { useServerTiles } from '../tiles/useTiles.ts';
@@ -31,16 +31,16 @@ type ContainerProps = ComponentProps<typeof AccountContentContainer>;
 /**
  * Core's two server lists (all, grouped) render through AccountContentContainer with their own registries; the
  * interceptor in index.ts hands those here. With `homePage` on, the container stays (page title, padding, every
- * extension's slots, Xylo's greeting among them) and its content becomes Xylo's page, which covers both lists.
+ * extension's slots, Zoron's greeting among them) and its content becomes Zoron's page, which covers both lists.
  */
 export function HomeSwitch({ element }: ContainerProps & { element: ReactElement<ContainerProps> }) {
-  const theme = useXyloTheme();
+  const theme = useZoronTheme();
   if (!theme.homePage) return element;
   return cloneElement(element, { hideTitleComponent: true, children: <Home /> });
 }
 
 /** The chosen sort, per browser. */
-const SORT_KEY = 'xylo:home-sort';
+const SORT_KEY = 'zoron:home-sort';
 /** Pages of core's server list (26 servers each) loaded at most; past that, the page says how many it shows. */
 const MAX_PAGES = 10;
 
@@ -80,18 +80,18 @@ function Chip({
   children: ReactNode;
 }) {
   return (
-    <button type='button' className='xylo-chip' data-active={active || undefined} onClick={onClick}>
-      {color && <span className='xylo-chip-dot' style={{ background: color }} />}
+    <button type='button' className='zoron-chip' data-active={active || undefined} onClick={onClick}>
+      {color && <span className='zoron-chip-dot' style={{ background: color }} />}
       {children}
-      {count !== undefined && <span className='xylo-chip-count'>{count}</span>}
+      {count !== undefined && <span className='zoron-chip-count'>{count}</span>}
     </button>
   );
 }
 
 function Empty({ title, hint, action }: { title: string; hint: string; action?: ReactNode }) {
   return (
-    <Card className='xylo-home-empty'>
-      <span className='xylo-home-empty-icon'>
+    <Card className='zoron-home-empty'>
+      <span className='zoron-home-empty-icon'>
         <FontAwesomeIcon icon={faServer} />
       </span>
       <span className='text-lg font-semibold'>{title}</span>
@@ -102,7 +102,7 @@ function Empty({ title, hint, action }: { title: string; hint: string; action?: 
 }
 
 /**
- * Xylo's servers page (`homePage` on), in place of both of core's lists: a stat strip summing the shown servers'
+ * Zoron's servers page (`homePage` on), in place of both of core's lists: a stat strip summing the shown servers'
  * live usage, a search, status chips with counts, a chip per server group (the rail's folders), a sort, and a grid
  * of server cards. Selecting cards brings up core's bulk power bar. Live usage comes from core's store, polled per
  * node while the page is open.
@@ -134,7 +134,7 @@ export default function Home() {
   });
 
   const all = useQuery({
-    queryKey: ['xylo', 'home-servers', user?.uuid, others],
+    queryKey: ['zoron', 'home-servers', user?.uuid, others],
     queryFn: () => loadServers(others),
     enabled: !!user && !user.suspended,
     placeholderData: keepPreviousData,
@@ -178,7 +178,7 @@ export default function Home() {
   };
 
   return (
-    <div className='xylo-home flex flex-col gap-5'>
+    <div className='zoron-home flex flex-col gap-5'>
       <div className='flex flex-col gap-3'>
         <div className='flex flex-wrap items-center gap-3'>
           <h2 className='mr-auto text-xl font-semibold tracking-tight'>
@@ -226,7 +226,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className='xylo-chips' role='toolbar'>
+        <div className='zoron-chips' role='toolbar'>
           {STATUS_FILTERS.filter((filter) => filter !== 'attention' || counts.attention > 0).map((filter) => (
             <Chip key={filter} active={status === filter} count={counts[filter]} onClick={() => setStatus(filter)}>
               {t(FILTER_LABEL[filter], {})}
@@ -234,7 +234,7 @@ export default function Home() {
           ))}
           {shownGroups.length > 0 && !others && (
             <>
-              <span className='xylo-chips-sep' />
+              <span className='zoron-chips-sep' />
               <Chip active={group === null} onClick={() => setGroupUuid(null)}>
                 {t('home.allServers', {})}
               </Chip>
@@ -254,7 +254,7 @@ export default function Home() {
           {shown.length > 0 && (
             <button
               type='button'
-              className='xylo-chip ml-auto'
+              className='zoron-chip ml-auto'
               data-active={allShownSelected || undefined}
               onClick={() =>
                 setSelected(
@@ -272,9 +272,9 @@ export default function Home() {
       </div>
 
       {loading ? (
-        <div className='xylo-home-grid'>
+        <div className='zoron-home-grid'>
           {[0, 1, 2].map((i) => (
-            <Card key={i} className='xylo-home-card xylo-skeleton' />
+            <Card key={i} className='zoron-home-card zoron-skeleton' />
           ))}
         </div>
       ) : pool.length === 0 ? (
@@ -292,7 +292,7 @@ export default function Home() {
           }
         />
       ) : (
-        <div className='xylo-home-grid'>
+        <div className='zoron-home-grid'>
           {shown.map((server) => (
             <ServerCard
               key={server.uuid}

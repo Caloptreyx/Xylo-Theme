@@ -21,7 +21,7 @@ export const SURFACES = ['glass', 'solid', 'outline'] as const;
 export type Surface = (typeof SURFACES)[number];
 export const SHADOWS = ['none', 'soft', 'deep'] as const;
 export type Shadow = (typeof SHADOWS)[number];
-/** Navigation: Xylo's icon rail and context panel (elements/shell), or core's sidebar floating or flush. */
+/** Navigation: Zoron's icon rail and context panel (elements/shell), or core's sidebar floating or flush. */
 export const SIDEBARS = ['rail', 'floating', 'docked'] as const;
 export type Sidebar = (typeof SIDEBARS)[number];
 export const BUTTON_STYLES = ['gradient', 'solid', 'soft', 'outline'] as const;
@@ -126,7 +126,7 @@ export type ConsoleInspector = (typeof CONSOLE_INSPECTORS)[number];
 export const MAX_SITE_COMMANDS = 12;
 export const MAX_SITE_COMMAND = 200;
 
-export interface XyloTheme {
+export interface ZoronTheme {
   accent: string;
   /** The gradient's second stop and the backdrop's second colour. */
   accent2: string;
@@ -179,9 +179,9 @@ export interface XyloTheme {
   hoverLift: boolean;
   /** A greeting with the user's name above the servers list. */
   greeting: boolean;
-  /** Xylo's servers page (elements/home): live stats, filters and power controls in place of core's list. */
+  /** Zoron's servers page (elements/home): live stats, filters and power controls in place of core's list. */
   homePage: boolean;
-  /** Xylo's server overview (elements/server) as the page a server opens on; the console moves to `/terminal`. */
+  /** Zoron's server overview (elements/server) as the page a server opens on; the console moves to `/terminal`. */
   serverOverview: boolean;
   /** The overview's blocks in the order they show; one left out is hidden (each also needs its permission). */
   overviewSections: OverviewSection[];
@@ -192,7 +192,7 @@ export interface XyloTheme {
   overviewHeader: OverviewHeader;
   /** Whether the overview shows the server's description under its name. */
   overviewDescription: boolean;
-  /** Xylo's console page (elements/console): a full height terminal, live readouts, a details panel. */
+  /** Zoron's console page (elements/console): a full height terminal, live readouts, a details panel. */
   consolePage: boolean;
   terminalScheme: TerminalScheme;
   terminalSkin: TerminalSkin;
@@ -210,7 +210,7 @@ export interface XyloTheme {
   /** How the command bar draws each figure's last minute. */
   consoleGraphs: ConsoleGraph;
   consoleInspector: ConsoleInspector;
-  /** Whether the docked inspector starts open for visitors who never toggled it (`xylo:console-panel` wins). */
+  /** Whether the docked inspector starts open for visitors who never toggled it (`zoron:console-panel` wins). */
   consoleInspectorOpen: boolean;
   /** The spacing of the console's command bar, toolbar, chip row and prompt. */
   consoleDensity: Density;
@@ -233,7 +233,7 @@ export interface CustomPreset {
  * not the style.
  */
 export type PresetLook = Pick<
-  XyloTheme,
+  ZoronTheme,
   | 'accent'
   | 'accent2'
   | 'background'
@@ -325,7 +325,7 @@ const AURORA: PresetLook = {
   pageTransition: 'rise',
 };
 
-export const DEFAULT_THEME: XyloTheme = {
+export const DEFAULT_THEME: ZoronTheme = {
   ...CARBON,
   success: '',
   warning: '',
@@ -639,7 +639,7 @@ export function presetName(v: unknown): string | null {
   return name.length > 0 && name.length <= MAX_PRESET_NAME ? name : null;
 }
 
-export const pickLook = (t: XyloTheme): PresetLook =>
+export const pickLook = (t: ZoronTheme): PresetLook =>
   Object.fromEntries(LOOK_KEYS.map((key) => [key, t[key]])) as PresetLook;
 
 /** A site command as shown and sent: control characters dropped, trimmed; null when nothing or too much is left. */
@@ -694,7 +694,7 @@ function customPresets(v: unknown, fallback: CustomPreset[]): CustomPreset[] {
   return out;
 }
 
-export function normalizeTheme(raw: unknown, d: XyloTheme = DEFAULT_THEME): XyloTheme {
+export function normalizeTheme(raw: unknown, d: ZoronTheme = DEFAULT_THEME): ZoronTheme {
   const r = record(raw) ?? {};
   const image = r.backgroundImage;
 
@@ -781,13 +781,13 @@ export function normalizeTheme(raw: unknown, d: XyloTheme = DEFAULT_THEME): Xylo
 }
 
 /** A preset's look laid over `base`, which keeps the fields a preset leaves alone. */
-export function applyPreset(base: XyloTheme, look: PresetLook): XyloTheme {
+export function applyPreset(base: ZoronTheme, look: PresetLook): ZoronTheme {
   return normalizeTheme({ ...base, ...look }, base);
 }
 
 /** Field by field equality; comparing JSON would depend on key order, which differs between sources. */
-export function sameTheme(a: XyloTheme, b: XyloTheme): boolean {
-  return (Object.keys(DEFAULT_THEME) as (keyof XyloTheme)[]).every((key) => {
+export function sameTheme(a: ZoronTheme, b: ZoronTheme): boolean {
+  return (Object.keys(DEFAULT_THEME) as (keyof ZoronTheme)[]).every((key) => {
     if (key === 'customPresets') {
       const [x, y] = [a.customPresets, b.customPresets];
       return (
@@ -802,7 +802,7 @@ export function sameTheme(a: XyloTheme, b: XyloTheme): boolean {
   });
 }
 
-export type Palette = Pick<XyloTheme, 'accent' | 'accent2' | 'background' | 'surface' | 'text'>;
+export type Palette = Pick<ZoronTheme, 'accent' | 'accent2' | 'background' | 'surface' | 'text'>;
 
 /**
  * A dark palette around one hue: a bright accent, an analogous second stop `spread` degrees on, and near black
@@ -846,7 +846,7 @@ const SPACING: [string, number][] = [
 const DENSITY_SCALE: Record<Density, number> = { compact: 0.8, comfortable: 1, spacious: 1.2 };
 
 /** Light mode's base colours: the dark page becomes the ink, the surfaces near white with a hint of accent. */
-export function lightBase(t: XyloTheme) {
+export function lightBase(t: ZoronTheme) {
   const ink = mix(t.background, '#0b0b10', 0.5);
   const text = t.lightText || (luminance(ink) < 0.03 ? ink : '#14141c');
   return {
@@ -857,7 +857,7 @@ export function lightBase(t: XyloTheme) {
 }
 
 /** Mantine's dark scale: 0 is text, 4 borders, 6 cards, 7 the page. */
-function darkScale(t: XyloTheme): string[] {
+function darkScale(t: ZoronTheme): string[] {
   const { text, background, surface } = t;
   return [
     text,
@@ -874,11 +874,11 @@ function darkScale(t: XyloTheme): string[] {
 }
 
 /** The fills text sits on: the accent, and with gradient buttons or pill links both gradient stops. */
-const accentFills = (t: XyloTheme) =>
+const accentFills = (t: ZoronTheme) =>
   t.buttonStyle === 'gradient' || t.navStyle === 'pill' ? [t.accent, t.accent2] : [t.accent];
 
 /** White or near black, whichever reads better on the worst of the accent fills; white wins ties. */
-export function accentInk(t: XyloTheme): string {
+export function accentInk(t: ZoronTheme): string {
   const fills = accentFills(t);
   const worst = (ink: string) => Math.min(...fills.map((fill) => contrastRatio(ink, fill)));
   return worst('#ffffff') >= worst('#0b0b10') ? '#ffffff' : '#0b0b10';
@@ -914,7 +914,7 @@ export interface TerminalPalette {
 /**
  * The named schemes as their authors publish them (Catppuccin is Mocha, Everforest dark medium, Kanagawa Wave,
  * GitHub the Primer defaults; Solarized dark's bright black is base01 rather than the background, as most ports do,
- * so dim text stays visible). Phosphor and Amber are Xylo's own monochrome screens: every colour is a shade of the
+ * so dim text stays visible). Phosphor and Amber are Zoron's own monochrome screens: every colour is a shade of the
  * one hue, so coloured output stays readable.
  */
 export const NAMED_TERMINALS: Record<Exclude<TerminalScheme, 'theme' | 'panel'>, TerminalPalette> = {
@@ -1277,7 +1277,7 @@ export const NAMED_TERMINALS: Record<Exclude<TerminalScheme, 'theme' | 'panel'>,
  * step below the page, takes red, green and yellow from the status colours and blue from the accent, and darkens or
  * lightens every hue until it reads on that background at 4.5:1.
  */
-export function terminalPalette(t: XyloTheme, dark: boolean): TerminalPalette | null {
+export function terminalPalette(t: ZoronTheme, dark: boolean): TerminalPalette | null {
   if (t.terminalScheme === 'panel') return null;
   if (t.terminalScheme !== 'theme') return NAMED_TERMINALS[t.terminalScheme];
 
@@ -1308,7 +1308,7 @@ export interface ContrastIssue {
 }
 
 /** WCAG AA pairs the theme paints, below their minimum: 4.5:1 for text, 3:1 for the label text on accent fills. */
-export function contrastIssues(t: XyloTheme): ContrastIssue[] {
+export function contrastIssues(t: ZoronTheme): ContrastIssue[] {
   const light = lightBase(t);
   const dark = darkScale(t);
   const ink = accentInk(t);
@@ -1324,23 +1324,23 @@ export function contrastIssues(t: XyloTheme): ContrastIssue[] {
 }
 
 /** What static CSS (app.css) keys off; every value is an allow listed choice. */
-export function themeAttributes(t: XyloTheme): Record<string, string> {
+export function themeAttributes(t: ZoronTheme): Record<string, string> {
   return {
-    xylo: '',
-    xyloBackdrop: t.backgroundImage ? 'image' : t.backdrop,
-    xyloAnimate: t.backdropAnimate && t.motion === 'full' && t.backdrop !== 'solid' ? 'on' : 'off',
-    xyloPattern: t.patternOpacity > 0 ? t.pattern : 'none',
-    xyloSurface: t.surfaceStyle,
-    xyloShadow: t.shadow,
-    xyloSidebar: t.sidebar,
-    xyloButtons: t.buttonStyle,
-    xyloNav: t.navStyle,
-    xyloMotion: t.motion,
-    xyloTransition: t.motion === 'none' ? 'none' : t.pageTransition,
-    xyloLift: t.hoverLift && t.motion !== 'none' ? 'on' : 'off',
-    xyloTitles: t.gradientTitles ? 'gradient' : 'plain',
-    xyloTerminal: t.terminalScheme === 'panel' ? 'panel' : 'custom',
-    xyloTermSkin: t.terminalSkin,
+    zoron: '',
+    zoronBackdrop: t.backgroundImage ? 'image' : t.backdrop,
+    zoronAnimate: t.backdropAnimate && t.motion === 'full' && t.backdrop !== 'solid' ? 'on' : 'off',
+    zoronPattern: t.patternOpacity > 0 ? t.pattern : 'none',
+    zoronSurface: t.surfaceStyle,
+    zoronShadow: t.shadow,
+    zoronSidebar: t.sidebar,
+    zoronButtons: t.buttonStyle,
+    zoronNav: t.navStyle,
+    zoronMotion: t.motion,
+    zoronTransition: t.motion === 'none' ? 'none' : t.pageTransition,
+    zoronLift: t.hoverLift && t.motion !== 'none' ? 'on' : 'off',
+    zoronTitles: t.gradientTitles ? 'gradient' : 'plain',
+    zoronTerminal: t.terminalScheme === 'panel' ? 'panel' : 'custom',
+    zoronTermSkin: t.terminalSkin,
   };
 }
 
@@ -1349,8 +1349,8 @@ type Vars = [string, string][];
 const vars = (entries: Vars) => entries.map(([k, v]) => `${k}:${v};`).join('');
 const scale = (name: string, values: string[]): Vars => values.map((v, i) => [`--mantine-color-${name}-${i}`, v]);
 
-/** The scheme dependent Xylo variables app.css paints with. */
-function surfaceVars(t: XyloTheme, s: { surface: string; text: string; background: string }, dark: boolean): Vars {
+/** The scheme dependent Zoron variables app.css paints with. */
+function surfaceVars(t: ZoronTheme, s: { surface: string; text: string; background: string }, dark: boolean): Vars {
   const a = t.surfaceOpacity / 100;
   const card =
     t.surfaceStyle === 'glass'
@@ -1363,31 +1363,31 @@ function surfaceVars(t: XyloTheme, s: { surface: string; text: string; backgroun
   const intensity = (t.backdropIntensity / 100) * (dark ? 1 : 0.55);
   const glow = t.glow / 100;
   return [
-    ['--xylo-card', card],
-    ['--xylo-card-solid', s.surface],
-    ['--xylo-overlay', t.surfaceStyle === 'glass' ? alpha(raised, 0.9) : raised],
+    ['--zoron-card', card],
+    ['--zoron-card-solid', s.surface],
+    ['--zoron-overlay', t.surfaceStyle === 'glass' ? alpha(raised, 0.9) : raised],
     // the rail layout's content canvas: halfway between page and card, translucent unless the surfaces are solid
     [
-      '--xylo-canvas',
+      '--zoron-canvas',
       t.surfaceStyle === 'solid'
         ? mix(s.surface, s.background, 0.55)
         : alpha(mix(s.surface, s.background, 0.55), dark ? 0.6 : 0.7),
     ],
-    ['--xylo-hairline', alpha(s.text, t.surfaceStyle === 'outline' ? border * 1.5 : border)],
-    ['--xylo-sheen', alpha('#ffffff', dark ? 0.035 + glow * 0.03 : 0.6)],
-    ['--xylo-shadow-color', dark ? 'rgba(0, 0, 0, 0.55)' : alpha(mix(t.accent, '#1a1a2e', 0.15), 0.14)],
-    ['--xylo-glow-color', alpha(t.accent, (dark ? 0.5 : 0.35) * glow)],
-    ['--xylo-glow-color-2', alpha(t.accent2, (dark ? 0.4 : 0.28) * glow)],
-    ['--xylo-field-1', alpha(t.accent, Math.min(1, 0.8 * intensity))],
-    ['--xylo-field-2', alpha(t.accent2, Math.min(1, 0.6 * intensity))],
-    ['--xylo-field-3', alpha(mix(t.accent, t.accent2, 0.5), Math.min(1, 0.45 * intensity))],
-    ['--xylo-pattern-color', alpha(s.text, (dark ? 0.16 : 0.18) * (t.patternOpacity / 100))],
-    ['--xylo-noise-opacity', String(Math.round((dark ? 0.22 : 0.14) * (t.patternOpacity / 100) * 1000) / 1000)],
-    ['--xylo-ink', dark ? '#ffffff' : s.text],
+    ['--zoron-hairline', alpha(s.text, t.surfaceStyle === 'outline' ? border * 1.5 : border)],
+    ['--zoron-sheen', alpha('#ffffff', dark ? 0.035 + glow * 0.03 : 0.6)],
+    ['--zoron-shadow-color', dark ? 'rgba(0, 0, 0, 0.55)' : alpha(mix(t.accent, '#1a1a2e', 0.15), 0.14)],
+    ['--zoron-glow-color', alpha(t.accent, (dark ? 0.5 : 0.35) * glow)],
+    ['--zoron-glow-color-2', alpha(t.accent2, (dark ? 0.4 : 0.28) * glow)],
+    ['--zoron-field-1', alpha(t.accent, Math.min(1, 0.8 * intensity))],
+    ['--zoron-field-2', alpha(t.accent2, Math.min(1, 0.6 * intensity))],
+    ['--zoron-field-3', alpha(mix(t.accent, t.accent2, 0.5), Math.min(1, 0.45 * intensity))],
+    ['--zoron-pattern-color', alpha(s.text, (dark ? 0.16 : 0.18) * (t.patternOpacity / 100))],
+    ['--zoron-noise-opacity', String(Math.round((dark ? 0.22 : 0.14) * (t.patternOpacity / 100) * 1000) / 1000)],
+    ['--zoron-ink', dark ? '#ffffff' : s.text],
   ];
 }
 
-export function buildCss(t: XyloTheme): string {
+export function buildCss(t: ZoronTheme): string {
   const blue = shades(t.accent);
   const dark = darkScale(t);
   const light = lightBase(t);
@@ -1396,13 +1396,13 @@ export function buildCss(t: XyloTheme): string {
 
   const shared: Vars = [
     ...scale('blue', blue),
-    ['--xylo-accent', t.accent],
-    ['--xylo-accent-2', t.accent2],
-    ['--xylo-gradient', `linear-gradient(135deg,${t.accent} 0%,${t.accent2} 100%)`],
-    ['--xylo-accent-ink', ink],
-    ['--xylo-radius', `${t.radius}px`],
-    ['--xylo-control-radius', `${t.controlRadius}px`],
-    ['--xylo-blur', `${t.blur}px`],
+    ['--zoron-accent', t.accent],
+    ['--zoron-accent-2', t.accent2],
+    ['--zoron-gradient', `linear-gradient(135deg,${t.accent} 0%,${t.accent2} 100%)`],
+    ['--zoron-accent-ink', ink],
+    ['--zoron-radius', `${t.radius}px`],
+    ['--zoron-control-radius', `${t.controlRadius}px`],
+    ['--zoron-blur', `${t.blur}px`],
     ['--mantine-radius-xs', `${Math.round(t.controlRadius * 0.6)}px`],
     ['--mantine-radius-sm', `${t.controlRadius}px`],
     ['--mantine-radius-default', `${t.controlRadius}px`],
@@ -1478,7 +1478,7 @@ export function buildCss(t: XyloTheme): string {
     ['--chart-tick-color', 'var(--mantine-color-dimmed)'],
   ];
 
-  // the console's card behind the transparent xterm (app.css, `data-xylo-terminal='custom'`); the flush frame drops
+  // the console's card behind the transparent xterm (app.css, `data-zoron-terminal='custom'`); the flush frame drops
   // the card, which leaves 'theme' on the canvas (its palette is made for the page) and a named scheme on its own
   // background, the one its colours read on. The crt frame's scanlines, vignette and glow are strong on a dark screen
   // and faint on a light one, where a glow would only blur dark text ('panel' follows the mode, as core's does).
@@ -1489,15 +1489,15 @@ export function buildCss(t: XyloTheme): string {
     const palette = terminalPalette(t, dark);
     const lit = palette ? luminance(palette.background) > 0.3 : !dark;
     block.push(
-      ['--xylo-term-scan', lit ? 'rgba(0, 0, 0, 0.05)' : 'rgba(0, 0, 0, 0.2)'],
-      ['--xylo-term-vignette', lit ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.4)'],
-      ['--xylo-term-glow', lit ? 'none' : '0 0 1px currentColor, 0 0 6px currentColor'],
+      ['--zoron-term-scan', lit ? 'rgba(0, 0, 0, 0.05)' : 'rgba(0, 0, 0, 0.2)'],
+      ['--zoron-term-vignette', lit ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.4)'],
+      ['--zoron-term-glow', lit ? 'none' : '0 0 1px currentColor, 0 0 6px currentColor'],
     );
     if (!palette) continue;
     block.push(
-      ['--xylo-term-bg', palette.background],
-      ['--xylo-term-fg', palette.foreground],
-      ['--xylo-term-flush', t.terminalScheme === 'theme' ? 'transparent' : palette.background],
+      ['--zoron-term-bg', palette.background],
+      ['--zoron-term-fg', palette.foreground],
+      ['--zoron-term-flush', t.terminalScheme === 'theme' ? 'transparent' : palette.background],
     );
   }
 
@@ -1547,16 +1547,16 @@ export function buildCss(t: XyloTheme): string {
   if (t.backgroundImage) {
     // a veil of the page colour over the image, `backgroundDim` percent strong, keeps text readable on it
     const veil = `color-mix(in srgb,var(--mantine-color-body) ${t.backgroundDim}%,transparent)`;
-    css.push(`html:root[data-xylo]{background-image:linear-gradient(${veil},${veil}),url("${t.backgroundImage}");}`);
+    css.push(`html:root[data-zoron]{background-image:linear-gradient(${veil},${veil}),url("${t.backgroundImage}");}`);
   }
 
   // Mantine gives accent filled buttons, action icons and badges white text through an inline variable beside the
   // inline fill, so where that fill is the accent the text follows the accent's ink (a white accent gets dark text)
   const fill = (name: string) => `[style*="${name}: var(--mantine-color-blue-filled)"]`;
   css.push(
-    `html:root .mantine-Button-root${fill('--button-bg')}{--button-color:var(--xylo-accent-ink)!important;}`,
-    `html:root .mantine-ActionIcon-root${fill('--ai-bg')}{--ai-color:var(--xylo-accent-ink)!important;}`,
-    `html:root .mantine-Badge-root:is(${fill('--badge-bg')},:not([style*="--badge-bg"])){--badge-color:var(--xylo-accent-ink)!important;}`,
+    `html:root .mantine-Button-root${fill('--button-bg')}{--button-color:var(--zoron-accent-ink)!important;}`,
+    `html:root .mantine-ActionIcon-root${fill('--ai-bg')}{--ai-color:var(--zoron-accent-ink)!important;}`,
+    `html:root .mantine-Badge-root:is(${fill('--badge-bg')},:not([style*="--badge-bg"])){--badge-color:var(--zoron-accent-ink)!important;}`,
   );
 
   return css.join('\n');

@@ -4,15 +4,15 @@ import { Chip, ColorInput, Slider } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { HEX, toHexColor } from '../../lib/color.ts';
 import { ActionIcon, Switch } from '../../lib/core.ts';
-import { PRESETS, type XyloTheme } from '../../lib/theme.ts';
+import { PRESETS, type ZoronTheme } from '../../lib/theme.ts';
 import { useExtTranslations } from '../../translations.ts';
 
 /**
- * Every control is marked with the theme field it edits (`data-xylo-setting`), which the settings search scrolls to
+ * Every control is marked with the theme field it edits (`data-zoron-setting`), which the settings search scrolls to
  * (fields.ts lists them). The field controls below mark themselves; `Setting` marks any other control.
  */
-export const Setting = ({ field, children }: { field: keyof XyloTheme; children: ReactNode }) => (
-  <div data-xylo-setting={field}>{children}</div>
+export const Setting = ({ field, children }: { field: keyof ZoronTheme; children: ReactNode }) => (
+  <div data-zoron-setting={field}>{children}</div>
 );
 
 /** A titled block of settings inside a section. */
@@ -59,7 +59,7 @@ export function ColorField({
   optional = false,
   onChange,
 }: {
-  field: keyof XyloTheme;
+  field: keyof ZoronTheme;
   label: string;
   description?: string;
   value: string;
@@ -117,7 +117,7 @@ export function SliderField({
   format,
   onChange,
 }: {
-  field: keyof XyloTheme;
+  field: keyof ZoronTheme;
   label: string;
   value: number;
   min: number;
@@ -129,7 +129,7 @@ export function SliderField({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className='flex flex-col gap-1.5' data-xylo-setting={field}>
+    <div className='flex flex-col gap-1.5' data-zoron-setting={field}>
       <div className='flex items-center justify-between text-sm'>
         <span>{label}</span>
         <span className='rounded-md bg-(--mantine-color-default) px-1.5 py-0.5 font-mono text-xs tabular-nums text-(--mantine-color-dimmed)'>
@@ -157,7 +157,7 @@ export function ToggleField({
   checked,
   onChange,
 }: {
-  field: keyof XyloTheme;
+  field: keyof ZoronTheme;
   label: string;
   description?: string;
   checked: boolean;
@@ -183,14 +183,14 @@ export function ToggleChips<T extends string>({
   options,
   onChange,
 }: {
-  field: keyof XyloTheme;
+  field: keyof ZoronTheme;
   label: string;
   value: readonly T[];
   options: { value: T; label: string }[];
   onChange: (value: T[]) => void;
 }) {
   return (
-    <div className='flex flex-col gap-1.5' data-xylo-setting={field}>
+    <div className='flex flex-col gap-1.5' data-zoron-setting={field}>
       <span className='text-sm'>{label}</span>
       <Chip.Group
         multiple
@@ -224,7 +224,7 @@ export function ChoiceTiles<T extends string>({
   columns = 2,
   onChange,
 }: {
-  field: keyof XyloTheme;
+  field: keyof ZoronTheme;
   label?: string;
   value: T;
   options: Tile<T>[];
@@ -233,7 +233,7 @@ export function ChoiceTiles<T extends string>({
 }) {
   const grid = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' }[columns];
   return (
-    <div className='flex flex-col gap-1.5' role='radiogroup' aria-label={label} data-xylo-setting={field}>
+    <div className='flex flex-col gap-1.5' role='radiogroup' aria-label={label} data-zoron-setting={field}>
       {label && <span className='text-sm'>{label}</span>}
       <div className={`grid ${grid} gap-2`}>
         {options.map((option) => {
@@ -245,16 +245,16 @@ export function ChoiceTiles<T extends string>({
               role='radio'
               aria-checked={selected}
               onClick={() => onChange(option.value)}
-              className={`xylo-tile group relative flex cursor-pointer flex-col gap-1 rounded-xl border p-1 text-left transition-[border-color,background-color,box-shadow] duration-200 ${
+              className={`zoron-tile group relative flex cursor-pointer flex-col gap-1 rounded-xl border p-1 text-left transition-[border-color,background-color,box-shadow] duration-200 ${
                 selected
-                  ? 'border-(--xylo-accent) bg-(--mantine-color-default-hover) shadow-[0_0_0_3px_color-mix(in_srgb,var(--xylo-accent)_22%,transparent)]'
+                  ? 'border-(--zoron-accent) bg-(--mantine-color-default-hover) shadow-[0_0_0_3px_color-mix(in_srgb,var(--zoron-accent)_22%,transparent)]'
                   : 'border-(--mantine-color-default-border) bg-(--mantine-color-default) hover:border-(--mantine-color-placeholder)'
               }`}
             >
               <div className='h-12 w-full overflow-hidden rounded-lg'>{option.preview}</div>
               <span className='flex items-center justify-between gap-1 px-1 pb-0.5 text-xs font-medium'>
                 <span className='truncate'>{option.label}</span>
-                {selected && <FontAwesomeIcon icon={faCheck} className='text-[0.625rem] text-(--xylo-accent)' />}
+                {selected && <FontAwesomeIcon icon={faCheck} className='text-[0.625rem] text-(--zoron-accent)' />}
               </span>
             </button>
           );

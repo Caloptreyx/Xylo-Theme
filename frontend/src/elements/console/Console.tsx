@@ -14,7 +14,7 @@ import {
   useServerStore,
   useVisualViewportBottomInset,
 } from '../../lib/core.ts';
-import { useXyloTheme } from '../../lib/store.ts';
+import { useZoronTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { phaseOf } from '../home/home.ts';
 import { TileHeading } from '../tiles/TileFace.tsx';
@@ -26,7 +26,7 @@ import { Telemetry } from './Telemetry.tsx';
  * The visitor's own open state of the docked inspector, per browser ('shown' or 'hidden'); without one the theme's
  * `consoleInspectorOpen` decides.
  */
-const PANEL_KEY = 'xylo:console-panel';
+const PANEL_KEY = 'zoron:console-panel';
 
 /**
  * Page widths in rem: under PHONE it is a phone's page (app.css's phone rules key off `data-phone`, the shell's top
@@ -42,17 +42,17 @@ function pageSize(width: number, rem: number): PageSize {
 }
 
 /**
- * Core's console page, wherever core shows it (`/terminal`, or `/` with the overview off): Xylo's with
+ * Core's console page, wherever core shows it (`/terminal`, or `/` with the overview off): Zoron's with
  * `consolePage` on, else core's, which the interceptor in index.ts hands in. Reading the theme here lets Studio
  * switch it live.
  */
 export function ConsoleSwitch({ Core }: { Core: FC }) {
-  const theme = useXyloTheme();
+  const theme = useZoronTheme();
   return theme.consolePage ? <ConsolePage /> : <Core />;
 }
 
 /**
- * Keeps `--xylo-con-top` on the workspace: where it starts on the page, so app.css can size it down to the bottom
+ * Keeps `--zoron-con-top` on the workspace: where it starts on the page, so app.css can size it down to the bottom
  * of the viewport. Measured again when the page's height changes (a notice above it coming or going) and when the
  * window resizes.
  */
@@ -62,7 +62,7 @@ function useViewportFill(box: RefObject<HTMLElement | null>) {
     if (!element) return;
     const measure = () =>
       element.style.setProperty(
-        '--xylo-con-top',
+        '--zoron-con-top',
         `${Math.max(0, Math.round(element.getBoundingClientRect().top + window.scrollY))}px`,
       );
     measure();
@@ -106,7 +106,7 @@ function readPanel(): boolean | null {
 }
 
 /**
- * Xylo's console page: one workspace from where it starts down to the viewport's bottom, painted in the terminal
+ * Zoron's console page: one workspace from where it starts down to the viewport's bottom, painted in the terminal
  * scheme and worn by the terminal frame (app.css). Along its top the command bar: the server's name, state and
  * uptime, live telemetry with sparklines (the theme's figures and graph style), core's power controls and the
  * inspector toggle. Under it core's own terminal (search, history, SSH, popout, its features and input row slots),
@@ -119,7 +119,7 @@ function readPanel(): boolean | null {
 function ConsolePage() {
   const { t } = useExtTranslations();
   const { t: coreT } = useCoreTranslations();
-  const theme = useXyloTheme();
+  const theme = useZoronTheme();
   const server = useServerStore((state) => state.server);
   const state = useServerStore((state) => state.state);
   const uptime = useServerStore((state) => state.stats?.uptime ?? 0);
@@ -151,7 +151,7 @@ function ConsolePage() {
     const onDown = (event: PointerEvent) => {
       const target = event.target instanceof Element ? event.target : null;
       if (!target || aside.current?.contains(target)) return;
-      if (target.closest('[data-xylo-inspector-toggle], [data-portal]')) return;
+      if (target.closest('[data-zoron-inspector-toggle], [data-portal]')) return;
       setShownAt(null);
     };
     // capture: the toggle's tooltip swallows the Escape that would close the panel
@@ -193,22 +193,22 @@ function ConsolePage() {
     >
       <section
         ref={root}
-        className='xylo-con'
+        className='zoron-con'
         data-phone={phone || undefined}
         data-inspector={phone || !inspector ? undefined : wide ? 'docked' : 'over'}
         data-side={theme.consoleInspector === 'left' ? 'left' : undefined}
         data-density={theme.consoleDensity}
         data-keyboard={keyboardInset > 0 || undefined}
-        style={{ '--xylo-con-inset': `${keyboardInset}px` } as CSSProperties}
+        style={{ '--zoron-con-inset': `${keyboardInset}px` } as CSSProperties}
       >
-        <header className='xylo-con-bar'>
-          <div className='xylo-con-id'>
-            <TileHeading server={server} size={22} className='xylo-con-name' />
-            <span className='xylo-con-state' data-phase={phase}>
+        <header className='zoron-con-bar'>
+          <div className='zoron-con-id'>
+            <TileHeading server={server} size={22} className='zoron-con-name' />
+            <span className='zoron-con-state' data-phase={phase}>
               {t(`home.${phase}`, {})}
             </span>
             {live && uptime > 0 && (
-              <span className='xylo-con-uptime'>
+              <span className='zoron-con-uptime'>
                 {t('overview.uptime', { time: formatMilliseconds(uptime, true, false) })}
               </span>
             )}
@@ -217,18 +217,18 @@ function ConsolePage() {
             <Telemetry key={server.uuid} live={live} metrics={theme.consoleMetrics} graph={theme.consoleGraphs} />
           )}
           <ServerCan action={['control.start', 'control.stop', 'control.restart']} matchAny>
-            <div className='xylo-con-power'>
+            <div className='zoron-con-power'>
               <ServerPowerControls />
             </div>
           </ServerCan>
           {inspector && (
             <Tooltip label={toggleLabel}>
               <ActionIcon
-                className='xylo-con-toggle'
+                className='zoron-con-toggle'
                 variant={open && !phone ? 'light' : 'subtle'}
                 color='gray'
                 size={phone ? 'xl' : 'lg'}
-                data-xylo-inspector-toggle
+                data-zoron-inspector-toggle
                 aria-label={toggleLabel}
                 aria-expanded={open}
                 aria-haspopup={phone ? 'dialog' : undefined}
@@ -240,15 +240,15 @@ function ConsolePage() {
           )}
         </header>
 
-        <div className='xylo-con-main'>
-          <div className='xylo-con-term'>
+        <div className='zoron-con-main'>
+          <div className='zoron-con-term'>
             <CoreTerminal />
             <CommandChips onEdit={inspector ? () => openAt('commands') : undefined} />
           </div>
           {!phone && inspector && (
             <aside
               ref={aside}
-              className='xylo-con-aside'
+              className='zoron-con-aside'
               data-open={open || undefined}
               inert={!open}
               aria-label={t('console.details', {})}
@@ -265,7 +265,7 @@ function ConsolePage() {
             onClose={() => setShownAt(null)}
             position='bottom'
             title={t('console.details', {})}
-            classNames={{ content: 'xylo-sheet', header: 'xylo-sheet-header', body: 'xylo-sheet-body' }}
+            classNames={{ content: 'zoron-sheet', header: 'zoron-sheet-header', body: 'zoron-sheet-body' }}
           >
             <Inspector tab={tab} onTab={setTab} />
           </Drawer>

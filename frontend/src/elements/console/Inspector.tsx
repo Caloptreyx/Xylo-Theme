@@ -2,7 +2,7 @@ import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { type KeyboardEvent, useId } from 'react';
 import { ActionIcon, ExtensionSlot, useServerCan, useServerStore } from '../../lib/core.ts';
-import { useXyloTheme } from '../../lib/store.ts';
+import { useZoronTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { ConnectDetails } from '../server/parts.tsx';
 import { CommandsEditor } from './QuickCommands.tsx';
@@ -34,7 +34,7 @@ export function Inspector({
   const id = useId();
   const server = useServerStore((state) => state.server);
   const canConsole = useServerCan('control.console');
-  const quickCommands = useXyloTheme().consoleQuickCommands;
+  const quickCommands = useZoronTheme().consoleQuickCommands;
   const registry = window.extensionContext.extensionRegistry.pages.server.console;
 
   const tabs: InspectorTab[] = ['connect'];
@@ -62,9 +62,9 @@ export function Inspector({
   };
 
   return (
-    <div className='xylo-con-inspect'>
-      <div className='xylo-con-inspect-head'>
-        <div role='tablist' aria-label={t('console.details', {})} className='xylo-con-tabs' onKeyDown={onKeyDown}>
+    <div className='zoron-con-inspect'>
+      <div className='zoron-con-inspect-head'>
+        <div role='tablist' aria-label={t('console.details', {})} className='zoron-con-tabs' onKeyDown={onKeyDown}>
           {tabs.map((name) => (
             <button
               key={name}
@@ -74,7 +74,7 @@ export function Inspector({
               aria-selected={name === current}
               aria-controls={`${id}-panel`}
               tabIndex={name === current ? 0 : -1}
-              className='xylo-con-tab'
+              className='zoron-con-tab'
               onClick={() => onTab(name)}
             >
               {t(TAB_LABEL[name], {})}
@@ -87,10 +87,10 @@ export function Inspector({
           </ActionIcon>
         )}
       </div>
-      <div role='tabpanel' id={`${id}-panel`} aria-labelledby={`${id}-${current}`} className='xylo-con-inspect-body'>
+      <div role='tabpanel' id={`${id}-panel`} aria-labelledby={`${id}-${current}`} className='zoron-con-inspect-body'>
         {current === 'connect' && (
           <>
-            {server.description && <p className='xylo-con-desc'>{server.description}</p>}
+            {server.description && <p className='zoron-con-desc'>{server.description}</p>}
             <ConnectDetails />
           </>
         )}

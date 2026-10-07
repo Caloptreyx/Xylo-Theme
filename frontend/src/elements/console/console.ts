@@ -4,7 +4,7 @@
  */
 
 /** Quick commands per server and browser, as a JSON array of strings. */
-export const commandsKey = (serverUuid: string) => `xylo:commands:${serverUuid}`;
+export const commandsKey = (serverUuid: string) => `zoron:commands:${serverUuid}`;
 export const MAX_COMMANDS = 20;
 export const MAX_COMMAND = 200;
 

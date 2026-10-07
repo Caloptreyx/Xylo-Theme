@@ -5,7 +5,7 @@
  * lib/store.ts.
  */
 
-import { TERMINAL_SCHEMES, TERMINAL_SKINS, type TerminalScheme, type TerminalSkin, type XyloTheme } from './theme.ts';
+import { TERMINAL_SCHEMES, TERMINAL_SKINS, type TerminalScheme, type TerminalSkin, type ZoronTheme } from './theme.ts';
 
 // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escapes are what these match
 const SGR = /\x1b\[([0-9;]*)m/g;
@@ -60,7 +60,7 @@ export interface TerminalPrefs {
 }
 
 /** Where a browser keeps its TerminalPrefs. */
-export const TERMINAL_PREFS_KEY = 'xylo:terminal';
+export const TERMINAL_PREFS_KEY = 'zoron:terminal';
 
 /** The stored prefs, each field allow listed; anything else (missing, broken JSON, unknown names) is the site's. */
 export function parseTerminalPrefs(raw: string | null): TerminalPrefs {
@@ -79,7 +79,7 @@ export function parseTerminalPrefs(raw: string | null): TerminalPrefs {
 }
 
 /** `theme` with the visitor's choices over its scheme and frame, while the theme lets them choose. */
-export function withTerminalPrefs(theme: XyloTheme, prefs: TerminalPrefs): XyloTheme {
+export function withTerminalPrefs(theme: ZoronTheme, prefs: TerminalPrefs): ZoronTheme {
   if (!theme.terminalUserChoice || (!prefs.scheme && !prefs.skin)) return theme;
   return {
     ...theme,

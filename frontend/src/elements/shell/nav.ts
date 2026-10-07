@@ -21,7 +21,7 @@ export function areaOf(pathname: string): Area {
   return 'home';
 }
 
-/** The props Xylo reads off core's sidebar nodes: a link's target, a divider's label, a wrapper's content. */
+/** The props Zoron reads off core's sidebar nodes: a link's target, a divider's label, a wrapper's content. */
 type NodeProps = { to?: unknown; label?: unknown; children?: ReactNode };
 
 /**

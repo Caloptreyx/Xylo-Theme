@@ -58,24 +58,27 @@ function Meter({
   let spark: ReactNode = null;
   if (graph === 'bars') {
     spark = (
-      <path className='xylo-con-spark-bars' d={live ? sparkBars(samples, SPARK_WIDTH, SPARK_HEIGHT, max) : FLAT_BARS} />
+      <path
+        className='zoron-con-spark-bars'
+        d={live ? sparkBars(samples, SPARK_WIDTH, SPARK_HEIGHT, max) : FLAT_BARS}
+      />
     );
   } else if (graph !== 'none') {
     const path = live ? sparkPath(samples, SPARK_WIDTH, SPARK_HEIGHT, max) : { line: FLAT, area: '' };
     spark = (
       <>
-        {graph === 'area' && path.area && <path className='xylo-con-spark-area' d={path.area} />}
-        <path className='xylo-con-spark-line' d={path.line} vectorEffect='non-scaling-stroke' />
+        {graph === 'area' && path.area && <path className='zoron-con-spark-area' d={path.area} />}
+        <path className='zoron-con-spark-line' d={path.line} vectorEffect='non-scaling-stroke' />
       </>
     );
   }
   return (
-    <div className='xylo-con-meter' title={title} data-live={live || undefined}>
-      <span className='xylo-con-meter-label'>{label}</span>
-      <span className='xylo-con-meter-value'>{value}</span>
+    <div className='zoron-con-meter' title={title} data-live={live || undefined}>
+      <span className='zoron-con-meter-label'>{label}</span>
+      <span className='zoron-con-meter-value'>{value}</span>
       {spark && (
         <svg
-          className='xylo-con-spark'
+          className='zoron-con-spark'
           viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
           preserveAspectRatio='none'
           aria-hidden='true'
@@ -168,7 +171,7 @@ export function Telemetry({
     };
 
   return (
-    <div className='xylo-con-meters' data-graph={graph}>
+    <div className='zoron-con-meters' data-graph={graph}>
       {metrics.map((metric) => (
         <Meter key={metric} {...meters[metric]} live={live} graph={graph} />
       ))}

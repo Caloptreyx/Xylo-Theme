@@ -334,26 +334,26 @@ describe('buildCss', () => {
 describe('themeAttributes', () => {
   test('motion none turns off transitions, lift and the drift', () => {
     const attrs = themeAttributes({ ...DEFAULT_THEME, motion: 'none' });
-    assert.equal(attrs.xyloTransition, 'none');
-    assert.equal(attrs.xyloLift, 'off');
-    assert.equal(attrs.xyloAnimate, 'off');
+    assert.equal(attrs.zoronTransition, 'none');
+    assert.equal(attrs.zoronLift, 'off');
+    assert.equal(attrs.zoronAnimate, 'off');
   });
 
   test('subtle motion keeps transitions but stops the drift', () => {
     const attrs = themeAttributes({ ...DEFAULT_THEME, motion: 'subtle' });
-    assert.equal(attrs.xyloTransition, DEFAULT_THEME.pageTransition);
-    assert.equal(attrs.xyloAnimate, 'off');
+    assert.equal(attrs.zoronTransition, DEFAULT_THEME.pageTransition);
+    assert.equal(attrs.zoronAnimate, 'off');
   });
 
   test('a background image replaces the backdrop; an invisible texture is none', () => {
     const attrs = themeAttributes({ ...DEFAULT_THEME, backgroundImage: '/bg.png', patternOpacity: 0 });
-    assert.equal(attrs.xyloBackdrop, 'image');
-    assert.equal(attrs.xyloPattern, 'none');
+    assert.equal(attrs.zoronBackdrop, 'image');
+    assert.equal(attrs.zoronPattern, 'none');
   });
 
   test('the terminal frame is its own attribute', () => {
-    assert.equal(themeAttributes(DEFAULT_THEME).xyloTermSkin, 'card');
-    assert.equal(themeAttributes({ ...DEFAULT_THEME, terminalSkin: 'neon' }).xyloTermSkin, 'neon');
+    assert.equal(themeAttributes(DEFAULT_THEME).zoronTermSkin, 'card');
+    assert.equal(themeAttributes({ ...DEFAULT_THEME, terminalSkin: 'neon' }).zoronTermSkin, 'neon');
   });
 });
 
@@ -408,15 +408,15 @@ describe('terminalPalette', () => {
   test("'panel' keeps core's colours: no palette, no variables", () => {
     const theme = normalizeTheme({ terminalScheme: 'panel' });
     assert.equal(terminalPalette(theme, true), null);
-    assert.equal(themeAttributes(theme).xyloTerminal, 'panel');
-    assert.ok(!buildCss(theme).includes('--xylo-term-bg'));
+    assert.equal(themeAttributes(theme).zoronTerminal, 'panel');
+    assert.ok(!buildCss(theme).includes('--zoron-term-bg'));
   });
 
   test('a named scheme is the same in both modes', () => {
     const theme = normalizeTheme({ terminalScheme: 'nord' });
     assert.deepEqual(terminalPalette(theme, false), terminalPalette(theme, true));
     assert.equal(terminalPalette(theme, true)?.background, '#2e3440');
-    assert.equal(themeAttributes(theme).xyloTerminal, 'custom');
+    assert.equal(themeAttributes(theme).zoronTerminal, 'custom');
   });
 
   test('every named scheme has sixteen colours, and the scheme groups list each scheme once', () => {
@@ -439,13 +439,13 @@ describe('terminalPalette', () => {
   });
 
   test("the flush frame leaves 'theme' on the canvas and a named scheme on its own background", () => {
-    assert.match(buildCss(DEFAULT_THEME), /--xylo-term-flush:transparent;/);
-    assert.match(buildCss(normalizeTheme({ terminalScheme: 'githubLight' })), /--xylo-term-flush:#ffffff;/);
+    assert.match(buildCss(DEFAULT_THEME), /--zoron-term-flush:transparent;/);
+    assert.match(buildCss(normalizeTheme({ terminalScheme: 'githubLight' })), /--zoron-term-flush:#ffffff;/);
   });
 
   test('the crt glow lights a dark screen only, whatever the mode', () => {
     const glow = (css: string, scheme: 'dark' | 'light') =>
-      css.match(new RegExp(`\\[data-mantine-color-scheme="${scheme}"\\]\\{[^}]*--xylo-term-glow:([^;]*);`))?.[1];
+      css.match(new RegExp(`\\[data-mantine-color-scheme="${scheme}"\\]\\{[^}]*--zoron-term-glow:([^;]*);`))?.[1];
     const themed = buildCss(DEFAULT_THEME);
     assert.match(glow(themed, 'dark') ?? '', /currentColor/);
     assert.equal(glow(themed, 'light'), 'none');

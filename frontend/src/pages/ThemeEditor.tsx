@@ -66,11 +66,11 @@ import {
 } from '../lib/core.ts';
 import { useCanSaveTheme } from '../lib/permissions.ts';
 import { loadTheme, type PreviewScheme, READY_MSG, rememberTheme, savedTheme, sendPreview } from '../lib/store.ts';
-import { DEFAULT_THEME, normalizeTheme, SAFE_URL, sameTheme, type XyloTheme } from '../lib/theme.ts';
+import { DEFAULT_THEME, normalizeTheme, SAFE_URL, sameTheme, type ZoronTheme } from '../lib/theme.ts';
 import { useExtTranslations } from '../translations.ts';
 
 /** Auth routes redirect signed in users, so the editor previews core's real login page here (index.ts). */
-export const LOGIN_PREVIEW_PATH = '/xylo-preview/login';
+export const LOGIN_PREVIEW_PATH = '/zoron-preview/login';
 
 const SECTIONS: Record<SectionId, { icon: IconDefinition; Component: FC<SectionProps> }> = {
   presets: { icon: faSwatchbook, Component: PresetsSection },
@@ -90,9 +90,9 @@ const STAGE_PADDING = 28;
 const HISTORY = 60;
 
 /** Debounced undo and redo over whole drafts: a burst of edits (a slider drag) is one step. */
-function useHistory(draft: XyloTheme, setDraft: (theme: XyloTheme) => void) {
-  const past = useRef<XyloTheme[]>([]);
-  const future = useRef<XyloTheme[]>([]);
+function useHistory(draft: ZoronTheme, setDraft: (theme: ZoronTheme) => void) {
+  const past = useRef<ZoronTheme[]>([]);
+  const future = useRef<ZoronTheme[]>([]);
   const committed = useRef(draft);
   const latest = useRef(draft);
   const [, rerender] = useReducer((n: number) => n + 1, 0);
@@ -136,7 +136,7 @@ function useHistory(draft: XyloTheme, setDraft: (theme: XyloTheme) => void) {
     canRedo: future.current.length > 0 && !pending,
     undo: () => step(past, future),
     redo: () => step(future, past),
-    restart: (theme: XyloTheme) => {
+    restart: (theme: ZoronTheme) => {
       past.current = [];
       future.current = [];
       committed.current = theme;
@@ -157,13 +157,13 @@ export default function ThemeEditor() {
   const { addToast } = useToast();
   const navigate = useNavigate();
 
-  const [draft, setDraft] = useState<XyloTheme>(savedTheme);
-  const [saved, setSaved] = useState<XyloTheme>(savedTheme);
+  const [draft, setDraft] = useState<ZoronTheme>(savedTheme);
+  const [saved, setSaved] = useState<ZoronTheme>(savedTheme);
   // the cache can be stale or missing, so nothing is saved until the stored theme has loaded
   const [load, setLoad] = useState<'pending' | 'ok' | 'failed'>('pending');
   // the stored theme's version, sent as `base` so a save never replaces a theme saved elsewhere meanwhile
   const version = useRef('');
-  const [conflict, setConflict] = useState<XyloTheme | null>(null);
+  const [conflict, setConflict] = useState<ZoronTheme | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [section, setSection] = useState<SectionId>('presets');
   const [device, setDevice] = useState<Device>('desktop');
@@ -181,7 +181,7 @@ export default function ThemeEditor() {
   const [holding, setHolding] = useState(false);
   const [query, setQuery] = useState('');
   // a setting picked in the search; a fresh object each time, so picking the same one again scrolls again
-  const [jump, setJump] = useState<{ field: keyof XyloTheme } | null>(null);
+  const [jump, setJump] = useState<{ field: keyof ZoronTheme } | null>(null);
 
   const frame = useRef<HTMLIFrameElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -192,13 +192,13 @@ export default function ThemeEditor() {
   const onScreen = useRef(draft);
   const history = useHistory(draft, setDraft);
 
-  const set = (patch: Partial<XyloTheme>) => setDraft((d) => ({ ...d, ...patch }));
+  const set = (patch: Partial<ZoronTheme>) => setDraft((d) => ({ ...d, ...patch }));
   const dirty = !sameTheme(normalizeTheme(draft, saved), saved);
   const badUrl = draft.backgroundImage !== '' && !SAFE_URL.test(draft.backgroundImage);
   const comparing = holding && dirty;
   const canSaveTheme = useCanSaveTheme();
   const canSave = dirty && load === 'ok' && !badUrl && canSaveTheme;
-  // a role holding only the Xylo permission reaches the admin area, not necessarily its extensions page
+  // a role holding only the Zoron permission reaches the admin area, not necessarily its extensions page
   const closeTo = useAdminCan('extensions.*') ? '/admin/extensions' : '/admin';
 
   const blocker = useBlocker(dirty);
@@ -257,7 +257,7 @@ export default function ThemeEditor() {
     return () => clearTimeout(id);
   }, [valid, saved, comparing, scheme]);
 
-  // the frame announces itself once Xylo runs in it (after every navigation inside it)
+  // the frame announces itself once Zoron runs in it (after every navigation inside it)
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin || event.source !== frame.current?.contentWindow) return;
@@ -271,11 +271,11 @@ export default function ThemeEditor() {
   // a setting picked in the search: scrolled into view in its (now open) section and briefly lit, once
   useEffect(() => {
     if (!jump) return;
-    const el = asideRef.current?.querySelector<HTMLElement>(`[data-xylo-setting="${jump.field}"]`);
+    const el = asideRef.current?.querySelector<HTMLElement>(`[data-zoron-setting="${jump.field}"]`);
     if (!el) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     el.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
-    const lit = 'color-mix(in srgb, var(--xylo-accent) 20%, transparent)';
+    const lit = 'color-mix(in srgb, var(--zoron-accent) 20%, transparent)';
     el.animate(
       [
         { borderRadius: '10px', backgroundColor: lit, boxShadow: `0 0 0 6px ${lit}` },
@@ -286,7 +286,7 @@ export default function ThemeEditor() {
   }, [jump]);
 
   /** Stores `theme` (made from the draft `sent`); without `base` it replaces whatever is stored. */
-  const store = (theme: XyloTheme, sent: XyloTheme, base?: string) => {
+  const store = (theme: ZoronTheme, sent: ZoronTheme, base?: string) => {
     setSaving(true);
     saveTheme(theme, base)
       .then((newVersion) => {
@@ -323,7 +323,7 @@ export default function ThemeEditor() {
     link.href = URL.createObjectURL(
       new Blob([JSON.stringify(normalizeTheme(draft, saved), null, 2)], { type: 'application/json' }),
     );
-    link.download = 'xylo-theme.json';
+    link.download = 'zoron-theme.json';
     link.click();
     URL.revokeObjectURL(link.href);
   };
@@ -383,14 +383,14 @@ export default function ThemeEditor() {
   );
 
   return (
-    <div className='xylo-editor fixed inset-0 z-[120] flex flex-col bg-(--mantine-color-body) text-(--mantine-color-text)'>
-      <header className='flex h-14 shrink-0 items-center gap-3 border-b border-(--mantine-color-default-border) bg-(--xylo-card-solid) px-3'>
+    <div className='zoron-editor fixed inset-0 z-[120] flex flex-col bg-(--mantine-color-body) text-(--mantine-color-text)'>
+      <header className='flex h-14 shrink-0 items-center gap-3 border-b border-(--mantine-color-default-border) bg-(--zoron-card-solid) px-3'>
         {iconButton(t('editor.close', {}), faXmark, () => navigate(closeTo))}
         <div className='flex min-w-0 items-center gap-2.5'>
           <div
             aria-hidden
-            className='grid size-8 shrink-0 place-items-center rounded-lg text-sm font-bold text-(--xylo-accent-ink) shadow-[0_6px_18px_-8px_var(--xylo-glow-color)]'
-            style={{ background: 'var(--xylo-gradient)' }}
+            className='grid size-8 shrink-0 place-items-center rounded-lg text-sm font-bold text-(--zoron-accent-ink) shadow-[0_6px_18px_-8px_var(--zoron-glow-color)]'
+            style={{ background: 'var(--zoron-gradient)' }}
           >
             X
           </div>
@@ -528,7 +528,7 @@ export default function ThemeEditor() {
       </header>
 
       <div className='flex min-h-0 flex-1'>
-        <nav className='flex w-[76px] shrink-0 flex-col items-stretch gap-1 overflow-y-auto border-r border-(--mantine-color-default-border) bg-(--xylo-card-solid) p-2'>
+        <nav className='flex w-[76px] shrink-0 flex-col items-stretch gap-1 overflow-y-auto border-r border-(--mantine-color-default-border) bg-(--zoron-card-solid) p-2'>
           {SECTION_IDS.map((id) => {
             const active = id === section;
             return (
@@ -559,7 +559,7 @@ export default function ThemeEditor() {
           })}
         </nav>
 
-        <aside className='flex w-[360px] shrink-0 flex-col border-r border-(--mantine-color-default-border) bg-(--xylo-card-solid)'>
+        <aside className='flex w-[360px] shrink-0 flex-col border-r border-(--mantine-color-default-border) bg-(--zoron-card-solid)'>
           <div className='border-b border-(--mantine-color-default-border) px-5 py-4'>
             <Select
               size='xs'
@@ -576,7 +576,7 @@ export default function ThemeEditor() {
               searchValue={query}
               onSearchChange={setQuery}
               onChange={(value) => {
-                const field = value as keyof XyloTheme | null;
+                const field = value as keyof ZoronTheme | null;
                 const target = field && SECTION_IDS.find((id) => sectionSettings(id).some(([f]) => f === field));
                 if (field && target) {
                   setSection(target);
@@ -620,14 +620,14 @@ export default function ThemeEditor() {
               </div>
             )}
           </div>
-          <div ref={asideRef} key={section} className='xylo-pop min-h-0 flex-1 overflow-y-auto px-5 py-5'>
+          <div ref={asideRef} key={section} className='zoron-pop min-h-0 flex-1 overflow-y-auto px-5 py-5'>
             <SectionComponent draft={draft} valid={valid} set={set} />
           </div>
         </aside>
 
         <main
           ref={stageRef}
-          className='xylo-stage relative flex min-w-0 flex-1 items-start justify-center overflow-hidden'
+          className='zoron-stage relative flex min-w-0 flex-1 items-start justify-center overflow-hidden'
         >
           <div
             className='relative mt-7 shrink-0 overflow-hidden rounded-2xl border border-(--mantine-color-default-border) shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)] transition-[width] duration-300'

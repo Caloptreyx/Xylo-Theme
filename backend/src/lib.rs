@@ -14,7 +14,7 @@ pub struct ExtensionStruct;
 #[async_trait::async_trait]
 impl Extension for ExtensionStruct {
     async fn initialize(&mut self, _state: State) {
-        tracing::info!("xylo theme loaded");
+        tracing::info!("zoron theme loaded");
     }
 
     async fn initialize_router(
@@ -24,13 +24,13 @@ impl Extension for ExtensionStruct {
     ) -> ExtensionRouteBuilder {
         builder
             // public on purpose: the login page is themed too
-            .add_global_router(|routes| routes.nest("/xylo", routes::public(&state)))
+            .add_global_router(|routes| routes.nest("/zoron", routes::public(&state)))
             .add_admin_api_router(|routes| {
-                routes.nest("/extensions/dev.caloptreyx.xylo", routes::admin(&state))
+                routes.nest("/extensions/dev.caloptreyx.zoron", routes::admin(&state))
             })
     }
 
-    /// `xylo-theme.update`: saving the theme without the panel wide `settings.update`.
+    /// `zoron-theme.update`: saving the theme without the panel wide `settings.update`.
     async fn initialize_permissions(
         &mut self,
         _state: State,

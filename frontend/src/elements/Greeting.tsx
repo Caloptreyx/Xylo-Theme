@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../lib/core.ts';
-import { useXyloTheme } from '../lib/store.ts';
+import { useZoronTheme } from '../lib/store.ts';
 import { useExtTranslations } from '../translations.ts';
 
 const greetingKey = (hour: number) =>
@@ -10,7 +10,7 @@ const greetingKey = (hour: number) =>
 export default function Greeting() {
   const { t, language } = useExtTranslations();
   const { user } = useAuth();
-  const theme = useXyloTheme();
+  const theme = useZoronTheme();
   const [now, setNow] = useState(() => new Date());
 
   // the greeting follows the clock across a long session
@@ -28,9 +28,9 @@ export default function Greeting() {
   }).format(now);
 
   return (
-    <div className='xylo-pop mb-6 flex flex-col gap-1'>
+    <div className='zoron-pop mb-6 flex flex-col gap-1'>
       <h1 className='text-2xl font-semibold tracking-tight text-balance sm:text-3xl'>
-        <span className='xylo-greeting-title'>{t(greetingKey(now.getHours()), { name })}</span>
+        <span className='zoron-greeting-title'>{t(greetingKey(now.getHours()), { name })}</span>
       </h1>
       <p className='text-sm text-(--mantine-color-dimmed)'>{date}</p>
     </div>

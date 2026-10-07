@@ -2,7 +2,7 @@ import { faAngleRight, faPen, faPlus, faXmark } from '@fortawesome/free-solid-sv
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { type FormEvent, useMemo, useState, useSyncExternalStore } from 'react';
 import { ActionIcon, Button, SocketRequest, TextInput, useServerCan, useServerStore } from '../../lib/core.ts';
-import { useXyloTheme } from '../../lib/store.ts';
+import { useZoronTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { commandOf, commandsKey, MAX_COMMAND, MAX_COMMANDS, parseCommands, withCommand } from './console.ts';
 
@@ -39,7 +39,7 @@ function saveCommands(key: string, next: string[]) {
 }
 
 /**
- * A server's quick commands (`xylo:commands:<uuid>`, per browser), shared by every part showing them (the chips
+ * A server's quick commands (`zoron:commands:<uuid>`, per browser), shared by every part showing them (the chips
  * above the prompt, the inspector's list), with the setter that saves them.
  */
 function useQuickCommands(uuid: string) {
@@ -77,7 +77,7 @@ function useCommandSender() {
  */
 export function CommandChips({ onEdit }: { onEdit?: () => void }) {
   const { t } = useExtTranslations();
-  const theme = useXyloTheme();
+  const theme = useZoronTheme();
   const uuid = useServerStore((state) => state.server.uuid);
   const canConsole = useServerCan('control.console');
   const [saved] = useQuickCommands(uuid);
@@ -92,28 +92,28 @@ export function CommandChips({ onEdit }: { onEdit?: () => void }) {
     <button
       key={command}
       type='button'
-      className='xylo-con-chip'
+      className='zoron-con-chip'
       data-site={fromSite || undefined}
       disabled={!ready}
       title={reason ?? t(fromSite ? 'console.sendSiteCommand' : 'console.sendCommand', { command })}
       aria-label={t(fromSite ? 'console.sendSiteCommand' : 'console.sendCommand', { command })}
       onClick={() => send(command)}
     >
-      <FontAwesomeIcon icon={faAngleRight} className='xylo-con-chip-cue' />
+      <FontAwesomeIcon icon={faAngleRight} className='zoron-con-chip-cue' />
       <span className='truncate'>{command}</span>
     </button>
   );
 
   return (
-    <div className='xylo-con-chips' role='group' aria-label={t('console.commands', {})}>
+    <div className='zoron-con-chips' role='group' aria-label={t('console.commands', {})}>
       {site.map((command) => chip(command, true))}
       {own.map((command) => chip(command, false))}
       {onEdit && (
         <button
           type='button'
-          className='xylo-con-chip'
+          className='zoron-con-chip'
           data-edit
-          data-xylo-inspector-toggle
+          data-zoron-inspector-toggle
           title={t('console.editCommands', {})}
           aria-label={t('console.editCommands', {})}
           onClick={onEdit}
@@ -139,7 +139,7 @@ function CommandRow({
   onClick: () => void;
 }) {
   return (
-    <button type='button' className='xylo-con-command' disabled={disabled} title={title} onClick={onClick}>
+    <button type='button' className='zoron-con-command' disabled={disabled} title={title} onClick={onClick}>
       <FontAwesomeIcon icon={faAngleRight} className='shrink-0 opacity-50' />
       <span className='truncate'>{command}</span>
     </button>
@@ -153,7 +153,7 @@ function CommandRow({
  */
 export function CommandsEditor() {
   const { t } = useExtTranslations();
-  const theme = useXyloTheme();
+  const theme = useZoronTheme();
   const uuid = useServerStore((state) => state.server.uuid);
   const [commands, save] = useQuickCommands(uuid);
   const { ready, reason, send } = useCommandSender();
@@ -175,8 +175,8 @@ export function CommandsEditor() {
     <div className='flex flex-col gap-3'>
       {site.length > 0 && (
         <>
-          <h3 className='xylo-con-commands-head'>{t('console.siteCommands', {})}</h3>
-          <ul className='xylo-con-commands'>
+          <h3 className='zoron-con-commands-head'>{t('console.siteCommands', {})}</h3>
+          <ul className='zoron-con-commands'>
             {site.map((command) => (
               <li key={command}>
                 <CommandRow
@@ -188,7 +188,7 @@ export function CommandsEditor() {
               </li>
             ))}
           </ul>
-          <h3 className='xylo-con-commands-head'>{t('console.ownCommands', {})}</h3>
+          <h3 className='zoron-con-commands-head'>{t('console.ownCommands', {})}</h3>
         </>
       )}
       {own.length === 0 ? (
@@ -196,7 +196,7 @@ export function CommandsEditor() {
           {t(site.length > 0 ? 'console.ownEmpty' : 'console.commandsEmpty', {})}
         </p>
       ) : (
-        <ul className='xylo-con-commands'>
+        <ul className='zoron-con-commands'>
           {own.map((command) => (
             <li key={command}>
               <CommandRow

@@ -4,13 +4,13 @@ import { Drawer } from '@mantine/core';
 import { type ReactElement, type ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { ActionIcon, useGlobalStore, useQuickActionsStore } from '../../lib/core.ts';
-import { useXyloTheme } from '../../lib/store.ts';
+import { useZoronTheme } from '../../lib/store.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { type Area, areaOf, type PanelNodes, panelNodes, type SidebarProps } from './nav.ts';
 import { AppMark, Rail } from './Rail.tsx';
 
 /** The panel's collapsed state, per browser. */
-const PANEL_KEY = 'xylo:panel';
+const PANEL_KEY = 'zoron:panel';
 
 /**
  * `sidebar: 'rail'` replaces core's sidebar on the dashboard, server and admin pages: an icon rail of areas and
@@ -18,7 +18,7 @@ const PANEL_KEY = 'xylo:panel';
  * drawer. The setup wizard (its sidebar lists its steps) and the other layouts keep core's element.
  */
 export default function Shell({ element, ...props }: SidebarProps & { element: ReactElement }) {
-  const theme = useXyloTheme();
+  const theme = useZoronTheme();
   const { pathname } = useLocation();
   if (theme.sidebar !== 'rail' || pathname.startsWith('/oobe')) return element;
   return <RailShell {...props} />;
@@ -61,12 +61,12 @@ function RailShell({ header, footer, children }: SidebarProps) {
 
   return (
     <>
-      <div className='xylo-shell sticky top-0 z-40 hidden h-screen shrink-0 lg:flex'>
+      <div className='zoron-shell sticky top-0 z-40 hidden h-screen shrink-0 lg:flex'>
         <Rail area={area} collapsed={collapsed} onToggle={toggle} />
         <Panel area={area} nodes={nodes} footer={footer} collapsed={collapsed} />
       </div>
 
-      <div className='xylo-topbar sticky top-0 z-50 flex h-14 items-center gap-2 px-3 lg:hidden'>
+      <div className='zoron-topbar sticky top-0 z-50 flex h-14 items-center gap-2 px-3 lg:hidden'>
         <ActionIcon
           variant='subtle'
           color='gray'
@@ -99,7 +99,7 @@ function RailShell({ header, footer, children }: SidebarProps) {
         // leaves a strip of the page to tap out on, however narrow the phone
         size='min(340px, calc(100vw - 3rem))'
         padding={0}
-        classNames={{ content: 'xylo-drawer' }}
+        classNames={{ content: 'zoron-drawer' }}
         styles={{ body: { height: '100%' } }}
       >
         <div className='flex h-full'>
@@ -126,7 +126,7 @@ function Panel({
   return (
     <aside
       id='sidebar-content'
-      className='xylo-panel h-full shrink-0 overflow-hidden'
+      className='zoron-panel h-full shrink-0 overflow-hidden'
       data-collapsed={collapsed || undefined}
       inert={collapsed}
     >
@@ -138,7 +138,7 @@ function Panel({
           </h2>
         )}
         {nodes.head.length > 0 && <div className='shrink-0'>{nodes.head}</div>}
-        <div className='xylo-panel-scroll flex min-h-0 flex-1 flex-col overflow-y-auto'>{nodes.menu}</div>
+        <div className='zoron-panel-scroll flex min-h-0 flex-1 flex-col overflow-y-auto'>{nodes.menu}</div>
         {footer && <div className='shrink-0 pt-2'>{footer}</div>}
       </div>
     </aside>

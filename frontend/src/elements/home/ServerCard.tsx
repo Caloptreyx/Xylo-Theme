@@ -91,7 +91,7 @@ export default function ServerCard({
         color={color}
         size='lg'
         aria-label={label}
-        className='xylo-home-raise'
+        className='zoron-home-raise'
         loading={bulkActionLoading === action}
         onClick={() => power(action)}
       >
@@ -103,7 +103,7 @@ export default function ServerCard({
   return (
     <>
       <Card
-        className='xylo-home-card cursor-pointer'
+        className='zoron-home-card cursor-pointer'
         data-phase={phase}
         data-selected={selected || undefined}
         onContextMenu={(event) => {
@@ -114,28 +114,28 @@ export default function ServerCard({
         <div className='flex items-start gap-3'>
           <button
             type='button'
-            className='xylo-home-tile xylo-home-raise'
+            className='zoron-home-tile zoron-home-raise'
             data-selecting={selecting || undefined}
             aria-pressed={selected}
             aria-label={t('home.select', { name: tile.label })}
             style={{ background: tile.background }}
             onClick={() => onSelect(!selected)}
           >
-            <span className='xylo-home-tile-initials'>
+            <span className='zoron-home-tile-initials'>
               <TileGlyph tile={tile} />
             </span>
-            <span className='xylo-home-tile-check'>
+            <span className='zoron-home-tile-check'>
               <FontAwesomeIcon icon={faCheck} />
             </span>
           </button>
           <div className='min-w-0 flex-1'>
-            <Link to={`/server/${server.uuidShort}`} className='xylo-home-card-link'>
+            <Link to={`/server/${server.uuidShort}`} className='zoron-home-card-link'>
               {tile.label}
             </Link>
             <p className='flex items-center gap-1.5 truncate text-xs text-(--mantine-color-dimmed)'>
               {!server.isOwner && (
                 <Tooltip label={t('home.shared', {})}>
-                  <FontAwesomeIcon icon={faUsers} className='xylo-home-raise text-(--mantine-color-yellow-filled)' />
+                  <FontAwesomeIcon icon={faUsers} className='zoron-home-raise text-(--mantine-color-yellow-filled)' />
                 </Tooltip>
               )}
               {tile.custom && <span className='truncate'>{server.name}</span>}
@@ -143,19 +143,19 @@ export default function ServerCard({
               <span className='truncate'>{server.egg.name}</span>
             </p>
           </div>
-          <span className='xylo-status' data-phase={phase}>
-            <span className='xylo-status-dot' />
+          <span className='zoron-status' data-phase={phase}>
+            <span className='zoron-status-dot' />
             {t(`home.${phase}`, {})}
           </span>
         </div>
 
         {address ? (
-          <CopyOnClick content={address} className='xylo-home-address xylo-home-raise'>
+          <CopyOnClick content={address} className='zoron-home-address zoron-home-raise'>
             <FontAwesomeIcon icon={faCopy} className='opacity-60' />
             <span className='truncate'>{address}</span>
           </CopyOnClick>
         ) : (
-          <span className='xylo-home-address' data-empty>
+          <span className='zoron-home-address' data-empty>
             {t('home.noAddress', {})}
           </span>
         )}
@@ -177,7 +177,7 @@ export default function ServerCard({
                 color='gray'
                 size='lg'
                 aria-label={t('home.more', {})}
-                className='xylo-home-raise'
+                className='zoron-home-raise'
               >
                 <FontAwesomeIcon icon={faEllipsis} />
               </ActionIcon>

@@ -109,9 +109,9 @@ export function TileGlyph({ tile, letters = 2 }: { tile: Tile; letters?: number 
 export function TileSquare({ tile, size, className = '' }: { tile: Tile; size: number; className?: string }) {
   return (
     <span
-      className={`xylo-server-tile ${className}`}
+      className={`zoron-server-tile ${className}`}
       aria-hidden
-      style={{ background: tile.background, '--xylo-tile-size': `${size}px` } as CSSProperties}
+      style={{ background: tile.background, '--zoron-tile-size': `${size}px` } as CSSProperties}
     >
       <TileGlyph tile={tile} />
     </span>

@@ -1,6 +1,6 @@
 /*
- * Xylo's static styles. The panel loads every extension's app.css whether the extension is enabled or not, so every
- * rule is scoped to the attributes applyTheme() (lib/store.ts) puts on html, which only an enabled Xylo sets. The
+ * Zoron's static styles. The panel loads every extension's app.css whether the extension is enabled or not, so every
+ * rule is scoped to the attributes applyTheme() (lib/store.ts) puts on html, which only an enabled Zoron sets. The
  * colours and sizes come from the variables buildCss() (lib/theme.ts) writes; the attributes pick the variants.
  */
 
@@ -161,12 +161,12 @@
 /* ---------- page, backdrop and texture ---------- */
 
 /* a first visit waits for the theme (lib/store.ts), 1.5s at most, instead of flashing the default look */
-html[data-xylo-pending] body {
+html[data-zoron-pending] body {
   visibility: hidden;
 }
 
-html[data-xylo] {
-  --xylo-ease: cubic-bezier(0.22, 1, 0.36, 1);
+html[data-zoron] {
+  --zoron-ease: cubic-bezier(0.22, 1, 0.36, 1);
   background-color: var(--mantine-color-body);
   background-size: cover;
   background-position: center;
@@ -179,61 +179,61 @@ html[data-xylo] {
 }
 
 /* the backdrop and the texture are fixed layers under body, which lets them through */
-html[data-xylo] body {
+html[data-zoron] body {
   background-color: transparent;
 }
 
-html[data-xylo]::before,
-html[data-xylo]::after {
+html[data-zoron]::before,
+html[data-zoron]::after {
   content: "";
   position: fixed;
   z-index: -1;
   pointer-events: none;
 }
 
-html[data-xylo]::before {
+html[data-zoron]::before {
   inset: -12vmax;
 }
 
-html[data-xylo]::after {
+html[data-zoron]::after {
   inset: 0;
 }
 
 /* the blur turns the gradients' straight falloff into soft light; rasterized once, then only moved */
-html[data-xylo]::before {
+html[data-zoron]::before {
   filter: blur(40px);
 }
 
-html[data-xylo-backdrop="aurora"]::before {
+html[data-zoron-backdrop="aurora"]::before {
   background:
-    radial-gradient(44vmax 34vmax at 30% 22%, var(--xylo-field-1), transparent 70%),
-    radial-gradient(38vmax 30vmax at 80% 24%, var(--xylo-field-2), transparent 70%),
-    radial-gradient(50vmax 34vmax at 58% 86%, var(--xylo-field-3), transparent 70%);
+    radial-gradient(44vmax 34vmax at 30% 22%, var(--zoron-field-1), transparent 70%),
+    radial-gradient(38vmax 30vmax at 80% 24%, var(--zoron-field-2), transparent 70%),
+    radial-gradient(50vmax 34vmax at 58% 86%, var(--zoron-field-3), transparent 70%);
 }
 
-html[data-xylo-backdrop="spotlight"]::before {
+html[data-zoron-backdrop="spotlight"]::before {
   background:
-    radial-gradient(60vmax 36vmax at 55% 12%, var(--xylo-field-1), transparent 72%),
-    radial-gradient(32vmax 22vmax at 66% 14%, var(--xylo-field-2), transparent 70%);
+    radial-gradient(60vmax 36vmax at 55% 12%, var(--zoron-field-1), transparent 72%),
+    radial-gradient(32vmax 22vmax at 66% 14%, var(--zoron-field-2), transparent 70%);
 }
 
-html[data-xylo-backdrop="mesh"]::before {
+html[data-zoron-backdrop="mesh"]::before {
   background:
-    radial-gradient(40vmax 32vmax at 20% 18%, var(--xylo-field-1), transparent 70%),
-    radial-gradient(40vmax 32vmax at 84% 20%, var(--xylo-field-2), transparent 70%),
-    radial-gradient(40vmax 32vmax at 80% 84%, var(--xylo-field-1), transparent 70%),
-    radial-gradient(40vmax 32vmax at 20% 82%, var(--xylo-field-3), transparent 70%);
+    radial-gradient(40vmax 32vmax at 20% 18%, var(--zoron-field-1), transparent 70%),
+    radial-gradient(40vmax 32vmax at 84% 20%, var(--zoron-field-2), transparent 70%),
+    radial-gradient(40vmax 32vmax at 80% 84%, var(--zoron-field-1), transparent 70%),
+    radial-gradient(40vmax 32vmax at 20% 82%, var(--zoron-field-3), transparent 70%);
 }
 
 /* only transform moves, so the drift stays on the compositor */
 @media (prefers-reduced-motion: no-preference) {
-  html[data-xylo-animate="on"]::before {
-    animation: xylo-drift 36s ease-in-out infinite alternate;
+  html[data-zoron-animate="on"]::before {
+    animation: zoron-drift 36s ease-in-out infinite alternate;
     will-change: transform;
   }
 }
 
-@keyframes xylo-drift {
+@keyframes zoron-drift {
   0% {
     transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
   }
@@ -245,76 +245,80 @@ html[data-xylo-backdrop="mesh"]::before {
   }
 }
 
-html[data-xylo-pattern="grid"]::after {
+html[data-zoron-pattern="grid"]::after {
   background-image:
-    linear-gradient(var(--xylo-pattern-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--xylo-pattern-color) 1px, transparent 1px);
+    linear-gradient(var(--zoron-pattern-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--zoron-pattern-color) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 35%, transparent 100%);
 }
 
-html[data-xylo-pattern="dots"]::after {
-  background-image: radial-gradient(var(--xylo-pattern-color) 1.2px, transparent 1.6px);
+html[data-zoron-pattern="dots"]::after {
+  background-image: radial-gradient(var(--zoron-pattern-color) 1.2px, transparent 1.6px);
   background-size: 22px 22px;
   mask-image: radial-gradient(ellipse 90% 75% at 50% 0%, #000 40%, transparent 100%);
 }
 
-html[data-xylo-pattern="noise"]::after {
-  opacity: var(--xylo-noise-opacity);
+html[data-zoron-pattern="noise"]::after {
+  opacity: var(--zoron-noise-opacity);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-html[data-xylo] ::selection {
-  background-color: color-mix(in srgb, var(--xylo-accent) 38%, transparent);
+html[data-zoron] ::selection {
+  background-color: color-mix(in srgb, var(--zoron-accent) 38%, transparent);
 }
 
-html[data-xylo] ::-webkit-scrollbar {
+html[data-zoron] ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
-html[data-xylo] ::-webkit-scrollbar-thumb {
+html[data-zoron] ::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: 999px;
   background-clip: padding-box;
   background-color: color-mix(in srgb, var(--mantine-color-text) 18%, transparent);
 }
 
-html[data-xylo] ::-webkit-scrollbar-track {
+html[data-zoron] ::-webkit-scrollbar-track {
   background: transparent;
 }
 
 /* core resets the outline on buttons and inputs; keyboard focus gets a visible accent ring back */
-html[data-xylo] :is(a, button, [role="button"], [role="tab"], [role="switch"]):focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--xylo-accent) 75%, transparent);
+html[data-zoron] :is(a, button, [role="button"], [role="tab"], [role="switch"]):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--zoron-accent) 75%, transparent);
   outline-offset: 2px;
 }
 
 /* ---------- shadows ---------- */
 
-html[data-xylo-shadow="none"] {
-  --xylo-shadow: 0 0 #0000;
-  --xylo-shadow-hover: 0 0 #0000;
+html[data-zoron-shadow="none"] {
+  --zoron-shadow: 0 0 #0000;
+  --zoron-shadow-hover: 0 0 #0000;
 }
 
-html[data-xylo-shadow="soft"] {
-  --xylo-shadow:
-    0 1px 2px color-mix(in srgb, var(--xylo-shadow-color) 45%, transparent), 0 12px 32px -16px var(--xylo-shadow-color);
-  --xylo-shadow-hover:
-    0 2px 4px color-mix(in srgb, var(--xylo-shadow-color) 50%, transparent), 0 20px 44px -18px var(--xylo-shadow-color);
+html[data-zoron-shadow="soft"] {
+  --zoron-shadow:
+    0 1px 2px color-mix(in srgb, var(--zoron-shadow-color) 45%, transparent),
+    0 12px 32px -16px var(--zoron-shadow-color);
+  --zoron-shadow-hover:
+    0 2px 4px color-mix(in srgb, var(--zoron-shadow-color) 50%, transparent),
+    0 20px 44px -18px var(--zoron-shadow-color);
 }
 
-html[data-xylo-shadow="deep"] {
-  --xylo-shadow:
-    0 2px 6px color-mix(in srgb, var(--xylo-shadow-color) 60%, transparent), 0 26px 60px -22px var(--xylo-shadow-color);
-  --xylo-shadow-hover:
-    0 4px 10px color-mix(in srgb, var(--xylo-shadow-color) 60%, transparent), 0 34px 72px -24px var(--xylo-shadow-color);
+html[data-zoron-shadow="deep"] {
+  --zoron-shadow:
+    0 2px 6px color-mix(in srgb, var(--zoron-shadow-color) 60%, transparent),
+    0 26px 60px -22px var(--zoron-shadow-color);
+  --zoron-shadow-hover:
+    0 4px 10px color-mix(in srgb, var(--zoron-shadow-color) 60%, transparent),
+    0 34px 72px -24px var(--zoron-shadow-color);
 }
 
 /* ---------- blocks: cards (the sidebar is one) and bordered papers; overlays are handled below ---------- */
 
-html[data-xylo] .mantine-Card-root:not(.fixed > *),
-html[data-xylo]
+html[data-zoron] .mantine-Card-root:not(.fixed > *),
+html[data-zoron]
   .mantine-Paper-root[data-with-border]:not(
     .mantine-Card-root,
     .mantine-Modal-content,
@@ -322,43 +326,43 @@ html[data-xylo]
     .mantine-Dialog-root,
     .mantine-Notification-root
   ) {
-  background-color: var(--xylo-card);
-  border-color: var(--xylo-hairline);
+  background-color: var(--zoron-card);
+  border-color: var(--zoron-hairline);
   box-shadow:
-    var(--xylo-shadow),
-    inset 0 1px 0 var(--xylo-sheen);
+    var(--zoron-shadow),
+    inset 0 1px 0 var(--zoron-sheen);
   transition:
-    transform 260ms var(--xylo-ease),
-    box-shadow 260ms var(--xylo-ease),
+    transform 260ms var(--zoron-ease),
+    box-shadow 260ms var(--zoron-ease),
     border-color 200ms ease,
     background-color 200ms ease;
 }
 
 /* a block inside a block reads as a raised well, not another floating panel */
-html[data-xylo] .mantine-Card-root .mantine-Card-root {
+html[data-zoron] .mantine-Card-root .mantine-Card-root {
   background-color: color-mix(in srgb, var(--mantine-color-text) 3%, transparent);
   box-shadow: none;
 }
 
 /* blur only the outermost glass blocks: nested backdrop filters cost a lot and add nothing */
-html[data-xylo-surface="glass"] .mantine-Card-root:not(.fixed > *, .mantine-Card-root .mantine-Card-root) {
-  -webkit-backdrop-filter: blur(var(--xylo-blur)) saturate(150%);
-  backdrop-filter: blur(var(--xylo-blur)) saturate(150%);
+html[data-zoron-surface="glass"] .mantine-Card-root:not(.fixed > *, .mantine-Card-root .mantine-Card-root) {
+  -webkit-backdrop-filter: blur(var(--zoron-blur)) saturate(150%);
+  backdrop-filter: blur(var(--zoron-blur)) saturate(150%);
 }
 
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  html[data-xylo-lift="on"] :is(a > .mantine-Card-root, .mantine-Card-root.cursor-pointer):hover {
+  html[data-zoron-lift="on"] :is(a > .mantine-Card-root, .mantine-Card-root.cursor-pointer):hover {
     transform: translateY(-2px);
-    border-color: color-mix(in srgb, var(--xylo-accent) 35%, var(--xylo-hairline));
+    border-color: color-mix(in srgb, var(--zoron-accent) 35%, var(--zoron-hairline));
     box-shadow:
-      var(--xylo-shadow-hover),
-      0 10px 40px -18px var(--xylo-glow-color),
-      inset 0 1px 0 var(--xylo-sheen);
+      var(--zoron-shadow-hover),
+      0 10px 40px -18px var(--zoron-glow-color),
+      inset 0 1px 0 var(--zoron-sheen);
   }
 }
 
 /* core's sticky page headers (a server's name and power buttons) paint the page colour, a dark band over the backdrop */
-html[data-xylo] .sticky.top-0[class~="bg-(--mantine-color-body)"] {
+html[data-zoron] .sticky.top-0[class~="bg-(--mantine-color-body)"] {
   background-color: color-mix(in srgb, var(--mantine-color-body) 62%, transparent);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   backdrop-filter: blur(16px) saturate(150%);
@@ -366,14 +370,14 @@ html[data-xylo] .sticky.top-0[class~="bg-(--mantine-color-body)"] {
 
 /* ---------- sidebar ---------- */
 
-html[data-xylo-sidebar="floating"] #sidebar-desktop {
+html[data-zoron-sidebar="floating"] #sidebar-desktop {
   margin: 12px 0 12px 12px;
   top: 12px;
   height: calc(100vh - 24px);
-  border-radius: calc(var(--xylo-radius) + 4px);
+  border-radius: calc(var(--zoron-radius) + 4px);
 }
 
-html[data-xylo-sidebar="docked"] #sidebar-desktop {
+html[data-zoron-sidebar="docked"] #sidebar-desktop {
   margin: 0;
   top: 0;
   height: 100vh;
@@ -383,26 +387,26 @@ html[data-xylo-sidebar="docked"] #sidebar-desktop {
 }
 
 /* overlay scrollbars paint over the links, so the scroller reaches into the card's padding and the bar sits there */
-html[data-xylo] #sidebar-content > .overflow-y-auto {
+html[data-zoron] #sidebar-content > .overflow-y-auto {
   margin-right: calc(var(--mantine-spacing-sm) * -1);
   padding-right: var(--mantine-spacing-sm);
 }
 
 /* section labels in sentence case (as core writes them), not tracked capitals */
-html[data-xylo] #sidebar-content .mantine-Divider-label {
+html[data-zoron] #sidebar-content .mantine-Divider-label {
   padding-inline: var(--mantine-spacing-xs);
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--mantine-color-dimmed);
 }
 
-html[data-xylo] #sidebar-content .mantine-Divider-label::before,
-html[data-xylo] #sidebar-content .mantine-Divider-label::after {
+html[data-zoron] #sidebar-content .mantine-Divider-label::before,
+html[data-zoron] #sidebar-content .mantine-Divider-label::after {
   display: none;
 }
 
 /* menu links (core's Sidebar.Link: a NavLink around a subtle Button that gets `active`) */
-html[data-xylo] #sidebar-content a > .mantine-Button-root {
+html[data-zoron] #sidebar-content a > .mantine-Button-root {
   font-weight: 500;
   color: color-mix(in srgb, var(--mantine-color-text) 78%, transparent);
   border-color: transparent;
@@ -412,51 +416,51 @@ html[data-xylo] #sidebar-content a > .mantine-Button-root {
     box-shadow 220ms ease;
 }
 
-html[data-xylo] #sidebar-content a > .mantine-Button-root svg {
+html[data-zoron] #sidebar-content a > .mantine-Button-root svg {
   opacity: 0.8;
-  transition: transform 220ms var(--xylo-ease);
+  transition: transform 220ms var(--zoron-ease);
 }
 
 @media (hover: hover) {
-  html[data-xylo] #sidebar-content a > .mantine-Button-root:not(.active):hover {
+  html[data-zoron] #sidebar-content a > .mantine-Button-root:not(.active):hover {
     background-color: color-mix(in srgb, var(--mantine-color-text) 6%, transparent);
     color: var(--mantine-color-text);
   }
 }
 
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  html[data-xylo]:not([data-xylo-motion="none"]) #sidebar-content a > .mantine-Button-root:not(.active):hover svg {
+  html[data-zoron]:not([data-zoron-motion="none"]) #sidebar-content a > .mantine-Button-root:not(.active):hover svg {
     transform: translateX(2px);
   }
 }
 
-html[data-xylo] #sidebar-content a > .mantine-Button-root.active svg {
+html[data-zoron] #sidebar-content a > .mantine-Button-root.active svg {
   opacity: 1;
 }
 
-html[data-xylo-nav="pill"] #sidebar-content a > .mantine-Button-root.active {
-  background: var(--xylo-gradient);
-  color: var(--xylo-accent-ink);
+html[data-zoron-nav="pill"] #sidebar-content a > .mantine-Button-root.active {
+  background: var(--zoron-gradient);
+  color: var(--zoron-accent-ink);
   box-shadow:
-    0 8px 22px -10px var(--xylo-glow-color),
+    0 8px 22px -10px var(--zoron-glow-color),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
-html[data-xylo-nav="glow"] #sidebar-content a > .mantine-Button-root.active {
+html[data-zoron-nav="glow"] #sidebar-content a > .mantine-Button-root.active {
   background: var(--mantine-color-blue-light);
   color: var(--mantine-color-blue-light-color);
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--xylo-accent) 40%, transparent),
-    0 0 26px -6px var(--xylo-glow-color);
+    inset 0 0 0 1px color-mix(in srgb, var(--zoron-accent) 40%, transparent),
+    0 0 26px -6px var(--zoron-glow-color);
 }
 
-html[data-xylo-nav="bar"] #sidebar-content a > .mantine-Button-root.active {
+html[data-zoron-nav="bar"] #sidebar-content a > .mantine-Button-root.active {
   background: color-mix(in srgb, var(--mantine-color-text) 7%, transparent);
   color: var(--mantine-color-bright);
-  box-shadow: inset 3px 0 0 var(--xylo-accent);
+  box-shadow: inset 3px 0 0 var(--zoron-accent);
 }
 
-html[data-xylo-nav="subtle"] #sidebar-content a > .mantine-Button-root.active {
+html[data-zoron-nav="subtle"] #sidebar-content a > .mantine-Button-root.active {
   background: color-mix(in srgb, var(--mantine-color-text) 8%, transparent);
   color: var(--mantine-color-bright);
 }
@@ -464,22 +468,22 @@ html[data-xylo-nav="subtle"] #sidebar-content a > .mantine-Button-root.active {
 /* ---------- the rail layout (elements/shell/Shell.tsx) ---------- */
 
 /* the rail and panel sit on the backdrop; the page is a raised canvas beside them */
-html[data-xylo] :is(.xylo-shell, .xylo-topbar) ~ :is(#dashboard-root, #server-root, #admin-root) {
+html[data-zoron] :is(.zoron-shell, .zoron-topbar) ~ :is(#dashboard-root, #server-root, #admin-root) {
   margin: 10px 10px 10px 0;
   min-height: calc(100vh - 20px);
   min-height: calc(100dvh - 20px);
-  border: 1px solid var(--xylo-hairline);
-  border-radius: calc(var(--xylo-radius) + 6px);
-  background-color: var(--xylo-canvas);
+  border: 1px solid var(--zoron-hairline);
+  border-radius: calc(var(--zoron-radius) + 6px);
+  background-color: var(--zoron-canvas);
   box-shadow:
-    var(--xylo-shadow),
-    inset 0 1px 0 var(--xylo-sheen);
+    var(--zoron-shadow),
+    inset 0 1px 0 var(--zoron-sheen);
   /* clip keeps the sticky page headers inside the rounded corners without making the canvas a scroller */
   overflow: clip;
 }
 
 @container page (width < 64rem) {
-  html[data-xylo] .xylo-topbar ~ :is(#dashboard-root, #server-root, #admin-root) {
+  html[data-zoron] .zoron-topbar ~ :is(#dashboard-root, #server-root, #admin-root) {
     margin: 0 8px 8px;
     min-height: calc(100vh - 3.5rem - 8px);
     /* the visible height, not the one behind a phone browser's toolbar */
@@ -487,7 +491,7 @@ html[data-xylo] :is(.xylo-shell, .xylo-topbar) ~ :is(#dashboard-root, #server-ro
   }
 }
 
-html[data-xylo] .xylo-topbar {
+html[data-zoron] .zoron-topbar {
   background-color: color-mix(in srgb, var(--mantine-color-body) 55%, transparent);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   backdrop-filter: blur(16px) saturate(150%);
@@ -495,50 +499,50 @@ html[data-xylo] .xylo-topbar {
 
 /* the drawer slides from the screen's edge: only its open side is rounded and bordered, and the panel fills it
    (doubled class to outrank the overlay rule below) */
-html[data-xylo] .xylo-drawer.xylo-drawer {
+html[data-zoron] .zoron-drawer.zoron-drawer {
   border-width: 0 1px 0 0;
-  border-radius: 0 calc(var(--xylo-radius) + 10px) calc(var(--xylo-radius) + 10px) 0;
-  background-color: var(--xylo-overlay);
+  border-radius: 0 calc(var(--zoron-radius) + 10px) calc(var(--zoron-radius) + 10px) 0;
+  background-color: var(--zoron-overlay);
 }
 
-html[data-xylo] .xylo-drawer .xylo-panel {
+html[data-zoron] .zoron-drawer .zoron-panel {
   flex: 1;
   min-width: 0;
   width: auto;
 }
 
-html[data-xylo] .xylo-drawer .xylo-panel > div {
+html[data-zoron] .zoron-drawer .zoron-panel > div {
   width: 100%;
 }
 
-html[data-xylo] .xylo-panel {
+html[data-zoron] .zoron-panel {
   width: 256px;
-  transition: width 300ms var(--xylo-ease);
+  transition: width 300ms var(--zoron-ease);
 }
 
-html[data-xylo] .xylo-panel[data-collapsed] {
+html[data-zoron] .zoron-panel[data-collapsed] {
   width: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-xylo] .xylo-panel {
+  html[data-zoron] .zoron-panel {
     transition: none;
   }
 }
 
 /* core's server block and account card read as part of the panel, not cards floating on it */
-html[data-xylo] .xylo-panel .mantine-Card-root {
+html[data-zoron] .zoron-panel .mantine-Card-root {
   background-color: color-mix(in srgb, var(--mantine-color-text) 4%, transparent);
   box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
 
-html[data-xylo] .xylo-rail-servers {
+html[data-zoron] .zoron-rail-servers {
   scrollbar-width: none;
 }
 
-html[data-xylo] .xylo-panel-scroll {
+html[data-zoron] .zoron-panel-scroll {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--mantine-color-text) 18%, transparent) transparent;
 }
@@ -547,57 +551,57 @@ html[data-xylo] .xylo-panel-scroll {
  * The panel's links and the rail's servers fade out at an edge only while there is more to scroll that way. Scroll
  * driven, so where it isn't supported (or nothing scrolls, which leaves the timeline inactive) nothing fades.
  */
-@property --xylo-fade-top {
+@property --zoron-fade-top {
   syntax: "<length>";
   inherits: false;
   initial-value: 0px;
 }
 
-@property --xylo-fade-bottom {
+@property --zoron-fade-bottom {
   syntax: "<length>";
   inherits: false;
   initial-value: 0px;
 }
 
-@keyframes xylo-scroll-fade {
+@keyframes zoron-scroll-fade {
   0% {
-    --xylo-fade-top: 0px;
-    --xylo-fade-bottom: 28px;
+    --zoron-fade-top: 0px;
+    --zoron-fade-bottom: 28px;
   }
   8% {
-    --xylo-fade-top: 28px;
+    --zoron-fade-top: 28px;
   }
   92% {
-    --xylo-fade-bottom: 28px;
+    --zoron-fade-bottom: 28px;
   }
   100% {
-    --xylo-fade-top: 28px;
-    --xylo-fade-bottom: 0px;
+    --zoron-fade-top: 28px;
+    --zoron-fade-bottom: 0px;
   }
 }
 
 @supports (animation-timeline: scroll()) {
-  html[data-xylo] :is(.xylo-panel-scroll, .xylo-rail-servers) {
+  html[data-zoron] :is(.zoron-panel-scroll, .zoron-rail-servers) {
     -webkit-mask-image: linear-gradient(
       to bottom,
       transparent,
-      #000 var(--xylo-fade-top),
-      #000 calc(100% - var(--xylo-fade-bottom)),
+      #000 var(--zoron-fade-top),
+      #000 calc(100% - var(--zoron-fade-bottom)),
       transparent
     );
     mask-image: linear-gradient(
       to bottom,
       transparent,
-      #000 var(--xylo-fade-top),
-      #000 calc(100% - var(--xylo-fade-bottom)),
+      #000 var(--zoron-fade-top),
+      #000 calc(100% - var(--zoron-fade-bottom)),
       transparent
     );
-    animation: xylo-scroll-fade linear both;
+    animation: zoron-scroll-fade linear both;
     animation-timeline: scroll(self);
   }
 }
 
-html[data-xylo] .xylo-rail-sep {
+html[data-zoron] .zoron-rail-sep {
   width: 28px;
   height: 2px;
   margin: 2px 0;
@@ -606,7 +610,7 @@ html[data-xylo] .xylo-rail-sep {
 }
 
 /* a square that rounds less when hovered or current, Discord style, with a pill on the rail's edge */
-html[data-xylo] .xylo-rail-btn {
+html[data-zoron] .zoron-rail-btn {
   position: relative;
   display: grid;
   flex-shrink: 0;
@@ -619,14 +623,14 @@ html[data-xylo] .xylo-rail-btn {
   font-size: 1.05rem;
   cursor: pointer;
   transition:
-    border-radius 240ms var(--xylo-ease),
+    border-radius 240ms var(--zoron-ease),
     background-color 200ms ease,
     color 200ms ease,
     box-shadow 240ms ease,
-    transform 140ms var(--xylo-ease);
+    transform 140ms var(--zoron-ease);
 }
 
-html[data-xylo] .xylo-rail-btn::before {
+html[data-zoron] .zoron-rail-btn::before {
   content: "";
   position: absolute;
   left: -14px;
@@ -636,67 +640,67 @@ html[data-xylo] .xylo-rail-btn::before {
   border-radius: 0 4px 4px 0;
   background-color: var(--mantine-color-text);
   transform: translateY(-50%);
-  transition: height 240ms var(--xylo-ease);
+  transition: height 240ms var(--zoron-ease);
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-rail-btn:hover {
+  html[data-zoron] .zoron-rail-btn:hover {
     border-radius: 14px;
     background-color: color-mix(in srgb, var(--mantine-color-text) 11%, transparent);
     color: var(--mantine-color-text);
   }
 
-  html[data-xylo] .xylo-rail-btn:hover::before {
+  html[data-zoron] .zoron-rail-btn:hover::before {
     height: 12px;
   }
 }
 
-html[data-xylo] .xylo-rail-btn:active {
+html[data-zoron] .zoron-rail-btn:active {
   transform: scale(0.94);
 }
 
-html[data-xylo] .xylo-rail-btn:focus-visible {
-  outline: 2px solid var(--xylo-accent);
+html[data-zoron] .zoron-rail-btn:focus-visible {
+  outline: 2px solid var(--zoron-accent);
   outline-offset: 2px;
 }
 
 @media (hover: hover) {
-  html[data-xylo] :is(.xylo-rail-server, .xylo-rail-folder):hover {
+  html[data-zoron] :is(.zoron-rail-server, .zoron-rail-folder):hover {
     filter: brightness(1.12);
   }
 }
 
-html[data-xylo] .xylo-rail-btn[data-active] {
+html[data-zoron] .zoron-rail-btn[data-active] {
   border-radius: 14px;
-  background: var(--xylo-gradient);
-  color: var(--xylo-accent-ink);
-  box-shadow: 0 8px 22px -10px var(--xylo-glow-color);
+  background: var(--zoron-gradient);
+  color: var(--zoron-accent-ink);
+  box-shadow: 0 8px 22px -10px var(--zoron-glow-color);
 }
 
-html[data-xylo] .xylo-rail-btn[data-active]::before {
+html[data-zoron] .zoron-rail-btn[data-active]::before {
   height: 28px;
 }
 
 /* server tiles and folders keep their own colour; the current one gets a ring instead of the gradient */
-html[data-xylo] :is(.xylo-rail-server, .xylo-rail-folder)[data-active] {
+html[data-zoron] :is(.zoron-rail-server, .zoron-rail-folder)[data-active] {
   box-shadow:
     0 0 0 2px var(--mantine-color-body),
-    0 0 0 4px var(--xylo-accent);
+    0 0 0 4px var(--zoron-accent);
 }
 
 /* a closed folder (one of core's server groups) is a rounded square previewing its first four servers, Discord style */
-html[data-xylo] .xylo-rail-folder {
+html[data-zoron] .zoron-rail-folder {
   border-radius: 14px;
 }
 
-html[data-xylo] .xylo-rail-folder-grid {
+html[data-zoron] .zoron-rail-folder-grid {
   display: grid;
   grid-template-columns: repeat(2, 15px);
   grid-auto-rows: 15px;
   gap: 3px;
 }
 
-html[data-xylo] .xylo-rail-folder-grid > span {
+html[data-zoron] .zoron-rail-folder-grid > span {
   display: grid;
   place-items: center;
   border-radius: 5px;
@@ -707,7 +711,7 @@ html[data-xylo] .xylo-rail-folder-grid > span {
 }
 
 /* an open folder: its head and servers on one tinted pill */
-html[data-xylo] .xylo-rail-folder-open {
+html[data-zoron] .zoron-rail-folder-open {
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
@@ -718,11 +722,11 @@ html[data-xylo] .xylo-rail-folder-open {
   background-color: color-mix(in srgb, var(--mantine-color-text) 7%, transparent);
 }
 
-html[data-xylo] .xylo-rail-folder-head {
+html[data-zoron] .zoron-rail-folder-head {
   background-color: transparent;
 }
 
-@keyframes xylo-folder-open {
+@keyframes zoron-folder-open {
   from {
     opacity: 0;
     transform: translateY(-4px);
@@ -730,8 +734,8 @@ html[data-xylo] .xylo-rail-folder-head {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  html[data-xylo]:not([data-xylo-motion="none"]) .xylo-rail-folder-open {
-    animation: xylo-folder-open 200ms var(--xylo-ease);
+  html[data-zoron]:not([data-zoron-motion="none"]) .zoron-rail-folder-open {
+    animation: zoron-folder-open 200ms var(--zoron-ease);
   }
 }
 
@@ -740,12 +744,12 @@ html[data-xylo] .xylo-rail-folder-head {
  * take it grows a ring; a place in a list (servers in an open folder, the folders) shows as a bar in the gap; the
  * free space tints while the server can leave its folder there.
  */
-html[data-xylo] .xylo-rail {
+html[data-zoron] .zoron-rail {
   -webkit-user-select: none;
   user-select: none;
 }
 
-html[data-xylo] .xylo-rail-drag {
+html[data-zoron] .zoron-rail-drag {
   position: relative;
   display: flex;
   flex-shrink: 0;
@@ -754,73 +758,73 @@ html[data-xylo] .xylo-rail-drag {
   -webkit-touch-callout: none;
 }
 
-html[data-xylo] .xylo-rail-drag[data-dragging] {
+html[data-zoron] .zoron-rail-drag[data-dragging] {
   opacity: 0.35;
 }
 
-html[data-xylo] .xylo-rail-drag[data-drop="onto"] .xylo-rail-btn {
+html[data-zoron] .zoron-rail-drag[data-drop="onto"] .zoron-rail-btn {
   border-radius: 14px;
   box-shadow:
     0 0 0 2px var(--mantine-color-body),
-    0 0 0 4px var(--xylo-accent);
+    0 0 0 4px var(--zoron-accent);
   transform: scale(1.08);
 }
 
-html[data-xylo] .xylo-rail-folder-open {
+html[data-zoron] .zoron-rail-folder-open {
   position: relative;
 }
 
-html[data-xylo] .xylo-rail-folder-open[data-drop="onto"] {
-  background-color: color-mix(in srgb, var(--xylo-accent) 16%, transparent);
-  box-shadow: inset 0 0 0 2px var(--xylo-accent);
+html[data-zoron] .zoron-rail-folder-open[data-drop="onto"] {
+  background-color: color-mix(in srgb, var(--zoron-accent) 16%, transparent);
+  box-shadow: inset 0 0 0 2px var(--zoron-accent);
 }
 
 /* the bar sits in the 8px gap above or below the target */
-html[data-xylo] :is(.xylo-rail-drag, .xylo-rail-folder-open):is([data-drop="before"], [data-drop="after"])::after {
+html[data-zoron] :is(.zoron-rail-drag, .zoron-rail-folder-open):is([data-drop="before"], [data-drop="after"])::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
   height: 3px;
   border-radius: 3px;
-  background: var(--xylo-gradient);
-  box-shadow: 0 0 10px var(--xylo-glow-color);
+  background: var(--zoron-gradient);
+  box-shadow: 0 0 10px var(--zoron-glow-color);
   pointer-events: none;
 }
 
-html[data-xylo] :is(.xylo-rail-drag, .xylo-rail-folder-open)[data-drop="before"]::after {
+html[data-zoron] :is(.zoron-rail-drag, .zoron-rail-folder-open)[data-drop="before"]::after {
   top: -5.5px;
 }
 
-html[data-xylo] :is(.xylo-rail-drag, .xylo-rail-folder-open)[data-drop="after"]::after {
+html[data-zoron] :is(.zoron-rail-drag, .zoron-rail-folder-open)[data-drop="after"]::after {
   bottom: -5.5px;
 }
 
-html[data-xylo] .xylo-rail-servers[data-drop="onto"] {
+html[data-zoron] .zoron-rail-servers[data-drop="onto"] {
   border-radius: 16px;
-  background-color: color-mix(in srgb, var(--xylo-accent) 8%, transparent);
+  background-color: color-mix(in srgb, var(--zoron-accent) 8%, transparent);
 }
 
-html[data-xylo] .xylo-rail-ghost {
+html[data-zoron] .zoron-rail-ghost {
   border-radius: 14px;
   box-shadow: 0 14px 30px -10px rgb(0 0 0 / 0.55);
   cursor: grabbing;
 }
 
-html[data-xylo] .xylo-rail-avatar,
-html[data-xylo] .xylo-rail-avatar[data-active] {
+html[data-zoron] .zoron-rail-avatar,
+html[data-zoron] .zoron-rail-avatar[data-active] {
   background: none;
   box-shadow: none;
 }
 
-html[data-xylo] .xylo-rail-avatar[data-active] .mantine-Avatar-root {
-  box-shadow: 0 0 0 2px var(--xylo-accent);
+html[data-zoron] .zoron-rail-avatar[data-active] .mantine-Avatar-root {
+  box-shadow: 0 0 0 2px var(--zoron-accent);
 }
 
 /* ---------- page chrome ---------- */
 
 /* sub pages (core's SubNavigation and other tab rows) as a segmented pill bar instead of underlined tabs */
-html[data-xylo] :is(#dashboard-root, #server-root, #admin-root) .mantine-Tabs-list:not([data-orientation="vertical"]) {
+html[data-zoron] :is(#dashboard-root, #server-root, #admin-root) .mantine-Tabs-list:not([data-orientation="vertical"]) {
   width: fit-content;
   max-width: 100%;
   flex-wrap: nowrap;
@@ -828,112 +832,112 @@ html[data-xylo] :is(#dashboard-root, #server-root, #admin-root) .mantine-Tabs-li
   padding: 4px;
   overflow-x: auto;
   scrollbar-width: none;
-  border-radius: calc(var(--xylo-control-radius) + 4px);
+  border-radius: calc(var(--zoron-control-radius) + 4px);
   background-color: color-mix(in srgb, var(--mantine-color-text) 5%, transparent);
 }
 
-html[data-xylo]
+html[data-zoron]
   :is(#dashboard-root, #server-root, #admin-root)
   .mantine-Tabs-list:not([data-orientation="vertical"])::before {
   display: none;
 }
 
-html[data-xylo]
+html[data-zoron]
   :is(#dashboard-root, #server-root, #admin-root)
   .mantine-Tabs-list:not([data-orientation="vertical"])
   .mantine-Tabs-tab {
   margin: 0;
   border: 0;
-  border-radius: var(--xylo-control-radius);
+  border-radius: var(--zoron-control-radius);
   color: var(--mantine-color-dimmed);
   white-space: nowrap;
 }
 
-html[data-xylo]
+html[data-zoron]
   :is(#dashboard-root, #server-root, #admin-root)
   .mantine-Tabs-list:not([data-orientation="vertical"])
   .mantine-Tabs-tab[data-active] {
-  background-color: var(--xylo-card-solid);
+  background-color: var(--zoron-card-solid);
   color: var(--mantine-color-text);
   box-shadow:
-    0 1px 2px var(--xylo-shadow-color),
-    inset 0 1px 0 var(--xylo-sheen);
+    0 1px 2px var(--zoron-shadow-color),
+    inset 0 1px 0 var(--zoron-sheen);
 }
 
 /* ---------- buttons ---------- */
 
-html[data-xylo] :is(.mantine-Button-root, .mantine-ActionIcon-root) {
+html[data-zoron] :is(.mantine-Button-root, .mantine-ActionIcon-root) {
   transition:
     background-color 180ms ease,
     border-color 180ms ease,
     box-shadow 220ms ease,
     filter 180ms ease,
-    transform 140ms var(--xylo-ease);
+    transform 140ms var(--zoron-ease);
 }
 
-/* Mantine nudges pressed buttons 1px down; Xylo gives them a short squeeze instead */
+/* Mantine nudges pressed buttons 1px down; Zoron gives them a short squeeze instead */
 @media (prefers-reduced-motion: no-preference) {
-  html[data-xylo]:not([data-xylo-motion="none"]) .mantine-active:active:not(fieldset:disabled *) {
+  html[data-zoron]:not([data-zoron-motion="none"]) .mantine-active:active:not(fieldset:disabled *) {
     transform: scale(0.97);
   }
 }
 
 /* `--button-bg` is the per colour fill Mantine sets inline, so red and green buttons keep their own colour */
-html[data-xylo-buttons="gradient"]
+html[data-zoron-buttons="gradient"]
 .mantine-Button-root[data-variant="filled"][style*="--button-bg: var(--mantine-color-blue-filled)"]:not(
   :disabled,
   [data-disabled]
 ) {
-  background-image: var(--xylo-gradient);
+  background-image: var(--zoron-gradient);
   border-color: transparent;
   box-shadow:
-    0 8px 24px -12px var(--xylo-glow-color),
+    0 8px 24px -12px var(--zoron-glow-color),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-html[data-xylo-buttons="gradient"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]):hover {
+html[data-zoron-buttons="gradient"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]):hover {
   filter: brightness(1.08) saturate(1.05);
 }
 
-html[data-xylo-buttons="soft"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]) {
+html[data-zoron-buttons="soft"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]) {
   background-color: color-mix(in srgb, var(--button-bg) 20%, transparent);
   border-color: color-mix(in srgb, var(--button-bg) 34%, transparent);
-  color: color-mix(in srgb, var(--button-bg) 45%, var(--xylo-ink));
+  color: color-mix(in srgb, var(--button-bg) 45%, var(--zoron-ink));
 }
 
-html[data-xylo-buttons="soft"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]):hover {
+html[data-zoron-buttons="soft"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]):hover {
   background-color: color-mix(in srgb, var(--button-bg) 30%, transparent);
 }
 
-html[data-xylo-buttons="outline"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]) {
+html[data-zoron-buttons="outline"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]) {
   background-color: transparent;
   border-color: color-mix(in srgb, var(--button-bg) 70%, transparent);
-  color: color-mix(in srgb, var(--button-bg) 50%, var(--xylo-ink));
+  color: color-mix(in srgb, var(--button-bg) 50%, var(--zoron-ink));
 }
 
-html[data-xylo-buttons="outline"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]):hover {
+html[data-zoron-buttons="outline"] .mantine-Button-root[data-variant="filled"]:not(:disabled, [data-disabled]):hover {
   background-color: color-mix(in srgb, var(--button-bg) 14%, transparent);
 }
 
 /* ---------- inputs ---------- */
 
-html[data-xylo] .mantine-Input-input {
+html[data-zoron] .mantine-Input-input {
   transition:
     border-color 160ms ease,
     box-shadow 200ms ease,
     background-color 160ms ease;
 }
 
-html[data-xylo] .mantine-Input-input:focus,
-html[data-xylo] .mantine-Input-input:focus-within,
-html[data-xylo] .mantine-Input-input[data-expanded] {
-  border-color: color-mix(in srgb, var(--xylo-accent) 80%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--xylo-accent) 20%, transparent);
+html[data-zoron] .mantine-Input-input:focus,
+html[data-zoron] .mantine-Input-input:focus-within,
+html[data-zoron] .mantine-Input-input[data-expanded] {
+  border-color: color-mix(in srgb, var(--zoron-accent) 80%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--zoron-accent) 20%, transparent);
 }
 
 /* ---------- overlays: menus, popovers, dropdowns, modals, drawers, tooltips ---------- */
 
-html[data-xylo]
+html[data-zoron]
 :is(
   .mantine-Menu-dropdown,
   .mantine-Popover-dropdown,
@@ -942,14 +946,14 @@ html[data-xylo]
   .mantine-Modal-content,
   .mantine-Drawer-content
 ) {
-  background-color: var(--xylo-overlay);
-  border: 1px solid var(--xylo-hairline);
+  background-color: var(--zoron-overlay);
+  border: 1px solid var(--zoron-hairline);
   box-shadow:
-    0 24px 60px -20px var(--xylo-shadow-color),
-    inset 0 1px 0 var(--xylo-sheen);
+    0 24px 60px -20px var(--zoron-shadow-color),
+    inset 0 1px 0 var(--zoron-sheen);
 }
 
-html[data-xylo-surface="glass"]
+html[data-zoron-surface="glass"]
   :is(
     .mantine-Menu-dropdown,
     .mantine-Popover-dropdown,
@@ -962,50 +966,50 @@ html[data-xylo-surface="glass"]
   backdrop-filter: blur(20px) saturate(160%);
 }
 
-html[data-xylo] :is(.mantine-Modal-overlay, .mantine-Drawer-overlay) {
+html[data-zoron] :is(.mantine-Modal-overlay, .mantine-Drawer-overlay) {
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
 
-html[data-xylo] .mantine-Modal-header {
+html[data-zoron] .mantine-Modal-header {
   background-color: transparent;
 }
 
-html[data-xylo] .mantine-Tooltip-tooltip {
+html[data-zoron] .mantine-Tooltip-tooltip {
   border-radius: var(--mantine-radius-sm);
-  box-shadow: 0 10px 30px -12px var(--xylo-shadow-color);
+  box-shadow: 0 10px 30px -12px var(--zoron-shadow-color);
 }
 
 /* ---------- tables, tabs, badges, progress ---------- */
 
-html[data-xylo] .mantine-Table-tbody > .mantine-Table-tr {
+html[data-zoron] .mantine-Table-tbody > .mantine-Table-tr {
   transition: background-color 160ms ease;
 }
 
-html[data-xylo] .mantine-Tabs-tab {
+html[data-zoron] .mantine-Tabs-tab {
   transition:
     color 160ms ease,
     background-color 160ms ease,
     border-color 160ms ease;
 }
 
-html[data-xylo] .mantine-Badge-root {
+html[data-zoron] .mantine-Badge-root {
   letter-spacing: 0.02em;
 }
 
 /* ---------- typography ---------- */
 
-html[data-xylo] .mantine-Title-root {
+html[data-zoron] .mantine-Title-root {
   letter-spacing: -0.015em;
 }
 
-html[data-xylo] .mantine-Title-root:is([data-order="1"], [data-order="2"]) {
+html[data-zoron] .mantine-Title-root:is([data-order="1"], [data-order="2"]) {
   letter-spacing: -0.025em;
 }
 
-html[data-xylo-titles="gradient"] :is(#dashboard-root, #server-root, #admin-root) .mantine-Title-root[data-order="1"] {
+html[data-zoron-titles="gradient"] :is(#dashboard-root, #server-root, #admin-root) .mantine-Title-root[data-order="1"] {
   width: fit-content;
-  background: var(--xylo-gradient);
+  background: var(--zoron-gradient);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1019,62 +1023,62 @@ html[data-xylo-titles="gradient"] :is(#dashboard-root, #server-root, #admin-root
  * outlives it, and the editor (a fixed full screen page) is left out: a transform would pin it to the column.
  */
 @media (prefers-reduced-motion: no-preference) {
-  html[data-xylo-transition="rise"]
+  html[data-zoron-transition="rise"]
     :is(#dashboard-root, #server-root, #admin-root)
     > div
     > div:first-child
-    > :not(:has(.xylo-editor)) {
-    animation: xylo-rise 480ms var(--xylo-ease);
+    > :not(:has(.zoron-editor)) {
+    animation: zoron-rise 480ms var(--zoron-ease);
   }
 
-  html[data-xylo-transition="fade"]
+  html[data-zoron-transition="fade"]
     :is(#dashboard-root, #server-root, #admin-root)
     > div
     > div:first-child
-    > :not(:has(.xylo-editor)) {
-    animation: xylo-fade 320ms ease-out;
+    > :not(:has(.zoron-editor)) {
+    animation: zoron-fade 320ms ease-out;
   }
 
-  html[data-xylo-transition="zoom"]
+  html[data-zoron-transition="zoom"]
     :is(#dashboard-root, #server-root, #admin-root)
     > div
     > div:first-child
-    > :not(:has(.xylo-editor)) {
-    animation: xylo-zoom 420ms var(--xylo-ease);
+    > :not(:has(.zoron-editor)) {
+    animation: zoron-zoom 420ms var(--zoron-ease);
   }
 }
 
-@keyframes xylo-rise {
+@keyframes zoron-rise {
   from {
     opacity: 0;
     transform: translateY(12px);
   }
 }
 
-@keyframes xylo-fade {
+@keyframes zoron-fade {
   from {
     opacity: 0;
   }
 }
 
-@keyframes xylo-zoom {
+@keyframes zoron-zoom {
   from {
     opacity: 0;
     transform: scale(0.985);
   }
 }
 
-/* ---------- Xylo's own pieces ---------- */
+/* ---------- Zoron's own pieces ---------- */
 
 /* the greeting takes the gradient only with "Gradient page titles" on, like the page titles */
-html[data-xylo-titles="gradient"] .xylo-greeting-title {
-  background: var(--xylo-gradient);
+html[data-zoron-titles="gradient"] .zoron-greeting-title {
+  background: var(--zoron-gradient);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-@keyframes xylo-pop {
+@keyframes zoron-pop {
   from {
     opacity: 0;
     transform: translateY(6px) scale(0.98);
@@ -1082,13 +1086,13 @@ html[data-xylo-titles="gradient"] .xylo-greeting-title {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .xylo-pop {
-    animation: xylo-pop 360ms var(--xylo-ease, ease-out) both;
+  .zoron-pop {
+    animation: zoron-pop 360ms var(--zoron-ease, ease-out) both;
   }
 }
 
 /* the editor's preview stage and its option tiles (pages/ThemeEditor.tsx, elements/editor) */
-.xylo-stage {
+.zoron-stage {
   background-image: radial-gradient(
     color-mix(in srgb, var(--mantine-color-text) 9%, transparent) 1px,
     transparent 1.5px
@@ -1097,29 +1101,29 @@ html[data-xylo-titles="gradient"] .xylo-greeting-title {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .xylo-tile:hover .xylo-tile-anim-rise {
-    animation: xylo-rise 1100ms var(--xylo-ease, ease-out) infinite;
+  .zoron-tile:hover .zoron-tile-anim-rise {
+    animation: zoron-rise 1100ms var(--zoron-ease, ease-out) infinite;
   }
 
-  .xylo-tile:hover .xylo-tile-anim-fade {
-    animation: xylo-fade 1100ms ease-out infinite;
+  .zoron-tile:hover .zoron-tile-anim-fade {
+    animation: zoron-fade 1100ms ease-out infinite;
   }
 
-  .xylo-tile:hover .xylo-tile-anim-zoom {
-    animation: xylo-zoom 1100ms var(--xylo-ease, ease-out) infinite;
+  .zoron-tile:hover .zoron-tile-anim-zoom {
+    animation: zoron-zoom 1100ms var(--zoron-ease, ease-out) infinite;
   }
 }
 
 /* ---------- figures: a stat strip and usage bars (the server overview) ---------- */
 
 /* the stat strip: one card split by hairlines, not a card per figure */
-html[data-xylo] .xylo-stats {
+html[data-zoron] .zoron-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   padding: 0;
 }
 
-html[data-xylo] .xylo-stat {
+html[data-zoron] .zoron-stat {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1127,71 +1131,71 @@ html[data-xylo] .xylo-stat {
   padding: 16px 20px 18px;
 }
 
-html[data-xylo] .xylo-stat-value {
+html[data-zoron] .zoron-stat-value {
   font-size: 1.25rem;
   line-height: 1.75rem;
 }
 
 @container page (width >= 40rem) {
-  html[data-xylo] .xylo-stat-value {
+  html[data-zoron] .zoron-stat-value {
     font-size: 1.5rem;
     line-height: 2rem;
   }
 }
 
-html[data-xylo] .xylo-stat:nth-child(even) {
-  border-left: 1px solid var(--xylo-hairline);
+html[data-zoron] .zoron-stat:nth-child(even) {
+  border-left: 1px solid var(--zoron-hairline);
 }
 
-html[data-xylo] .xylo-stat:nth-child(n + 3) {
-  border-top: 1px solid var(--xylo-hairline);
+html[data-zoron] .zoron-stat:nth-child(n + 3) {
+  border-top: 1px solid var(--zoron-hairline);
 }
 
 @media (min-width: 64rem) {
-  html[data-xylo] .xylo-stats {
+  html[data-zoron] .zoron-stats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  html[data-xylo] .xylo-stat:not(:first-child) {
-    border-left: 1px solid var(--xylo-hairline);
+  html[data-zoron] .zoron-stat:not(:first-child) {
+    border-left: 1px solid var(--zoron-hairline);
   }
 
-  html[data-xylo] .xylo-stat:nth-child(n + 3) {
+  html[data-zoron] .zoron-stat:nth-child(n + 3) {
     border-top: 0;
   }
 }
 
-html[data-xylo] .xylo-stat .xylo-meter-track {
+html[data-zoron] .zoron-stat .zoron-meter-track {
   margin-top: 8px;
 }
 
 /* a usage bar: the accent, turning amber then red as it fills, as core colours usage */
-html[data-xylo] .xylo-meter {
+html[data-zoron] .zoron-meter {
   display: flex;
   flex-direction: column;
   gap: 5px;
   min-width: 0;
 }
 
-html[data-xylo] .xylo-meter-track {
+html[data-zoron] .zoron-meter-track {
   height: 6px;
   overflow: hidden;
   border-radius: 6px;
   background-color: color-mix(in srgb, var(--mantine-color-text) 9%, transparent);
 }
 
-html[data-xylo] .xylo-meter-fill {
+html[data-zoron] .zoron-meter-fill {
   height: 100%;
   border-radius: inherit;
-  background: var(--xylo-accent);
-  transition: width 600ms var(--xylo-ease);
+  background: var(--zoron-accent);
+  transition: width 600ms var(--zoron-ease);
 }
 
-html[data-xylo] .xylo-meter[data-level="warn"] .xylo-meter-fill {
+html[data-zoron] .zoron-meter[data-level="warn"] .zoron-meter-fill {
   background: var(--mantine-color-yellow-filled);
 }
 
-html[data-xylo] .xylo-meter[data-level="danger"] .xylo-meter-fill {
+html[data-zoron] .zoron-meter[data-level="danger"] .zoron-meter-fill {
   background: var(--mantine-color-red-filled);
 }
 
@@ -1199,89 +1203,89 @@ html[data-xylo] .xylo-meter[data-level="danger"] .xylo-meter-fill {
 
 /* a row of blocks (overview.ts's overviewRows): one stack across, the activity card beside a narrower stack on
    either side, or equal columns; one column on narrow pages, in the theme's order */
-html[data-xylo] .xylo-ov-grid {
+html[data-zoron] .zoron-ov-grid {
   display: grid;
   gap: 16px;
   align-items: start;
 }
 
 @media (min-width: 64rem) {
-  html[data-xylo] .xylo-ov-grid[data-kind="mainSide"] {
+  html[data-zoron] .zoron-ov-grid[data-kind="mainSide"] {
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   }
 
-  html[data-xylo] .xylo-ov-grid[data-kind="sideMain"] {
+  html[data-zoron] .zoron-ov-grid[data-kind="sideMain"] {
     grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
   }
 
   /* side by side cards of the 'wide' layout share a height */
-  html[data-xylo] .xylo-ov-grid[data-kind="even"] {
+  html[data-zoron] .zoron-ov-grid[data-kind="even"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: stretch;
   }
 
-  html[data-xylo] .xylo-ov-grid[data-kind="even"] .xylo-ov-section {
+  html[data-zoron] .zoron-ov-grid[data-kind="even"] .zoron-ov-section {
     flex-grow: 1;
   }
 }
 
 /* the 'banner' head: a band tinted with the accent over the card's own surface (its material, blur and border);
    gradient buttons ask for gradients, and then the tint runs from one accent to the other */
-html[data-xylo] .mantine-Card-root.xylo-ov-banner {
+html[data-zoron] .mantine-Card-root.zoron-ov-banner {
   padding: 22px 24px;
-  border-color: color-mix(in srgb, var(--xylo-accent) 24%, var(--xylo-hairline));
+  border-color: color-mix(in srgb, var(--zoron-accent) 24%, var(--zoron-hairline));
   background-image: linear-gradient(
-    color-mix(in srgb, var(--xylo-accent) 9%, transparent),
-    color-mix(in srgb, var(--xylo-accent) 9%, transparent)
+    color-mix(in srgb, var(--zoron-accent) 9%, transparent),
+    color-mix(in srgb, var(--zoron-accent) 9%, transparent)
   );
 }
 
-html[data-xylo-buttons="gradient"] .mantine-Card-root.xylo-ov-banner {
+html[data-zoron-buttons="gradient"] .mantine-Card-root.zoron-ov-banner {
   background-image: linear-gradient(
     120deg,
-    color-mix(in srgb, var(--xylo-accent) 14%, transparent),
-    color-mix(in srgb, var(--xylo-accent-2) 8%, transparent)
+    color-mix(in srgb, var(--zoron-accent) 14%, transparent),
+    color-mix(in srgb, var(--zoron-accent-2) 8%, transparent)
   );
 }
 
 /* the 'numbers' usage style: no bars, so the figures carry the card */
-html[data-xylo] .xylo-stats[data-usage="numbers"] .xylo-stat-value {
+html[data-zoron] .zoron-stats[data-usage="numbers"] .zoron-stat-value {
   font-size: 1.5rem;
   line-height: 2rem;
 }
 
 @container page (width >= 40rem) {
-  html[data-xylo] .xylo-stats[data-usage="numbers"] .xylo-stat-value {
+  html[data-zoron] .zoron-stats[data-usage="numbers"] .zoron-stat-value {
     font-size: 1.875rem;
     line-height: 2.25rem;
   }
 }
 
 /* the 'graphs' usage style: each figure's last minute as a line over a faint fill, flat and muted while stopped */
-html[data-xylo] .xylo-stat-spark {
+html[data-zoron] .zoron-stat-spark {
   width: 100%;
   height: 2rem;
   margin-top: 8px;
   overflow: visible;
 }
 
-html[data-xylo] .xylo-stat-spark-line {
+html[data-zoron] .zoron-stat-spark-line {
   fill: none;
-  stroke: var(--xylo-accent);
+  stroke: var(--zoron-accent);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
 
-html[data-xylo] .xylo-stat-spark-area {
-  fill: color-mix(in srgb, var(--xylo-accent) 14%, transparent);
+html[data-zoron] .zoron-stat-spark-area {
+  fill: color-mix(in srgb, var(--zoron-accent) 14%, transparent);
 }
 
-html[data-xylo] .xylo-stat-spark:not([data-live]) .xylo-stat-spark-line {
+html[data-zoron] .zoron-stat-spark:not([data-live]) .zoron-stat-spark-line {
   stroke: color-mix(in srgb, var(--mantine-color-text) 22%, transparent);
 }
 
-html[data-xylo] .xylo-ov-section {
+html[data-zoron] .zoron-ov-section {
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1289,21 +1293,21 @@ html[data-xylo] .xylo-ov-section {
   padding: 18px 20px;
 }
 
-html[data-xylo] .xylo-ov-link {
-  color: var(--xylo-accent);
+html[data-zoron] .zoron-ov-link {
+  color: var(--zoron-accent);
   font-size: 0.8125rem;
   font-weight: 500;
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-ov-link:hover {
+  html[data-zoron] .zoron-ov-link:hover {
     text-decoration: underline;
     text-underline-offset: 3px;
   }
 }
 
 /* the activity list and the at-a-glance rows: hairlines between rows, none around them */
-html[data-xylo] .xylo-ov-activity {
+html[data-zoron] .zoron-ov-activity {
   display: flex;
   flex-direction: column;
   margin: 0;
@@ -1311,34 +1315,34 @@ html[data-xylo] .xylo-ov-activity {
   list-style: none;
 }
 
-html[data-xylo] .xylo-ov-activity > li {
+html[data-zoron] .zoron-ov-activity > li {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 9px 0;
 }
 
-html[data-xylo] :is(.xylo-ov-activity > li, .xylo-ov-glance) + :is(li, .xylo-ov-glance) {
-  border-top: 1px solid var(--xylo-hairline);
+html[data-zoron] :is(.zoron-ov-activity > li, .zoron-ov-glance) + :is(li, .zoron-ov-glance) {
+  border-top: 1px solid var(--zoron-hairline);
 }
 
-html[data-xylo] .xylo-ov-glance {
+html[data-zoron] .zoron-ov-glance {
   display: flex;
   align-items: center;
   gap: 12px;
   margin: 0 -8px;
   padding: 10px 8px;
-  border-radius: var(--xylo-control-radius, 8px);
+  border-radius: var(--zoron-control-radius, 8px);
   transition: background-color 160ms ease;
 }
 
 @media (hover: hover) {
-  html[data-xylo] a.xylo-ov-glance:hover {
+  html[data-zoron] a.zoron-ov-glance:hover {
     background-color: color-mix(in srgb, var(--mantine-color-text) 5%, transparent);
   }
 }
 
-html[data-xylo] .xylo-ov-row {
+html[data-zoron] .zoron-ov-row {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1346,15 +1350,15 @@ html[data-xylo] .xylo-ov-row {
 }
 
 /* a value to copy: monospace, outlined, the whole row is the button */
-html[data-xylo] .xylo-ov-copy {
+html[data-zoron] .zoron-ov-copy {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   width: 100%;
   padding: 7px 10px;
-  border: 1px solid var(--xylo-hairline);
-  border-radius: var(--xylo-control-radius, 8px);
+  border: 1px solid var(--zoron-hairline);
+  border-radius: var(--zoron-control-radius, 8px);
   background-color: color-mix(in srgb, var(--mantine-color-text) 3%, transparent);
   font-family: var(--mantine-font-family-monospace);
   font-size: 0.8125rem;
@@ -1363,157 +1367,157 @@ html[data-xylo] .xylo-ov-copy {
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-ov-copy:hover {
-    border-color: color-mix(in srgb, var(--xylo-accent) 45%, var(--xylo-hairline));
+  html[data-zoron] .zoron-ov-copy:hover {
+    border-color: color-mix(in srgb, var(--zoron-accent) 45%, var(--zoron-hairline));
   }
 }
 
-html[data-xylo] .xylo-ov-copy:active {
+html[data-zoron] .zoron-ov-copy:active {
   transform: scale(0.99);
 }
 
 /* ---------- the console page (elements/console) and every console's terminal ---------- */
 
 /* the card holding a terminal (core's console, the popout) in the theme's terminal scheme; core's xterm.css keeps
-   xterm's own layers transparent over it. On Xylo's page that card dissolves into the workspace, which paints it */
-html[data-xylo-terminal="custom"] .mantine-Card-root:has(.xterm) {
-  background: var(--xylo-term-bg);
-  color: var(--xylo-term-fg);
+   xterm's own layers transparent over it. On Zoron's page that card dissolves into the workspace, which paints it */
+html[data-zoron-terminal="custom"] .mantine-Card-root:has(.xterm) {
+  background: var(--zoron-term-bg);
+  color: var(--zoron-term-fg);
 }
 
 /*
- * Xylo's console page is one workspace: a surface from where it starts (`--xylo-con-top`, measured) to the viewport's
+ * Zoron's console page is one workspace: a surface from where it starts (`--zoron-con-top`, measured) to the viewport's
  * bottom, never shorter than a useful console, painted in the terminal scheme (the solid card colour with 'panel'),
  * holding the command bar, core's terminal and the inspector. The bar and the inspector sit a step off the background
  * (the scheme's text mixed in: lighter on a dark scheme, darker on a light one) behind hairlines, so the whole reads
  * as one object in both modes. With the on-screen keyboard up it is short enough to keep the prompt above it. The
  * spacing variables follow `consoleDensity` (`data-density`); phones keep their own touch sizes.
  */
-html[data-xylo] .xylo-con {
-  --xylo-con-bg: var(--xylo-term-bg, var(--xylo-card-solid));
-  --xylo-con-solid: var(--xylo-term-bg, var(--xylo-card-solid));
-  --xylo-con-fg: var(--xylo-term-fg, var(--mantine-color-text));
-  --xylo-con-line: color-mix(in srgb, var(--xylo-con-fg) 11%, transparent);
-  --xylo-con-step: color-mix(in srgb, var(--xylo-con-fg) 4%, transparent);
-  --xylo-con-fill: calc(100dvh - var(--xylo-con-top, 14rem) - 1.5rem);
+html[data-zoron] .zoron-con {
+  --zoron-con-bg: var(--zoron-term-bg, var(--zoron-card-solid));
+  --zoron-con-solid: var(--zoron-term-bg, var(--zoron-card-solid));
+  --zoron-con-fg: var(--zoron-term-fg, var(--mantine-color-text));
+  --zoron-con-line: color-mix(in srgb, var(--zoron-con-fg) 11%, transparent);
+  --zoron-con-step: color-mix(in srgb, var(--zoron-con-fg) 4%, transparent);
+  --zoron-con-fill: calc(100dvh - var(--zoron-con-top, 14rem) - 1.5rem);
   /* the inset every row starts at, the bar's block padding and column gap, its controls' height, the toolbar's,
      chip row's and prompt's heights */
-  --xylo-con-edge: 18px;
-  --xylo-con-bar-y: 10px;
-  --xylo-con-gap: 20px;
-  --xylo-con-control: 2rem;
-  --xylo-con-tool: 2.25rem;
-  --xylo-con-chips-y: 6px;
-  --xylo-con-chip: 1.75rem;
-  --xylo-con-prompt: 2.75rem;
+  --zoron-con-edge: 18px;
+  --zoron-con-bar-y: 10px;
+  --zoron-con-gap: 20px;
+  --zoron-con-control: 2rem;
+  --zoron-con-tool: 2.25rem;
+  --zoron-con-chips-y: 6px;
+  --zoron-con-chip: 1.75rem;
+  --zoron-con-prompt: 2.75rem;
   position: relative;
   display: flex;
   flex-direction: column;
-  height: max(24rem, var(--xylo-con-fill));
+  height: max(24rem, var(--zoron-con-fill));
   /* clip, not hidden: nothing (a focused field in the sliding panel) may scroll the surface sideways */
   overflow: clip;
-  border: 1px solid var(--xylo-hairline);
-  border-radius: var(--xylo-radius);
-  background: var(--xylo-con-bg);
-  box-shadow: var(--xylo-shadow);
-  color: var(--xylo-con-fg);
-  container: xylo-con / inline-size;
+  border: 1px solid var(--zoron-hairline);
+  border-radius: var(--zoron-radius);
+  background: var(--zoron-con-bg);
+  box-shadow: var(--zoron-shadow);
+  color: var(--zoron-con-fg);
+  container: zoron-con / inline-size;
 }
 
-html[data-xylo] .xylo-con[data-density="compact"] {
-  --xylo-con-edge: 12px;
-  --xylo-con-bar-y: 6px;
-  --xylo-con-gap: 14px;
-  --xylo-con-control: 1.75rem;
-  --xylo-con-tool: 1.875rem;
-  --xylo-con-chips-y: 4px;
-  --xylo-con-chip: 1.5rem;
-  --xylo-con-prompt: 2.25rem;
+html[data-zoron] .zoron-con[data-density="compact"] {
+  --zoron-con-edge: 12px;
+  --zoron-con-bar-y: 6px;
+  --zoron-con-gap: 14px;
+  --zoron-con-control: 1.75rem;
+  --zoron-con-tool: 1.875rem;
+  --zoron-con-chips-y: 4px;
+  --zoron-con-chip: 1.5rem;
+  --zoron-con-prompt: 2.25rem;
 }
 
-html[data-xylo] .xylo-con[data-density="spacious"] {
-  --xylo-con-edge: 24px;
-  --xylo-con-bar-y: 14px;
-  --xylo-con-gap: 28px;
-  --xylo-con-control: 2.25rem;
-  --xylo-con-tool: 2.75rem;
-  --xylo-con-chips-y: 9px;
-  --xylo-con-chip: 2rem;
-  --xylo-con-prompt: 3.25rem;
+html[data-zoron] .zoron-con[data-density="spacious"] {
+  --zoron-con-edge: 24px;
+  --zoron-con-bar-y: 14px;
+  --zoron-con-gap: 28px;
+  --zoron-con-control: 2.25rem;
+  --zoron-con-tool: 2.75rem;
+  --zoron-con-chips-y: 9px;
+  --zoron-con-chip: 2rem;
+  --zoron-con-prompt: 3.25rem;
 }
 
-html[data-xylo] .xylo-con[data-keyboard] {
-  height: max(8rem, min(var(--xylo-con-fill), calc(100dvh - var(--xylo-con-inset, 0px) - 7rem)));
+html[data-zoron] .zoron-con[data-keyboard] {
+  height: max(8rem, min(var(--zoron-con-fill), calc(100dvh - var(--zoron-con-inset, 0px) - 7rem)));
 }
 
 /* a named scheme's text and lines for what core and Mantine draw on it (inputs, subtle buttons, dimmed text), so a
    dark scheme in light mode, or a light one in dark mode, still reads; overlays are portalled out and keep the page's */
-html[data-xylo-terminal="custom"] .xylo-con {
-  --mantine-color-text: var(--xylo-term-fg);
-  --mantine-color-dimmed: color-mix(in srgb, var(--xylo-term-fg) 60%, var(--xylo-term-bg));
-  --mantine-color-placeholder: color-mix(in srgb, var(--xylo-term-fg) 45%, var(--xylo-term-bg));
-  --mantine-color-body: var(--xylo-term-bg);
-  --mantine-color-default: color-mix(in srgb, var(--xylo-term-fg) 5%, var(--xylo-term-bg));
-  --mantine-color-default-hover: color-mix(in srgb, var(--xylo-term-fg) 10%, var(--xylo-term-bg));
-  --mantine-color-default-color: var(--xylo-term-fg);
-  --mantine-color-default-border: color-mix(in srgb, var(--xylo-term-fg) 18%, var(--xylo-term-bg));
-  --xylo-hairline: color-mix(in srgb, var(--xylo-term-fg) 12%, transparent);
+html[data-zoron-terminal="custom"] .zoron-con {
+  --mantine-color-text: var(--zoron-term-fg);
+  --mantine-color-dimmed: color-mix(in srgb, var(--zoron-term-fg) 60%, var(--zoron-term-bg));
+  --mantine-color-placeholder: color-mix(in srgb, var(--zoron-term-fg) 45%, var(--zoron-term-bg));
+  --mantine-color-body: var(--zoron-term-bg);
+  --mantine-color-default: color-mix(in srgb, var(--zoron-term-fg) 5%, var(--zoron-term-bg));
+  --mantine-color-default-hover: color-mix(in srgb, var(--zoron-term-fg) 10%, var(--zoron-term-bg));
+  --mantine-color-default-color: var(--zoron-term-fg);
+  --mantine-color-default-border: color-mix(in srgb, var(--zoron-term-fg) 18%, var(--zoron-term-bg));
+  --zoron-hairline: color-mix(in srgb, var(--zoron-term-fg) 12%, transparent);
 }
 
 /* the command bar: who and how the server is, its live figures, power and the inspector toggle in one row; two rows
    when the workspace is too narrow for that. Without figures (`consoleMetrics` empty) the second row goes */
-html[data-xylo] .xylo-con-bar {
+html[data-zoron] .zoron-con-bar {
   display: grid;
   grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto auto;
   grid-template-areas: "id meters power toggle";
   align-items: center;
-  gap: 10px var(--xylo-con-gap);
-  padding: var(--xylo-con-bar-y) 12px var(--xylo-con-bar-y) var(--xylo-con-edge);
-  border-bottom: 1px solid var(--xylo-con-line);
-  background: var(--xylo-con-step);
+  gap: 10px var(--zoron-con-gap);
+  padding: var(--zoron-con-bar-y) 12px var(--zoron-con-bar-y) var(--zoron-con-edge);
+  border-bottom: 1px solid var(--zoron-con-line);
+  background: var(--zoron-con-step);
 }
 
 /* core's Tooltip wraps the inspector toggle in a box of its own, which takes the toggle's area */
-html[data-xylo] .xylo-con-bar > :has(.xylo-con-toggle) {
+html[data-zoron] .zoron-con-bar > :has(.zoron-con-toggle) {
   grid-area: toggle;
 }
 
 /* no inspector toggle with `consoleInspector: 'off'`: power ends the row */
-html[data-xylo] .xylo-con-bar:not(:has(.xylo-con-toggle)) {
+html[data-zoron] .zoron-con-bar:not(:has(.zoron-con-toggle)) {
   grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
   grid-template-areas: "id meters power";
 }
 
-@container xylo-con (width < 60rem) {
-  html[data-xylo] .xylo-con-bar {
+@container zoron-con (width < 60rem) {
+  html[data-zoron] .zoron-con-bar {
     grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas:
       "id power toggle"
       "meters meters meters";
   }
 
-  html[data-xylo] .xylo-con-bar:not(:has(> .xylo-con-meters)) {
+  html[data-zoron] .zoron-con-bar:not(:has(> .zoron-con-meters)) {
     grid-template-areas: "id power toggle";
   }
 
-  html[data-xylo] .xylo-con-bar:not(:has(.xylo-con-toggle)) {
+  html[data-zoron] .zoron-con-bar:not(:has(.zoron-con-toggle)) {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "id power"
       "meters meters";
   }
 
-  html[data-xylo] .xylo-con-bar:not(:has(.xylo-con-toggle)):not(:has(> .xylo-con-meters)) {
+  html[data-zoron] .zoron-con-bar:not(:has(.zoron-con-toggle)):not(:has(> .zoron-con-meters)) {
     grid-template-areas: "id power";
   }
 
-  html[data-xylo] .xylo-con-meter {
+  html[data-zoron] .zoron-con-meter {
     flex: 1 1 0;
     grid-template-columns: max-content minmax(1rem, 6rem);
   }
 }
 
-html[data-xylo] .xylo-con-id {
+html[data-zoron] .zoron-con-id {
   display: flex;
   grid-area: id;
   align-items: baseline;
@@ -1522,7 +1526,7 @@ html[data-xylo] .xylo-con-id {
   max-width: 22rem;
 }
 
-html[data-xylo] .xylo-con-name {
+html[data-zoron] .zoron-con-name {
   min-width: 0;
   overflow: hidden;
   font-size: 0.9375rem;
@@ -1533,16 +1537,16 @@ html[data-xylo] .xylo-con-name {
 }
 
 /* the state as text in its status colour (the chip's colours, in the status section) */
-html[data-xylo] .xylo-con-state {
-  --xylo-status: var(--color-server-status-offline, var(--mantine-color-red-filled));
+html[data-zoron] .zoron-con-state {
+  --zoron-status: var(--color-server-status-offline, var(--mantine-color-red-filled));
   flex-shrink: 0;
-  color: color-mix(in srgb, var(--xylo-status) 80%, var(--xylo-con-fg));
+  color: color-mix(in srgb, var(--zoron-status) 80%, var(--zoron-con-fg));
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
 }
 
-html[data-xylo] .xylo-con-uptime {
+html[data-zoron] .zoron-con-uptime {
   flex-shrink: 0;
   color: var(--mantine-color-dimmed);
   font-size: 0.75rem;
@@ -1552,7 +1556,7 @@ html[data-xylo] .xylo-con-uptime {
 
 /* telemetry: a dimmed label over a tabular value, a sparkline of the last minute beside them; the sparklines give
    way first when space runs short */
-html[data-xylo] .xylo-con-meters {
+html[data-zoron] .zoron-con-meters {
   display: flex;
   grid-area: meters;
   align-items: center;
@@ -1561,7 +1565,7 @@ html[data-xylo] .xylo-con-meters {
   overflow: hidden;
 }
 
-html[data-xylo] .xylo-con-meter {
+html[data-zoron] .zoron-con-meter {
   display: grid;
   grid-template-columns: max-content minmax(1rem, 3.25rem);
   grid-template-areas:
@@ -1572,7 +1576,7 @@ html[data-xylo] .xylo-con-meter {
   min-width: 0;
 }
 
-html[data-xylo] .xylo-con-meter-label {
+html[data-zoron] .zoron-con-meter-label {
   grid-area: label;
   color: var(--mantine-color-dimmed);
   font-size: 0.6875rem;
@@ -1581,7 +1585,7 @@ html[data-xylo] .xylo-con-meter-label {
 }
 
 /* a minimum width keeps the row from twitching as the figures change */
-html[data-xylo] .xylo-con-meter-value {
+html[data-zoron] .zoron-con-meter-value {
   grid-area: value;
   min-width: 7ch;
   font-family: var(--mantine-font-family-monospace);
@@ -1592,32 +1596,32 @@ html[data-xylo] .xylo-con-meter-value {
   white-space: nowrap;
 }
 
-html[data-xylo] .xylo-con-spark {
+html[data-zoron] .zoron-con-spark {
   grid-area: spark;
   width: 100%;
   height: 1.5rem;
   overflow: visible;
 }
 
-html[data-xylo] .xylo-con-spark-line {
+html[data-zoron] .zoron-con-spark-line {
   fill: none;
-  stroke: var(--xylo-accent);
+  stroke: var(--zoron-accent);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.25;
 }
 
-html[data-xylo] .xylo-con-spark-area {
-  fill: color-mix(in srgb, var(--xylo-accent) 16%, transparent);
+html[data-zoron] .zoron-con-spark-area {
+  fill: color-mix(in srgb, var(--zoron-accent) 16%, transparent);
 }
 
 /* the 'bars' style: thin columns in the accent, a little softer than the line */
-html[data-xylo] .xylo-con-spark-bars {
-  fill: color-mix(in srgb, var(--xylo-accent) 75%, transparent);
+html[data-zoron] .zoron-con-spark-bars {
+  fill: color-mix(in srgb, var(--zoron-accent) 75%, transparent);
 }
 
 /* the 'none' style: the label over the value, nothing beside them (more specific than the phone's columns) */
-html[data-xylo] .xylo-con .xylo-con-meters[data-graph="none"] > .xylo-con-meter {
+html[data-zoron] .zoron-con .zoron-con-meters[data-graph="none"] > .zoron-con-meter {
   grid-template-columns: max-content;
   grid-template-areas:
     "label"
@@ -1625,79 +1629,79 @@ html[data-xylo] .xylo-con .xylo-con-meters[data-graph="none"] > .xylo-con-meter 
 }
 
 /* a stopped server: the figures dimmed over a flat, muted line */
-html[data-xylo] .xylo-con-meter:not([data-live]) .xylo-con-meter-value {
+html[data-zoron] .zoron-con-meter:not([data-live]) .zoron-con-meter-value {
   color: var(--mantine-color-dimmed);
 }
 
-html[data-xylo] .xylo-con-meter:not([data-live]) .xylo-con-spark-line {
-  stroke: color-mix(in srgb, var(--xylo-con-fg) 22%, transparent);
+html[data-zoron] .zoron-con-meter:not([data-live]) .zoron-con-spark-line {
+  stroke: color-mix(in srgb, var(--zoron-con-fg) 22%, transparent);
 }
 
-html[data-xylo] .xylo-con-meter:not([data-live]) .xylo-con-spark-bars {
-  fill: color-mix(in srgb, var(--xylo-con-fg) 22%, transparent);
+html[data-zoron] .zoron-con-meter:not([data-live]) .zoron-con-spark-bars {
+  fill: color-mix(in srgb, var(--zoron-con-fg) 22%, transparent);
 }
 
 /* core's power controls (its row and buttons, other extensions' included) as one compact segmented group: each
    segment in its action's colour on the bar, tinted under the pointer */
-html[data-xylo] .xylo-con-power {
+html[data-zoron] .zoron-con-power {
   display: flex;
   grid-area: power;
   min-width: 0;
 }
 
-html[data-xylo] .xylo-con-power > div {
+html[data-zoron] .zoron-con-power > div {
   gap: 0;
   width: auto;
 }
 
-html[data-xylo] .xylo-con-power .mantine-Button-root {
-  height: var(--xylo-con-control);
+html[data-zoron] .zoron-con-power .mantine-Button-root {
+  height: var(--zoron-con-control);
   padding-inline: 12px;
   border: 1px solid var(--mantine-color-default-border);
   border-radius: 0;
   background: transparent;
-  color: color-mix(in srgb, var(--xylo-con-tone, var(--xylo-con-fg)) 85%, var(--xylo-con-fg));
+  color: color-mix(in srgb, var(--zoron-con-tone, var(--zoron-con-fg)) 85%, var(--zoron-con-fg));
   font-size: 0.8125rem;
 }
 
-html[data-xylo] .xylo-con-power .mantine-Button-root[style*="--mantine-color-green-filled"] {
-  --xylo-con-tone: var(--mantine-color-green-filled);
+html[data-zoron] .zoron-con-power .mantine-Button-root[style*="--mantine-color-green-filled"] {
+  --zoron-con-tone: var(--mantine-color-green-filled);
 }
 
-html[data-xylo] .xylo-con-power .mantine-Button-root[style*="--mantine-color-red-filled"] {
-  --xylo-con-tone: var(--mantine-color-red-filled);
+html[data-zoron] .zoron-con-power .mantine-Button-root[style*="--mantine-color-red-filled"] {
+  --zoron-con-tone: var(--mantine-color-red-filled);
 }
 
-html[data-xylo] .xylo-con-power .mantine-Button-root + .mantine-Button-root {
+html[data-zoron] .zoron-con-power .mantine-Button-root + .mantine-Button-root {
   margin-left: -1px;
 }
 
-html[data-xylo] .xylo-con-power button:first-of-type {
-  border-start-start-radius: var(--xylo-control-radius);
-  border-end-start-radius: var(--xylo-control-radius);
+html[data-zoron] .zoron-con-power button:first-of-type {
+  border-start-start-radius: var(--zoron-control-radius);
+  border-end-start-radius: var(--zoron-control-radius);
 }
 
-html[data-xylo] .xylo-con-power button:last-of-type {
-  border-start-end-radius: var(--xylo-control-radius);
-  border-end-end-radius: var(--xylo-control-radius);
+html[data-zoron] .zoron-con-power button:last-of-type {
+  border-start-end-radius: var(--zoron-control-radius);
+  border-end-end-radius: var(--zoron-control-radius);
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-con-power .mantine-Button-root:not(:disabled):hover {
-    background: color-mix(in srgb, var(--xylo-con-tone, var(--xylo-con-fg)) 14%, transparent);
+  html[data-zoron] .zoron-con-power .mantine-Button-root:not(:disabled):hover {
+    background: color-mix(in srgb, var(--zoron-con-tone, var(--zoron-con-fg)) 14%, transparent);
   }
 }
 
-html[data-xylo] .xylo-con-power .mantine-Loader-root {
+html[data-zoron] .zoron-con-power .mantine-Loader-root {
   --loader-color: currentColor;
 }
 
-html[data-xylo] .xylo-con-toggle {
+html[data-zoron] .zoron-con-toggle {
   grid-area: toggle;
   margin-left: -12px;
 }
 
-html[data-xylo] .xylo-con-main {
+html[data-zoron] .zoron-con-main {
   position: relative;
   display: grid;
   flex: 1;
@@ -1707,7 +1711,7 @@ html[data-xylo] .xylo-con-main {
 
 /* core's terminal fills the middle; its card dissolves (`display: contents`), so its header, output and input row
    lay out in this column: the header a slim toolbar, the input the prompt along the bottom, the chips above it */
-html[data-xylo] .xylo-con-term {
+html[data-zoron] .zoron-con-term {
   position: relative;
   isolation: isolate;
   display: flex;
@@ -1716,28 +1720,28 @@ html[data-xylo] .xylo-con-term {
   min-height: 0;
 }
 
-html[data-xylo] .xylo-con-term > .mantine-Card-root {
+html[data-zoron] .zoron-con-term > .mantine-Card-root {
   display: contents;
 }
 
-html[data-xylo] .xylo-con-term > .mantine-Card-root > :first-child {
+html[data-zoron] .zoron-con-term > .mantine-Card-root > :first-child {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: var(--xylo-con-tool);
+  min-height: var(--zoron-con-tool);
   margin: 0;
-  padding: 2px 8px 2px var(--xylo-con-edge);
-  border-bottom: 1px solid var(--xylo-con-line);
+  padding: 2px 8px 2px var(--zoron-con-edge);
+  border-bottom: 1px solid var(--zoron-con-line);
   color: var(--mantine-color-dimmed);
 }
 
-html[data-xylo] .xylo-con-term > .mantine-Card-root > :first-child > :first-child {
+html[data-zoron] .zoron-con-term > .mantine-Card-root > :first-child > :first-child {
   flex-shrink: 0;
   white-space: nowrap;
 }
 
-html[data-xylo] .xylo-con-term > .mantine-Card-root > :first-child > :last-child {
+html[data-zoron] .zoron-con-term > .mantine-Card-root > :first-child > :last-child {
   min-width: 0;
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -1745,68 +1749,68 @@ html[data-xylo] .xylo-con-term > .mantine-Card-root > :first-child > :last-child
 }
 
 /* core's connection dot: smaller, and still (no looping animation on idle content) */
-html[data-xylo] .xylo-con-term > .mantine-Card-root > :first-child .rounded-full {
+html[data-zoron] .zoron-con-term > .mantine-Card-root > :first-child .rounded-full {
   width: 6px;
   height: 6px;
   animation: none;
 }
 
 /* the output, inset from the workspace's edges */
-html[data-xylo] .xylo-con-term > .mantine-Card-root > .flex-1 {
-  margin: 10px 6px 6px var(--xylo-con-edge);
+html[data-zoron] .zoron-con-term > .mantine-Card-root > .flex-1 {
+  margin: 10px 6px 6px var(--zoron-con-edge);
 }
 
-html[data-xylo] .xylo-con-term > .mantine-Card-root > span {
-  margin: 0 var(--xylo-con-edge) 8px;
+html[data-zoron] .zoron-con-term > .mantine-Card-root > span {
+  margin: 0 var(--zoron-con-edge) 8px;
 }
 
 /* core's jump to the bottom, clear of the chips and the prompt */
-html[data-xylo] .xylo-con-term > .mantine-Card-root > [class~="z-90"] {
+html[data-zoron] .zoron-con-term > .mantine-Card-root > [class~="z-90"] {
   right: 1.25rem;
-  bottom: calc(var(--xylo-con-prompt) + var(--xylo-con-chip) + 2 * var(--xylo-con-chips-y) + 1.25rem);
+  bottom: calc(var(--zoron-con-prompt) + var(--zoron-con-chip) + 2 * var(--zoron-con-chips-y) + 1.25rem);
 }
 
 /* the prompt: core's input row as a line along the bottom edge, a `›` cue (core's prefix button is the cue where
    the panel has one), mono, no box; focus lights the cue's edge */
-html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child {
+html[data-zoron] .zoron-con-term > .mantine-Card-root > :last-child {
   order: 2;
   align-items: center;
   gap: 4px;
-  min-height: var(--xylo-con-prompt);
+  min-height: var(--zoron-con-prompt);
   margin: 0;
-  padding: 4px 10px 4px var(--xylo-con-edge);
-  border-top: 1px solid var(--xylo-con-line);
+  padding: 4px 10px 4px var(--zoron-con-edge);
+  border-top: 1px solid var(--zoron-con-line);
   font-family: var(--mantine-font-family-monospace);
   transition:
     background-color 160ms ease,
     box-shadow 160ms ease;
 }
 
-html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child::before {
+html[data-zoron] .zoron-con-term > .mantine-Card-root > :last-child::before {
   content: "›";
   flex-shrink: 0;
-  color: var(--xylo-accent);
+  color: var(--zoron-accent);
   font-size: 1.125rem;
   font-weight: 600;
   line-height: 1;
 }
 
-html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child:has([data-with-left-section])::before {
+html[data-zoron] .zoron-con-term > .mantine-Card-root > :last-child:has([data-with-left-section])::before {
   content: none;
 }
 
-html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child:has(:disabled)::before {
+html[data-zoron] .zoron-con-term > .mantine-Card-root > :last-child:has(:disabled)::before {
   color: var(--mantine-color-dimmed);
 }
 
-html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child:focus-within {
-  background-color: var(--xylo-con-step);
-  box-shadow: inset 2px 0 0 var(--xylo-accent);
+html[data-zoron] .zoron-con-term > .mantine-Card-root > :last-child:focus-within {
+  background-color: var(--zoron-con-step);
+  box-shadow: inset 2px 0 0 var(--zoron-accent);
 }
 
-html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child .mantine-Input-input {
-  height: calc(var(--xylo-con-prompt) - 0.5rem);
-  min-height: calc(var(--xylo-con-prompt) - 0.5rem);
+html[data-zoron] .zoron-con-term > .mantine-Card-root > :last-child .mantine-Input-input {
+  height: calc(var(--zoron-con-prompt) - 0.5rem);
+  min-height: calc(var(--zoron-con-prompt) - 0.5rem);
   border: 0;
   background: transparent;
   color: inherit;
@@ -1814,8 +1818,8 @@ html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child .mantine-Input
   font-size: 0.8125rem;
 }
 
-html[data-xylo]
-  .xylo-con-term
+html[data-zoron]
+  .zoron-con-term
   > .mantine-Card-root
   > :last-child
   :not([data-with-left-section])
@@ -1823,58 +1827,58 @@ html[data-xylo]
   padding-inline-start: 6px;
 }
 
-html[data-xylo] .xylo-con-term > .mantine-Card-root > :last-child .mantine-Input-input:disabled {
+html[data-zoron] .zoron-con-term > .mantine-Card-root > :last-child .mantine-Input-input:disabled {
   background: transparent;
 }
 
 /* quick commands: one row of chips just above the prompt, a click sends one; the last opens the inspector at them */
-html[data-xylo] .xylo-con-chips {
+html[data-zoron] .zoron-con-chips {
   display: flex;
   order: 1;
   gap: 6px;
   /* the block padding leaves room for a chip's focus ring, which the scroller would clip */
-  padding: var(--xylo-con-chips-y) 12px var(--xylo-con-chips-y) var(--xylo-con-edge);
+  padding: var(--zoron-con-chips-y) 12px var(--zoron-con-chips-y) var(--zoron-con-edge);
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
 }
 
-html[data-xylo] .xylo-con-chip {
+html[data-zoron] .zoron-con-chip {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   gap: 7px;
   max-width: 16rem;
-  height: var(--xylo-con-chip);
+  height: var(--zoron-con-chip);
   padding: 0 10px;
-  border: 1px solid var(--xylo-con-line);
-  border-radius: var(--xylo-control-radius, 8px);
-  background-color: var(--xylo-con-step);
-  color: color-mix(in srgb, var(--xylo-con-fg) 85%, transparent);
+  border: 1px solid var(--zoron-con-line);
+  border-radius: var(--zoron-control-radius, 8px);
+  background-color: var(--zoron-con-step);
+  color: color-mix(in srgb, var(--zoron-con-fg) 85%, transparent);
   font-family: var(--mantine-font-family-monospace);
   font-size: 0.75rem;
   white-space: nowrap;
   transition:
     border-color 160ms ease,
     color 160ms ease,
-    transform 120ms var(--xylo-ease);
+    transform 120ms var(--zoron-ease);
 }
 
-html[data-xylo] .xylo-con-chip-cue {
+html[data-zoron] .zoron-con-chip-cue {
   opacity: 0.5;
 }
 
 /* the site's commands (Studio's `consoleCommands`): a faint accent edge and cue, so they read as the site's, quietly */
-html[data-xylo] .xylo-con-chip[data-site] {
-  border-color: color-mix(in srgb, var(--xylo-accent) 28%, var(--xylo-con-line));
+html[data-zoron] .zoron-con-chip[data-site] {
+  border-color: color-mix(in srgb, var(--zoron-accent) 28%, var(--zoron-con-line));
 }
 
-html[data-xylo] .xylo-con-chip[data-site] .xylo-con-chip-cue {
-  color: var(--xylo-accent);
+html[data-zoron] .zoron-con-chip[data-site] .zoron-con-chip-cue {
+  color: var(--zoron-accent);
   opacity: 0.8;
 }
 
-html[data-xylo] .xylo-con-chip[data-edit] {
+html[data-zoron] .zoron-con-chip[data-edit] {
   border-style: dashed;
   background-color: transparent;
   color: var(--mantine-color-dimmed);
@@ -1882,97 +1886,99 @@ html[data-xylo] .xylo-con-chip[data-edit] {
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-con-chip:not(:disabled):hover {
-    border-color: color-mix(in srgb, var(--xylo-accent) 50%, var(--xylo-con-line));
-    color: var(--xylo-con-fg);
+  html[data-zoron] .zoron-con-chip:not(:disabled):hover {
+    border-color: color-mix(in srgb, var(--zoron-accent) 50%, var(--zoron-con-line));
+    color: var(--zoron-con-fg);
   }
 }
 
-html[data-xylo] .xylo-con-chip:not(:disabled):active {
+html[data-zoron] .zoron-con-chip:not(:disabled):active {
   transform: scale(0.97);
 }
 
-html[data-xylo] .xylo-con-chip:focus-visible {
-  outline: 2px solid var(--xylo-accent);
+html[data-zoron] .zoron-con-chip:focus-visible {
+  outline: 2px solid var(--zoron-accent);
   outline-offset: 1px;
 }
 
-html[data-xylo] .xylo-con-chip:disabled {
+html[data-zoron] .zoron-con-chip:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
 
 /* the inspector: a column behind a hairline, docked from DOCK (Console.tsx) as wide as 20rem, gone while closed; on
    the right, or on the left with `consoleInspector: 'left'` (`data-side`) */
-html[data-xylo] .xylo-con-aside {
+html[data-zoron] .zoron-con-aside {
   display: none;
   min-width: 0;
   min-height: 0;
-  border-left: 1px solid var(--xylo-con-line);
-  background: var(--xylo-con-step);
+  border-left: 1px solid var(--zoron-con-line);
+  background: var(--zoron-con-step);
 }
 
-html[data-xylo] .xylo-con[data-side="left"] .xylo-con-aside {
+html[data-zoron] .zoron-con[data-side="left"] .zoron-con-aside {
   order: -1;
-  border-right: 1px solid var(--xylo-con-line);
+  border-right: 1px solid var(--zoron-con-line);
   border-left: 0;
 }
 
-html[data-xylo] .xylo-con[data-inspector="docked"] .xylo-con-main:has(> .xylo-con-aside[data-open]) {
+html[data-zoron] .zoron-con[data-inspector="docked"] .zoron-con-main:has(> .zoron-con-aside[data-open]) {
   grid-template-columns: minmax(0, 1fr) 20rem;
 }
 
-html[data-xylo] .xylo-con[data-inspector="docked"][data-side="left"] .xylo-con-main:has(> .xylo-con-aside[data-open]) {
+html[data-zoron]
+  .zoron-con[data-inspector="docked"][data-side="left"]
+  .zoron-con-main:has(> .zoron-con-aside[data-open]) {
   grid-template-columns: 20rem minmax(0, 1fr);
 }
 
-html[data-xylo] .xylo-con[data-inspector="docked"] .xylo-con-aside[data-open] {
+html[data-zoron] .zoron-con[data-inspector="docked"] .zoron-con-aside[data-open] {
   display: flex;
 }
 
 /* narrower, it slides over the terminal from the workspace's edge on its side, opaque, and slides back out */
-html[data-xylo] .xylo-con[data-inspector="over"] .xylo-con-aside {
+html[data-zoron] .zoron-con[data-inspector="over"] .zoron-con-aside {
   position: absolute;
   inset: 0 0 0 auto;
   z-index: 20;
   display: flex;
   width: min(22rem, 100% - 3rem);
-  background: linear-gradient(var(--xylo-con-step), var(--xylo-con-step)), var(--xylo-con-solid);
+  background: linear-gradient(var(--zoron-con-step), var(--zoron-con-step)), var(--zoron-con-solid);
   box-shadow: -16px 0 32px -20px rgba(0, 0, 0, 0.5);
   opacity: 0;
   transform: translateX(1.5rem);
   visibility: hidden;
   transition:
     opacity 180ms ease,
-    transform 240ms var(--xylo-ease),
+    transform 240ms var(--zoron-ease),
     visibility 0s linear 240ms;
 }
 
-html[data-xylo] .xylo-con[data-inspector="over"][data-side="left"] .xylo-con-aside {
+html[data-zoron] .zoron-con[data-inspector="over"][data-side="left"] .zoron-con-aside {
   inset: 0 auto 0 0;
   box-shadow: 16px 0 32px -20px rgba(0, 0, 0, 0.5);
   transform: translateX(-1.5rem);
 }
 
-html[data-xylo] .xylo-con[data-inspector="over"] .xylo-con-aside[data-open] {
+html[data-zoron] .zoron-con[data-inspector="over"] .zoron-con-aside[data-open] {
   opacity: 1;
   transform: none;
   visibility: visible;
   transition-delay: 0s;
 }
 
-html[data-xylo][data-xylo-motion="none"] .xylo-con-aside {
+html[data-zoron][data-zoron-motion="none"] .zoron-con-aside {
   transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-xylo] .xylo-con-aside {
+  html[data-zoron] .zoron-con-aside {
     transition: none;
   }
 }
 
 /* the inspector's parts, the same in the panel and the phone's sheet: tabs over a scrolling body */
-html[data-xylo] .xylo-con-inspect {
+html[data-zoron] .zoron-con-inspect {
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -1980,17 +1986,17 @@ html[data-xylo] .xylo-con-inspect {
   min-height: 0;
 }
 
-html[data-xylo] .xylo-con-inspect-head {
+html[data-zoron] .zoron-con-inspect-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   min-height: 2.25rem;
   padding: 4px 8px 4px 12px;
-  border-bottom: 1px solid var(--xylo-hairline);
+  border-bottom: 1px solid var(--zoron-hairline);
 }
 
-html[data-xylo] .xylo-con-tabs {
+html[data-zoron] .zoron-con-tabs {
   display: flex;
   gap: 2px;
   min-width: 0;
@@ -1998,11 +2004,11 @@ html[data-xylo] .xylo-con-tabs {
   scrollbar-width: none;
 }
 
-html[data-xylo] .xylo-con-tab {
+html[data-zoron] .zoron-con-tab {
   flex-shrink: 0;
   height: 1.75rem;
   padding: 0 10px;
-  border-radius: var(--xylo-control-radius, 8px);
+  border-radius: var(--zoron-control-radius, 8px);
   color: var(--mantine-color-dimmed);
   font-size: 0.8125rem;
   font-weight: 500;
@@ -2012,17 +2018,17 @@ html[data-xylo] .xylo-con-tab {
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-con-tab:hover {
+  html[data-zoron] .zoron-con-tab:hover {
     color: var(--mantine-color-text);
   }
 }
 
-html[data-xylo] .xylo-con-tab[aria-selected="true"] {
+html[data-zoron] .zoron-con-tab[aria-selected="true"] {
   background-color: color-mix(in srgb, var(--mantine-color-text) 8%, transparent);
   color: var(--mantine-color-text);
 }
 
-html[data-xylo] .xylo-con-inspect-body {
+html[data-zoron] .zoron-con-inspect-body {
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -2034,11 +2040,11 @@ html[data-xylo] .xylo-con-inspect-body {
   scrollbar-width: thin;
 }
 
-html[data-xylo] .xylo-con-inspect-body > * {
+html[data-zoron] .zoron-con-inspect-body > * {
   flex-shrink: 0;
 }
 
-html[data-xylo] .xylo-con-desc {
+html[data-zoron] .zoron-con-desc {
   color: var(--mantine-color-dimmed);
   font-size: 0.8125rem;
   line-height: 1.5;
@@ -2048,7 +2054,7 @@ html[data-xylo] .xylo-con-desc {
 }
 
 /* the headings over the site's commands and the visitor's own, when the site has some */
-html[data-xylo] .xylo-con-commands-head {
+html[data-zoron] .zoron-con-commands-head {
   margin: 0;
   color: var(--mantine-color-dimmed);
   font-size: 0.75rem;
@@ -2056,7 +2062,7 @@ html[data-xylo] .xylo-con-commands-head {
 }
 
 /* the inspector's quick commands: one outlined monospace row each, the whole row sends it */
-html[data-xylo] .xylo-con-commands {
+html[data-zoron] .zoron-con-commands {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -2065,21 +2071,21 @@ html[data-xylo] .xylo-con-commands {
   list-style: none;
 }
 
-html[data-xylo] .xylo-con-commands > li {
+html[data-zoron] .zoron-con-commands > li {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-html[data-xylo] .xylo-con-command {
+html[data-zoron] .zoron-con-command {
   display: flex;
   flex: 1;
   align-items: center;
   gap: 8px;
   min-width: 0;
   padding: 6px 10px;
-  border: 1px solid var(--xylo-hairline);
-  border-radius: var(--xylo-control-radius, 8px);
+  border: 1px solid var(--zoron-hairline);
+  border-radius: var(--zoron-control-radius, 8px);
   background-color: color-mix(in srgb, var(--mantine-color-text) 3%, transparent);
   font-family: var(--mantine-font-family-monospace);
   font-size: 0.8125rem;
@@ -2088,21 +2094,21 @@ html[data-xylo] .xylo-con-command {
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-con-command:not(:disabled):hover {
-    border-color: color-mix(in srgb, var(--xylo-accent) 45%, var(--xylo-hairline));
+  html[data-zoron] .zoron-con-command:not(:disabled):hover {
+    border-color: color-mix(in srgb, var(--zoron-accent) 45%, var(--zoron-hairline));
   }
 }
 
-html[data-xylo] .xylo-con-command:not(:disabled):active {
+html[data-zoron] .zoron-con-command:not(:disabled):active {
   transform: scale(0.99);
 }
 
-html[data-xylo] .xylo-con-command:focus-visible {
-  outline: 2px solid var(--xylo-accent);
+html[data-zoron] .zoron-con-command:focus-visible {
+  outline: 2px solid var(--zoron-accent);
   outline-offset: 2px;
 }
 
-html[data-xylo] .xylo-con-command:disabled {
+html[data-zoron] .zoron-con-command:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -2113,15 +2119,15 @@ html[data-xylo] .xylo-con-command:disabled {
  * power buttons as a full width row, the figures as one line scrolling sideways; touch targets 40px or more. With
  * the keyboard up only the identity, the terminal and the prompt stay.
  */
-html[data-xylo] .xylo-con[data-phone] {
-  --xylo-con-fill: calc(100dvh - var(--xylo-con-top, 10rem) - 8px);
+html[data-zoron] .zoron-con[data-phone] {
+  --zoron-con-fill: calc(100dvh - var(--zoron-con-top, 10rem) - 8px);
   margin: 0 -16px -16px;
   border-width: 1px 0 0;
   border-radius: 0;
   box-shadow: none;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-bar {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-bar {
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
     "id toggle"
@@ -2131,35 +2137,35 @@ html[data-xylo] .xylo-con[data-phone] .xylo-con-bar {
   padding: 8px 8px 10px 16px;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-bar:not(:has(> .xylo-con-meters)) {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-bar:not(:has(> .zoron-con-meters)) {
   grid-template-areas:
     "id toggle"
     "power power";
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-id {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-id {
   flex-wrap: wrap;
   max-width: none;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-name {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-name {
   font-size: 1rem;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-toggle {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-toggle {
   margin-left: 0;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-power > div {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-power > div {
   width: 100%;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-power .mantine-Button-root {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-power .mantine-Button-root {
   flex: 1 1 0;
   height: 2.5rem;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-meters {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-meters {
   gap: 18px;
   margin: 0 -8px 0 -16px;
   padding-inline: 16px;
@@ -2168,28 +2174,28 @@ html[data-xylo] .xylo-con[data-phone] .xylo-con-meters {
   scrollbar-width: none;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-meter {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-meter {
   flex: 0 0 auto;
   grid-template-columns: max-content 2.25rem;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-spark {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-spark {
   height: 1.125rem;
 }
 
-html[data-xylo] .xylo-con[data-phone][data-keyboard] :is(.xylo-con-power, .xylo-con-meters) {
+html[data-zoron] .zoron-con[data-phone][data-keyboard] :is(.zoron-con-power, .zoron-con-meters) {
   display: none;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :first-child {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-term > .mantine-Card-root > :first-child {
   padding: 0 4px 0 16px;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :first-child > :last-child {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-term > .mantine-Card-root > :first-child > :last-child {
   gap: 0;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :first-child .mantine-ActionIcon-root {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-term > .mantine-Card-root > :first-child .mantine-ActionIcon-root {
   flex-shrink: 0;
   width: 2.5rem;
   min-width: 2.5rem;
@@ -2197,122 +2203,122 @@ html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :fir
   margin: 0;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > .flex-1 {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-term > .mantine-Card-root > .flex-1 {
   margin: 8px 4px 4px 16px;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > [class~="z-90"] {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-term > .mantine-Card-root > [class~="z-90"] {
   bottom: 7.5rem;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-chips {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-chips {
   padding-left: 16px;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-chip {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-chip {
   height: 2.5rem;
   padding: 0 14px;
   font-size: 0.8125rem;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-chip[data-edit]:not(:has(span)) {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-chip[data-edit]:not(:has(span)) {
   justify-content: center;
   width: 2.5rem;
   padding: 0;
 }
 
 /* at 16px the phone's browser doesn't zoom in on the prompt */
-html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :last-child {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-term > .mantine-Card-root > :last-child {
   min-height: 3rem;
   padding: 4px 8px calc(4px + env(safe-area-inset-bottom)) 16px;
 }
 
-html[data-xylo] .xylo-con[data-phone] .xylo-con-term > .mantine-Card-root > :last-child .mantine-Input-input {
+html[data-zoron] .zoron-con[data-phone] .zoron-con-term > .mantine-Card-root > :last-child .mantine-Input-input {
   height: 2.5rem;
   font-size: 1rem;
 }
 
 /* the phone's inspector sheet: from the bottom, rounded on top, never taller than most of the screen (doubled class
    to outrank the overlay rule); the inspector inside it scrolls with the sheet */
-html[data-xylo] .xylo-sheet.xylo-sheet {
+html[data-zoron] .zoron-sheet.zoron-sheet {
   height: auto;
   max-height: 85dvh;
   border-width: 1px 0 0;
-  border-radius: calc(var(--xylo-radius) + 10px) calc(var(--xylo-radius) + 10px) 0 0;
-  background-color: var(--xylo-overlay);
+  border-radius: calc(var(--zoron-radius) + 10px) calc(var(--zoron-radius) + 10px) 0 0;
+  background-color: var(--zoron-overlay);
 }
 
-html[data-xylo] .xylo-sheet-header {
-  background-color: var(--xylo-overlay);
+html[data-zoron] .zoron-sheet-header {
+  background-color: var(--zoron-overlay);
   font-weight: 600;
 }
 
-html[data-xylo] .xylo-sheet-body {
+html[data-zoron] .zoron-sheet-body {
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
 }
 
-html[data-xylo] .xylo-sheet .xylo-con-inspect-head {
+html[data-zoron] .zoron-sheet .zoron-con-inspect-head {
   padding: 0 0 10px;
 }
 
-html[data-xylo] .xylo-sheet .xylo-con-tab {
+html[data-zoron] .zoron-sheet .zoron-con-tab {
   height: 2.5rem;
   padding: 0 14px;
 }
 
-html[data-xylo] .xylo-sheet .xylo-con-inspect-body {
+html[data-zoron] .zoron-sheet .zoron-con-inspect-body {
   padding: 14px 0 0;
   overflow: visible;
 }
 
-html[data-xylo]
-  .xylo-sheet
-  :is(.xylo-con-command, .mantine-Input-input, .mantine-Button-root, .xylo-con-commands .mantine-ActionIcon-root) {
+html[data-zoron]
+  .zoron-sheet
+  :is(.zoron-con-command, .mantine-Input-input, .mantine-Button-root, .zoron-con-commands .mantine-ActionIcon-root) {
   min-height: 2.5rem;
 }
 
-html[data-xylo] .xylo-sheet .xylo-con-commands .mantine-ActionIcon-root {
+html[data-zoron] .zoron-sheet .zoron-con-commands .mantine-ActionIcon-root {
   min-width: 2.5rem;
 }
 
 /* ---------- terminal frames (`terminalSkin`) and the console's look picker (elements/console/TerminalLook.tsx) ---------- */
 
 /*
- * Every frame styles the card holding `.xterm` on core's console and the popout, and the whole workspace on Xylo's
- * page (the card there is dissolved: the rules that would draw on or around it skip `.xylo-con-term > *`). They
+ * Every frame styles the card holding `.xterm` on core's console and the popout, and the whole workspace on Zoron's
+ * page (the card there is dissolved: the rules that would draw on or around it skip `.zoron-con-term > *`). They
  * paint with currentColor (the scheme's foreground, or the panel's text with the 'panel' scheme) and
- * `--xylo-term-bg` with the card's own colour as the fallback, so each one works with every scheme in both modes.
+ * `--zoron-term-bg` with the card's own colour as the fallback, so each one works with every scheme in both modes.
  * 'card' is the plain card above. The doubled attribute outranks the glass surfaces' blur rule.
  */
 
 /* window: a title bar of three muted dots over a hairline; core's header (the card's first child) moves down for it,
    since core's own padding is a layered !important no unlayered rule can change */
-html[data-xylo][data-xylo-term-skin="window"] .mantine-Card-root:has(.xterm):not(.xylo-con-term > *) > :first-child {
+html[data-zoron][data-zoron-term-skin="window"] .mantine-Card-root:has(.xterm):not(.zoron-con-term > *) > :first-child {
   margin-top: 1.75rem;
 }
 
-html[data-xylo][data-xylo-term-skin="window"] .mantine-Card-root:has(.xterm):not(.xylo-con-term > *)::before {
-  --xylo-term-dot: color-mix(in srgb, currentColor 26%, transparent);
+html[data-zoron][data-zoron-term-skin="window"] .mantine-Card-root:has(.xterm):not(.zoron-con-term > *)::before {
+  --zoron-term-dot: color-mix(in srgb, currentColor 26%, transparent);
   content: "";
   position: absolute;
   inset: 0 0 auto;
   height: 1.75rem;
   border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
   background:
-    radial-gradient(circle closest-side, var(--xylo-term-dot) 80%, transparent) left 12px center / 10px 10px no-repeat,
-    radial-gradient(circle closest-side, var(--xylo-term-dot) 80%, transparent) left 28px center / 10px 10px no-repeat,
-    radial-gradient(circle closest-side, var(--xylo-term-dot) 80%, transparent) left 44px center / 10px 10px no-repeat,
+    radial-gradient(circle closest-side, var(--zoron-term-dot) 80%, transparent) left 12px center / 10px 10px no-repeat,
+    radial-gradient(circle closest-side, var(--zoron-term-dot) 80%, transparent) left 28px center / 10px 10px no-repeat,
+    radial-gradient(circle closest-side, var(--zoron-term-dot) 80%, transparent) left 44px center / 10px 10px no-repeat,
     color-mix(in srgb, currentColor 4%, transparent);
   pointer-events: none;
 }
 
 /* the workspace's window: the command bar is the title bar, a shade stronger, the dots at its left */
-html[data-xylo][data-xylo-term-skin="window"] .xylo-con-bar {
-  background: color-mix(in srgb, var(--xylo-con-fg) 6%, transparent);
+html[data-zoron][data-zoron-term-skin="window"] .zoron-con-bar {
+  background: color-mix(in srgb, var(--zoron-con-fg) 6%, transparent);
 }
 
-html[data-xylo][data-xylo-term-skin="window"] .xylo-con-id::before {
-  --xylo-term-dot: color-mix(in srgb, currentColor 26%, transparent);
+html[data-zoron][data-zoron-term-skin="window"] .zoron-con-id::before {
+  --zoron-term-dot: color-mix(in srgb, currentColor 26%, transparent);
   content: "";
   flex-shrink: 0;
   align-self: center;
@@ -2320,111 +2326,111 @@ html[data-xylo][data-xylo-term-skin="window"] .xylo-con-id::before {
   height: 10px;
   margin-right: 6px;
   background:
-    radial-gradient(circle closest-side, var(--xylo-term-dot) 80%, transparent) left 0 center / 10px 10px no-repeat,
-    radial-gradient(circle closest-side, var(--xylo-term-dot) 80%, transparent) left 16px center / 10px 10px no-repeat,
-    radial-gradient(circle closest-side, var(--xylo-term-dot) 80%, transparent) left 32px center / 10px 10px no-repeat;
+    radial-gradient(circle closest-side, var(--zoron-term-dot) 80%, transparent) left 0 center / 10px 10px no-repeat,
+    radial-gradient(circle closest-side, var(--zoron-term-dot) 80%, transparent) left 16px center / 10px 10px no-repeat,
+    radial-gradient(circle closest-side, var(--zoron-term-dot) 80%, transparent) left 32px center / 10px 10px no-repeat;
 }
 
 /* flush: no card at all; 'theme' and 'panel' sit on the canvas, a named scheme keeps its background as a plain block */
-html[data-xylo][data-xylo-term-skin="flush"] :is(.mantine-Card-root:has(.xterm), .xylo-con) {
+html[data-zoron][data-zoron-term-skin="flush"] :is(.mantine-Card-root:has(.xterm), .zoron-con) {
   border-color: transparent;
   border-radius: 0;
-  background: var(--xylo-term-flush, transparent);
+  background: var(--zoron-term-flush, transparent);
   box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
 
 /* glass: the scheme's background, translucent and blurred over the backdrop as much as the theme's glass is */
-html[data-xylo][data-xylo-term-skin="glass"] :is(.mantine-Card-root:has(.xterm), .xylo-con) {
+html[data-zoron][data-zoron-term-skin="glass"] :is(.mantine-Card-root:has(.xterm), .zoron-con) {
   border-color: color-mix(in srgb, currentColor 14%, transparent);
-  background: color-mix(in srgb, var(--xylo-term-bg, var(--xylo-card-solid)) 72%, transparent);
+  background: color-mix(in srgb, var(--zoron-term-bg, var(--zoron-card-solid)) 72%, transparent);
   box-shadow:
-    var(--xylo-shadow),
+    var(--zoron-shadow),
     inset 0 1px 0 color-mix(in srgb, #ffffff 8%, transparent);
-  -webkit-backdrop-filter: blur(var(--xylo-blur)) saturate(140%);
-  backdrop-filter: blur(var(--xylo-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--zoron-blur)) saturate(140%);
+  backdrop-filter: blur(var(--zoron-blur)) saturate(140%);
 }
 
 /* crt: rounder glass, scanlines and a vignette over the whole screen (on the workspace, its terminal area; clicks
    pass through), text glowing in its own colour; all of it still, no flicker. The strengths (buildCss) are faint on
    a light screen. A phone's workspace keeps its square edges */
-html[data-xylo][data-xylo-term-skin="crt"] :is(.mantine-Card-root:has(.xterm), .xylo-con:not([data-phone])) {
+html[data-zoron][data-zoron-term-skin="crt"] :is(.mantine-Card-root:has(.xterm), .zoron-con:not([data-phone])) {
   border-color: color-mix(in srgb, currentColor 10%, transparent);
-  border-radius: calc(var(--xylo-radius) + 10px);
+  border-radius: calc(var(--zoron-radius) + 10px);
   box-shadow:
-    var(--xylo-shadow),
-    0 0 0 3px color-mix(in srgb, var(--xylo-term-bg, var(--xylo-card-solid)) 70%, #000000);
+    var(--zoron-shadow),
+    0 0 0 3px color-mix(in srgb, var(--zoron-term-bg, var(--zoron-card-solid)) 70%, #000000);
 }
 
-html[data-xylo][data-xylo-term-skin="crt"]
-  :is(.mantine-Card-root:has(.xterm):not(.xylo-con-term > *), .xylo-con-term)::after {
+html[data-zoron][data-zoron-term-skin="crt"]
+  :is(.mantine-Card-root:has(.xterm):not(.zoron-con-term > *), .zoron-con-term)::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 10;
   border-radius: inherit;
-  background: repeating-linear-gradient(to bottom, var(--xylo-term-scan) 0 1px, transparent 1px 3px);
-  box-shadow: inset 0 0 4rem var(--xylo-term-vignette);
+  background: repeating-linear-gradient(to bottom, var(--zoron-term-scan) 0 1px, transparent 1px 3px);
+  box-shadow: inset 0 0 4rem var(--zoron-term-vignette);
   pointer-events: none;
 }
 
 /* xterm's DOM renderer draws each row as spans; set on each, currentColor is that run's own colour */
-html[data-xylo][data-xylo-term-skin="crt"] .mantine-Card-root .xterm-rows :is(div, span) {
-  text-shadow: var(--xylo-term-glow);
+html[data-zoron][data-zoron-term-skin="crt"] .mantine-Card-root .xterm-rows :is(div, span) {
+  text-shadow: var(--zoron-term-glow);
 }
 
-/* neon: an accent outline with a soft accent glow, around the workspace's edge on Xylo's page */
-html[data-xylo][data-xylo-term-skin="neon"] :is(.mantine-Card-root:has(.xterm), .xylo-con) {
-  border-color: color-mix(in srgb, var(--xylo-accent) 85%, transparent);
+/* neon: an accent outline with a soft accent glow, around the workspace's edge on Zoron's page */
+html[data-zoron][data-zoron-term-skin="neon"] :is(.mantine-Card-root:has(.xterm), .zoron-con) {
+  border-color: color-mix(in srgb, var(--zoron-accent) 85%, transparent);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--xylo-accent) 30%, transparent),
-    0 0 28px -4px color-mix(in srgb, var(--xylo-accent) 50%, transparent),
-    inset 0 0 28px -14px color-mix(in srgb, var(--xylo-accent) 45%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--zoron-accent) 30%, transparent),
+    0 0 28px -4px color-mix(in srgb, var(--zoron-accent) 50%, transparent),
+    inset 0 0 28px -14px color-mix(in srgb, var(--zoron-accent) 45%, transparent);
 }
 
-html[data-xylo][data-xylo-term-skin="neon"][data-mantine-color-scheme="light"]
-  :is(.mantine-Card-root:has(.xterm), .xylo-con) {
+html[data-zoron][data-zoron-term-skin="neon"][data-mantine-color-scheme="light"]
+  :is(.mantine-Card-root:has(.xterm), .zoron-con) {
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--xylo-accent) 22%, transparent),
-    0 0 22px -6px color-mix(in srgb, var(--xylo-accent) 40%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--zoron-accent) 22%, transparent),
+    0 0 22px -6px color-mix(in srgb, var(--zoron-accent) 40%, transparent);
 }
 
 /* the look picker: a switch between the two lists, each option a drawing or swatch with its name, the current one
    ringed; only the list scrolls */
-html[data-xylo] .xylo-look {
+html[data-zoron] .zoron-look {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-html[data-xylo] .xylo-look-list {
+html[data-zoron] .zoron-look-list {
   max-height: min(26rem, 60dvh);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-html[data-xylo] .xylo-look-caption {
+html[data-zoron] .zoron-look-caption {
   padding: 2px 2px 0;
   color: var(--mantine-color-dimmed);
   font-size: 0.75rem;
 }
 
-html[data-xylo] .xylo-look-grid {
+html[data-zoron] .zoron-look-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 
-html[data-xylo] .xylo-look-option {
+html[data-zoron] .zoron-look-option {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
   min-height: 2.5rem;
   padding: 5px;
-  border: 1px solid var(--xylo-hairline);
-  border-radius: var(--xylo-control-radius, 8px);
+  border: 1px solid var(--zoron-hairline);
+  border-radius: var(--zoron-control-radius, 8px);
   background: transparent;
   color: var(--mantine-color-text);
   font-size: 0.8125rem;
@@ -2435,43 +2441,43 @@ html[data-xylo] .xylo-look-option {
     background-color 160ms ease;
 }
 
-html[data-xylo] .xylo-look-option[data-frame] {
+html[data-zoron] .zoron-look-option[data-frame] {
   flex-direction: column;
   align-items: stretch;
   gap: 4px;
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-look-option:hover {
+  html[data-zoron] .zoron-look-option:hover {
     background-color: var(--mantine-color-default-hover);
   }
 }
 
-html[data-xylo] .xylo-look-option[aria-checked="true"] {
-  border-color: var(--xylo-accent);
-  background-color: color-mix(in srgb, var(--xylo-accent) 10%, transparent);
+html[data-zoron] .zoron-look-option[aria-checked="true"] {
+  border-color: var(--zoron-accent);
+  background-color: color-mix(in srgb, var(--zoron-accent) 10%, transparent);
 }
 
-html[data-xylo] .xylo-look-option:focus-visible {
-  outline: 2px solid var(--xylo-accent);
+html[data-zoron] .zoron-look-option:focus-visible {
+  outline: 2px solid var(--zoron-accent);
   outline-offset: 1px;
 }
 
-html[data-xylo] .xylo-look-swatch {
+html[data-zoron] .zoron-look-swatch {
   flex-shrink: 0;
   width: 2.75rem;
   height: 1.75rem;
   overflow: hidden;
-  border: 1px solid var(--xylo-hairline);
-  border-radius: calc(var(--xylo-control-radius, 8px) * 0.6);
+  border: 1px solid var(--zoron-hairline);
+  border-radius: calc(var(--zoron-control-radius, 8px) * 0.6);
 }
 
-html[data-xylo] .xylo-look-option[data-frame] .xylo-look-swatch {
+html[data-zoron] .zoron-look-option[data-frame] .zoron-look-swatch {
   width: 100%;
   height: 2.75rem;
 }
 
-html[data-xylo] .xylo-look-name {
+html[data-zoron] .zoron-look-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2480,7 +2486,7 @@ html[data-xylo] .xylo-look-name {
 /* ---------- the servers page (elements/home) ---------- */
 
 /* the toolbar's chips: status filters with counts, then one per server group in its folder colour */
-html[data-xylo] .xylo-chips {
+html[data-zoron] .zoron-chips {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -2489,14 +2495,14 @@ html[data-xylo] .xylo-chips {
   padding-bottom: 2px;
 }
 
-html[data-xylo] .xylo-chip {
+html[data-zoron] .zoron-chip {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   gap: 7px;
   height: 32px;
   padding: 0 12px;
-  border: 1px solid var(--xylo-hairline);
+  border: 1px solid var(--zoron-hairline);
   border-radius: 999px;
   background-color: color-mix(in srgb, var(--mantine-color-text) 4%, transparent);
   color: color-mix(in srgb, var(--mantine-color-text) 80%, transparent);
@@ -2508,39 +2514,39 @@ html[data-xylo] .xylo-chip {
     background-color 160ms ease,
     border-color 160ms ease,
     color 160ms ease,
-    transform 120ms var(--xylo-ease);
+    transform 120ms var(--zoron-ease);
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-chip:hover {
+  html[data-zoron] .zoron-chip:hover {
     background-color: color-mix(in srgb, var(--mantine-color-text) 9%, transparent);
     color: var(--mantine-color-text);
   }
 }
 
-html[data-xylo] .xylo-chip:focus-visible {
-  outline: 2px solid var(--xylo-accent);
+html[data-zoron] .zoron-chip:focus-visible {
+  outline: 2px solid var(--zoron-accent);
   outline-offset: 2px;
 }
 
-html[data-xylo] .xylo-chip:active {
+html[data-zoron] .zoron-chip:active {
   transform: scale(0.97);
 }
 
 /* the current chip: an accent tint and outline, so a row of them never turns into a gradient strip */
-html[data-xylo] .xylo-chip[data-active] {
-  border-color: color-mix(in srgb, var(--xylo-accent) 55%, transparent);
-  background-color: color-mix(in srgb, var(--xylo-accent) 16%, transparent);
-  color: color-mix(in srgb, var(--xylo-accent) 70%, var(--mantine-color-text));
+html[data-zoron] .zoron-chip[data-active] {
+  border-color: color-mix(in srgb, var(--zoron-accent) 55%, transparent);
+  background-color: color-mix(in srgb, var(--zoron-accent) 16%, transparent);
+  color: color-mix(in srgb, var(--zoron-accent) 70%, var(--mantine-color-text));
 }
 
-html[data-xylo] .xylo-chip-dot {
+html[data-zoron] .zoron-chip-dot {
   width: 8px;
   height: 8px;
   border-radius: 3px;
 }
 
-html[data-xylo] .xylo-chip-count {
+html[data-zoron] .zoron-chip-count {
   min-width: 20px;
   padding: 1px 6px;
   border-radius: 999px;
@@ -2550,22 +2556,22 @@ html[data-xylo] .xylo-chip-count {
   text-align: center;
 }
 
-html[data-xylo] .xylo-chips-sep {
+html[data-zoron] .zoron-chips-sep {
   flex-shrink: 0;
   width: 1px;
   height: 20px;
   margin: 0 4px;
-  background-color: var(--xylo-hairline);
+  background-color: var(--zoron-hairline);
 }
 
-html[data-xylo] .xylo-home-grid {
+html[data-zoron] .zoron-home-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
   gap: 14px;
 }
 
 /* a server card: the name's link stretches over it, the controls sit above that */
-html[data-xylo] .xylo-home-card {
+html[data-zoron] .zoron-home-card {
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -2573,14 +2579,14 @@ html[data-xylo] .xylo-home-card {
   padding: 16px;
 }
 
-html[data-xylo] .xylo-home-card[data-selected] {
-  border-color: var(--xylo-accent);
+html[data-zoron] .zoron-home-card[data-selected] {
+  border-color: var(--zoron-accent);
   box-shadow:
-    0 0 0 1px var(--xylo-accent),
-    var(--xylo-shadow);
+    0 0 0 1px var(--zoron-accent),
+    var(--zoron-shadow);
 }
 
-html[data-xylo] .xylo-home-card-link {
+html[data-zoron] .zoron-home-card-link {
   display: block;
   overflow: hidden;
   font-size: 1.0625rem;
@@ -2590,7 +2596,7 @@ html[data-xylo] .xylo-home-card-link {
   white-space: nowrap;
 }
 
-html[data-xylo] .xylo-home-card-link::after {
+html[data-zoron] .zoron-home-card-link::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -2598,22 +2604,22 @@ html[data-xylo] .xylo-home-card-link::after {
   border-radius: inherit;
 }
 
-html[data-xylo] .xylo-home-card-link:focus-visible {
+html[data-zoron] .zoron-home-card-link:focus-visible {
   outline: none;
 }
 
-html[data-xylo] .xylo-home-card-link:focus-visible::after {
-  outline: 2px solid var(--xylo-accent);
+html[data-zoron] .zoron-home-card-link:focus-visible::after {
+  outline: 2px solid var(--zoron-accent);
   outline-offset: -2px;
 }
 
-html[data-xylo] .xylo-home-raise {
+html[data-zoron] .zoron-home-raise {
   position: relative;
   z-index: 1;
 }
 
 /* the server's tile, as in the rail; it turns into a check box while selecting or hovered */
-html[data-xylo] .xylo-home-tile {
+html[data-zoron] .zoron-home-tile {
   display: grid;
   flex-shrink: 0;
   place-items: center;
@@ -2626,11 +2632,11 @@ html[data-xylo] .xylo-home-tile {
   cursor: pointer;
 }
 
-html[data-xylo] .xylo-home-tile > * {
+html[data-zoron] .zoron-home-tile > * {
   grid-area: 1 / 1;
 }
 
-html[data-xylo] .xylo-home-tile-check {
+html[data-zoron] .zoron-home-tile-check {
   display: grid;
   place-items: center;
   width: 100%;
@@ -2641,69 +2647,69 @@ html[data-xylo] .xylo-home-tile-check {
   transition: opacity 140ms ease;
 }
 
-html[data-xylo] .xylo-home-tile:is([data-selecting], :focus-visible) .xylo-home-tile-check {
+html[data-zoron] .zoron-home-tile:is([data-selecting], :focus-visible) .zoron-home-tile-check {
   opacity: 1;
   background-color: rgb(0 0 0 / 0.3);
   color: rgb(255 255 255 / 0.35);
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-home-tile:hover .xylo-home-tile-check {
+  html[data-zoron] .zoron-home-tile:hover .zoron-home-tile-check {
     opacity: 1;
   }
 }
 
-html[data-xylo] .xylo-home-tile[aria-pressed="true"] .xylo-home-tile-check {
+html[data-zoron] .zoron-home-tile[aria-pressed="true"] .zoron-home-tile-check {
   opacity: 1;
-  background: var(--xylo-gradient);
-  color: var(--xylo-accent-ink);
+  background: var(--zoron-gradient);
+  color: var(--zoron-accent-ink);
 }
 
 /* a server's tile on its own (the overview, the console's bar, the tile editor's preview), the user's look */
-html[data-xylo] .xylo-server-tile {
+html[data-zoron] .zoron-server-tile {
   display: grid;
   flex-shrink: 0;
   place-items: center;
-  width: var(--xylo-tile-size, 40px);
-  height: var(--xylo-tile-size, 40px);
-  border-radius: calc(var(--xylo-tile-size, 40px) * 0.28);
+  width: var(--zoron-tile-size, 40px);
+  height: var(--zoron-tile-size, 40px);
+  border-radius: calc(var(--zoron-tile-size, 40px) * 0.28);
   color: #fff;
-  font-size: calc(var(--xylo-tile-size, 40px) * 0.36);
+  font-size: calc(var(--zoron-tile-size, 40px) * 0.36);
   font-weight: 700;
   line-height: 1;
 }
 
-html[data-xylo] .xylo-con-id > .xylo-server-tile {
+html[data-zoron] .zoron-con-id > .zoron-server-tile {
   align-self: center;
 }
 
 /* the overview's tile opens the tile editor */
-html[data-xylo] .xylo-server-tile-button {
+html[data-zoron] .zoron-server-tile-button {
   display: inline-flex;
   flex-shrink: 0;
   border-radius: 14px;
   cursor: pointer;
 }
 
-html[data-xylo] .xylo-server-tile-button:focus-visible {
-  outline: 2px solid var(--xylo-accent);
+html[data-zoron] .zoron-server-tile-button:focus-visible {
+  outline: 2px solid var(--zoron-accent);
   outline-offset: 2px;
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-server-tile-button:hover {
+  html[data-zoron] .zoron-server-tile-button:hover {
     filter: brightness(1.12);
   }
 }
 
 /* the tile editor's icon grid and colour swatches */
-html[data-xylo] .xylo-server-tile-picks {
+html[data-zoron] .zoron-server-tile-picks {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-html[data-xylo] .xylo-server-tile-pick {
+html[data-zoron] .zoron-server-tile-pick {
   display: grid;
   place-items: center;
   width: 36px;
@@ -2719,17 +2725,17 @@ html[data-xylo] .xylo-server-tile-pick {
 }
 
 @media (hover: hover) {
-  html[data-xylo] .xylo-server-tile-pick:hover {
+  html[data-zoron] .zoron-server-tile-pick:hover {
     border-color: var(--mantine-color-placeholder);
   }
 }
 
-html[data-xylo] .xylo-server-tile-pick[aria-pressed="true"] {
-  border-color: var(--xylo-accent);
-  background-color: color-mix(in srgb, var(--xylo-accent) 16%, transparent);
+html[data-zoron] .zoron-server-tile-pick[aria-pressed="true"] {
+  border-color: var(--zoron-accent);
+  background-color: color-mix(in srgb, var(--zoron-accent) 16%, transparent);
 }
 
-html[data-xylo] .xylo-server-tile-swatch {
+html[data-zoron] .zoron-server-tile-swatch {
   width: 28px;
   height: 28px;
   border-radius: 8px;
@@ -2737,86 +2743,86 @@ html[data-xylo] .xylo-server-tile-swatch {
   cursor: pointer;
 }
 
-html[data-xylo] .xylo-server-tile-swatch[aria-pressed="true"] {
+html[data-zoron] .zoron-server-tile-swatch[aria-pressed="true"] {
   box-shadow:
     0 0 0 2px var(--mantine-color-body),
-    0 0 0 4px var(--xylo-accent);
+    0 0 0 4px var(--zoron-accent);
 }
 
-html[data-xylo] :is(.xylo-server-tile-pick, .xylo-server-tile-swatch):focus-visible {
-  outline: 2px solid var(--xylo-accent);
+html[data-zoron] :is(.zoron-server-tile-pick, .zoron-server-tile-swatch):focus-visible {
+  outline: 2px solid var(--zoron-accent);
   outline-offset: 2px;
 }
 
-/* status: a dot in the server's state colour (Xylo's status colours), pulsing while it runs */
-html[data-xylo] .xylo-status {
-  --xylo-status: var(--color-server-status-offline, var(--mantine-color-red-filled));
+/* status: a dot in the server's state colour (Zoron's status colours), pulsing while it runs */
+html[data-zoron] .zoron-status {
+  --zoron-status: var(--color-server-status-offline, var(--mantine-color-red-filled));
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   gap: 6px;
   padding: 3px 9px;
   border-radius: 999px;
-  background-color: color-mix(in srgb, var(--xylo-status) 14%, transparent);
-  color: color-mix(in srgb, var(--xylo-status) 75%, var(--mantine-color-text));
+  background-color: color-mix(in srgb, var(--zoron-status) 14%, transparent);
+  color: color-mix(in srgb, var(--zoron-status) 75%, var(--mantine-color-text));
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
 }
 
-html[data-xylo] :is(.xylo-status, .xylo-con-state)[data-phase="running"] {
-  --xylo-status: var(--color-server-status-running, var(--mantine-color-green-filled));
+html[data-zoron] :is(.zoron-status, .zoron-con-state)[data-phase="running"] {
+  --zoron-status: var(--color-server-status-running, var(--mantine-color-green-filled));
 }
 
-html[data-xylo] :is(.xylo-status, .xylo-con-state):is([data-phase="starting"], [data-phase="stopping"]) {
-  --xylo-status: var(--color-server-status-starting, var(--mantine-color-yellow-filled));
+html[data-zoron] :is(.zoron-status, .zoron-con-state):is([data-phase="starting"], [data-phase="stopping"]) {
+  --zoron-status: var(--color-server-status-starting, var(--mantine-color-yellow-filled));
 }
 
-html[data-xylo]
-  :is(.xylo-status, .xylo-con-state):is(
+html[data-zoron]
+  :is(.zoron-status, .zoron-con-state):is(
     [data-phase="installing"],
     [data-phase="restoring"],
     [data-phase="transferring"]
   ) {
-  --xylo-status: var(--mantine-color-blue-filled);
+  --zoron-status: var(--mantine-color-blue-filled);
 }
 
-html[data-xylo] :is(.xylo-status, .xylo-con-state):is([data-phase="failed"], [data-phase="suspended"]) {
-  --xylo-status: var(--mantine-color-red-filled);
+html[data-zoron] :is(.zoron-status, .zoron-con-state):is([data-phase="failed"], [data-phase="suspended"]) {
+  --zoron-status: var(--mantine-color-red-filled);
 }
 
-html[data-xylo] :is(.xylo-status, .xylo-con-state)[data-phase="offline"] {
-  --xylo-status: var(--mantine-color-dimmed);
+html[data-zoron] :is(.zoron-status, .zoron-con-state)[data-phase="offline"] {
+  --zoron-status: var(--mantine-color-dimmed);
 }
 
-html[data-xylo] .xylo-status-dot {
+html[data-zoron] .zoron-status-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background-color: var(--xylo-status);
+  background-color: var(--zoron-status);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  html[data-xylo]:not([data-xylo-motion="none"]) .xylo-skeleton {
-    animation: xylo-shimmer 1.4s ease-in-out infinite;
+  html[data-zoron]:not([data-zoron-motion="none"]) .zoron-skeleton {
+    animation: zoron-shimmer 1.4s ease-in-out infinite;
   }
 }
 
-@keyframes xylo-shimmer {
+@keyframes zoron-shimmer {
   50% {
     opacity: 0.55;
   }
 }
 
-html[data-xylo] .xylo-home-address {
+html[data-zoron] .zoron-home-address {
   display: inline-flex;
   align-self: flex-start;
   align-items: center;
   gap: 8px;
   max-width: 100%;
   padding: 5px 10px;
-  border: 1px solid var(--xylo-hairline);
-  border-radius: var(--xylo-control-radius, 8px);
+  border: 1px solid var(--zoron-hairline);
+  border-radius: var(--zoron-control-radius, 8px);
   background-color: color-mix(in srgb, var(--mantine-color-text) 4%, transparent);
   color: color-mix(in srgb, var(--mantine-color-text) 80%, transparent);
   font-family: var(--mantine-font-family-monospace);
@@ -2824,18 +2830,18 @@ html[data-xylo] .xylo-home-address {
 }
 
 @media (hover: hover) {
-  html[data-xylo] button.xylo-home-address:hover {
-    border-color: color-mix(in srgb, var(--xylo-accent) 45%, var(--xylo-hairline));
+  html[data-zoron] button.zoron-home-address:hover {
+    border-color: color-mix(in srgb, var(--zoron-accent) 45%, var(--zoron-hairline));
     color: var(--mantine-color-text);
   }
 }
 
-html[data-xylo] .xylo-home-address[data-empty] {
+html[data-zoron] .zoron-home-address[data-empty] {
   font-family: inherit;
   color: var(--mantine-color-dimmed);
 }
 
-html[data-xylo] .xylo-home-empty {
+html[data-zoron] .zoron-home-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2844,7 +2850,7 @@ html[data-xylo] .xylo-home-empty {
   text-align: center;
 }
 
-html[data-xylo] .xylo-home-empty-icon {
+html[data-zoron] .zoron-home-empty-icon {
   display: grid;
   place-items: center;
   width: 52px;
@@ -2852,6 +2858,6 @@ html[data-xylo] .xylo-home-empty-icon {
   margin-bottom: 6px;
   border-radius: 16px;
   background-color: color-mix(in srgb, var(--mantine-color-text) 7%, transparent);
-  color: var(--xylo-accent);
+  color: var(--zoron-accent);
   font-size: 1.25rem;
 }

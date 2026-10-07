@@ -256,7 +256,7 @@ export const FontMock = ({ look, font }: { look: Look; font: Font }) => (
 export const TransitionMock = ({ look, transition }: { look: Look; transition: Transition }) => (
   <div className='flex h-full items-center justify-center' style={{ background: look.surface }}>
     <div
-      className={`h-7 w-14 rounded-md xylo-tile-anim-${transition}`}
+      className={`h-7 w-14 rounded-md zoron-tile-anim-${transition}`}
       style={{ background: alpha(look.text, 0.12), border: `1px solid ${alpha(look.text, 0.18)}` }}
     />
   </div>

@@ -3,14 +3,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useComputedColorScheme } from '@mantine/core';
 import { type ReactNode, useState } from 'react';
 import { ActionIcon, Popover, SegmentedControl, Tooltip } from '../../lib/core.ts';
-import { inPreviewFrame, setTerminalPrefs, useBaseTheme, useTerminalPrefs, useXyloTheme } from '../../lib/store.ts';
+import { inPreviewFrame, setTerminalPrefs, useBaseTheme, useTerminalPrefs, useZoronTheme } from '../../lib/store.ts';
 import {
   lightBase,
   TERMINAL_SCHEME_GROUPS,
   TERMINAL_SKINS,
   type TerminalScheme,
   terminalPalette,
-  type XyloTheme,
+  type ZoronTheme,
 } from '../../lib/theme.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { TerminalSkinMock } from '../editor/mocks.tsx';
@@ -19,12 +19,12 @@ import { TerminalSkinMock } from '../editor/mocks.tsx';
 const PANEL_INK = { green: '#4e9a06', red: '#cc0000' };
 
 /** A scheme at swatch size: its background with a line of text, a success and an error. */
-function SchemeSwatch({ theme, scheme, dark }: { theme: XyloTheme; scheme: TerminalScheme; dark: boolean }) {
+function SchemeSwatch({ theme, scheme, dark }: { theme: ZoronTheme; scheme: TerminalScheme; dark: boolean }) {
   const palette = terminalPalette({ ...theme, terminalScheme: scheme }, dark);
   return (
     <span
-      className='xylo-look-swatch flex flex-col justify-center gap-[3px] px-1.5'
-      style={{ background: palette?.background ?? 'var(--xylo-card-solid)' }}
+      className='zoron-look-swatch flex flex-col justify-center gap-[3px] px-1.5'
+      style={{ background: palette?.background ?? 'var(--zoron-card-solid)' }}
     >
       <span
         className='h-[3px] w-3/5 rounded-full'
@@ -53,7 +53,7 @@ function LookOption({
       role='radio'
       aria-checked={checked}
       data-frame={frame || undefined}
-      className='xylo-look-option'
+      className='zoron-look-option'
       onClick={onPick}
     >
       {children}
@@ -68,7 +68,7 @@ function LookOption({
  */
 export default function TerminalLook() {
   const { t } = useExtTranslations();
-  const theme = useXyloTheme();
+  const theme = useZoronTheme();
   const site = useBaseTheme();
   const prefs = useTerminalPrefs();
   const dark = useComputedColorScheme('dark') === 'dark';
@@ -102,7 +102,7 @@ export default function TerminalLook() {
         </Tooltip>
       </Popover.Target>
       <Popover.Dropdown p='xs'>
-        <div className='xylo-look'>
+        <div className='zoron-look'>
           <SegmentedControl
             fullWidth
             size='xs'
@@ -116,20 +116,20 @@ export default function TerminalLook() {
 
           {tab === 'colours' ? (
             <div
-              className='xylo-look-list flex flex-col gap-1.5'
+              className='zoron-look-list flex flex-col gap-1.5'
               role='radiogroup'
               aria-label={t('terminalLook.colours', {})}
             >
-              <div className='xylo-look-grid'>
+              <div className='zoron-look-grid'>
                 <LookOption checked={!prefs.scheme} onPick={() => setTerminalPrefs({ ...prefs, scheme: undefined })}>
                   <SchemeSwatch theme={site} scheme={site.terminalScheme} dark={dark} />
-                  <span className='xylo-look-name'>{t('terminalLook.siteDefault', {})}</span>
+                  <span className='zoron-look-name'>{t('terminalLook.siteDefault', {})}</span>
                 </LookOption>
               </div>
               {TERMINAL_SCHEME_GROUPS.map((group) => (
                 <div key={group.id} className='flex flex-col gap-1.5'>
-                  <span className='xylo-look-caption'>{t(`consoleSection.${group.id}`, {})}</span>
-                  <div className='xylo-look-grid'>
+                  <span className='zoron-look-caption'>{t(`consoleSection.${group.id}`, {})}</span>
+                  <div className='zoron-look-grid'>
                     {group.schemes.map((scheme) => (
                       <LookOption
                         key={scheme}
@@ -137,7 +137,7 @@ export default function TerminalLook() {
                         onPick={() => setTerminalPrefs({ ...prefs, scheme })}
                       >
                         <SchemeSwatch theme={site} scheme={scheme} dark={dark} />
-                        <span className='xylo-look-name'>{t(`consoleSection.${scheme}`, {})}</span>
+                        <span className='zoron-look-name'>{t(`consoleSection.${scheme}`, {})}</span>
                       </LookOption>
                     ))}
                   </div>
@@ -145,9 +145,9 @@ export default function TerminalLook() {
               ))}
             </div>
           ) : (
-            <div className='xylo-look-list xylo-look-grid' role='radiogroup' aria-label={t('terminalLook.frame', {})}>
+            <div className='zoron-look-list zoron-look-grid' role='radiogroup' aria-label={t('terminalLook.frame', {})}>
               <LookOption frame checked={!prefs.skin} onPick={() => setTerminalPrefs({ ...prefs, skin: undefined })}>
-                <span className='xylo-look-swatch block'>
+                <span className='zoron-look-swatch block'>
                   <TerminalSkinMock
                     look={look}
                     palette={palette}
@@ -155,7 +155,7 @@ export default function TerminalLook() {
                     skin={site.terminalSkin}
                   />
                 </span>
-                <span className='xylo-look-name'>{t('terminalLook.siteDefault', {})}</span>
+                <span className='zoron-look-name'>{t('terminalLook.siteDefault', {})}</span>
               </LookOption>
               {TERMINAL_SKINS.map((skin) => (
                 <LookOption
@@ -164,16 +164,16 @@ export default function TerminalLook() {
                   checked={prefs.skin === skin}
                   onPick={() => setTerminalPrefs({ ...prefs, skin })}
                 >
-                  <span className='xylo-look-swatch block'>
+                  <span className='zoron-look-swatch block'>
                     <TerminalSkinMock look={look} palette={palette} scheme={theme.terminalScheme} skin={skin} />
                   </span>
-                  <span className='xylo-look-name'>{t(`consoleSection.${skin}`, {})}</span>
+                  <span className='zoron-look-name'>{t(`consoleSection.${skin}`, {})}</span>
                 </LookOption>
               ))}
             </div>
           )}
 
-          {inPreviewFrame && <span className='xylo-look-caption'>{t('terminalLook.previewNote', {})}</span>}
+          {inPreviewFrame && <span className='zoron-look-caption'>{t('terminalLook.previewNote', {})}</span>}
         </div>
       </Popover.Dropdown>
     </Popover>

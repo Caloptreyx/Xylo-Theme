@@ -76,7 +76,7 @@ import {
   TERMINAL_SKINS,
   TRANSITIONS,
   terminalPalette,
-  type XyloTheme,
+  type ZoronTheme,
 } from '../../lib/theme.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { ChoiceTiles, ColorField, Group, Setting, SliderField, ToggleChips, ToggleField } from './controls.tsx';
@@ -101,10 +101,10 @@ import {
 
 export interface SectionProps {
   /** The raw draft: colour fields may hold half typed text. */
-  draft: XyloTheme;
+  draft: ZoronTheme;
   /** The last valid normalized draft, which the drawings and checks use. */
-  valid: XyloTheme;
-  set: (patch: Partial<XyloTheme>) => void;
+  valid: ZoronTheme;
+  set: (patch: Partial<ZoronTheme>) => void;
 }
 
 /** A preset's drawing and name; picking it lays its look over the draft, and it reads as picked while it matches. */
@@ -115,9 +115,9 @@ function PresetTile({ name, look, valid, set }: { name: string; look: PresetLook
       type='button'
       aria-pressed={selected}
       onClick={() => set(applyPreset(valid, look))}
-      className={`xylo-tile group flex w-full cursor-pointer flex-col gap-1.5 rounded-2xl border p-1.5 text-left transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 ${
+      className={`zoron-tile group flex w-full cursor-pointer flex-col gap-1.5 rounded-2xl border p-1.5 text-left transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 ${
         selected
-          ? 'border-(--xylo-accent) shadow-[0_0_0_3px_color-mix(in_srgb,var(--xylo-accent)_22%,transparent)]'
+          ? 'border-(--zoron-accent) shadow-[0_0_0_3px_color-mix(in_srgb,var(--zoron-accent)_22%,transparent)]'
           : 'border-(--mantine-color-default-border) hover:border-(--mantine-color-placeholder)'
       }`}
     >
@@ -680,7 +680,7 @@ const BUTTON_LABEL = {
   solid: 'layout.buttonSolid',
   soft: 'layout.soft',
   outline: 'layout.outline',
-} as const satisfies Record<XyloTheme['buttonStyle'], string>;
+} as const satisfies Record<ZoronTheme['buttonStyle'], string>;
 
 export function LayoutSection({ valid, set }: SectionProps) {
   const { t } = useExtTranslations();
@@ -1136,7 +1136,7 @@ export function ConsoleSection({ valid, set }: SectionProps) {
         )}
       </Group>
 
-      {/* the rest of Xylo's own page; core's console has none of it */}
+      {/* the rest of Zoron's own page; core's console has none of it */}
       {valid.consolePage && (
         <>
           <Group title={t('consoleSection.commandBar', {})} hint={t('consoleSection.metricsHint', {})}>

@@ -11,7 +11,7 @@ export type RailServer = { uuid: string; name: string };
 export type RailGroup = { uuid: string; name: string; order: number; serverOrder: string[] };
 
 /** A folder's open state, per browser: the uuids of the open ones. */
-export const FOLDERS_KEY = 'xylo:folders';
+export const FOLDERS_KEY = 'zoron:folders';
 /** How many tiles a closed folder previews, in a 2 by 2 grid. */
 export const FOLDER_PREVIEW = 4;
 /** Core's cap on a server group's size (MAX_SERVERS_PER_GROUP). */

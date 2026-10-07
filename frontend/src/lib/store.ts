@@ -1,23 +1,23 @@
 import { useSyncExternalStore } from 'react';
 import { parseTerminalPrefs, TERMINAL_PREFS_KEY, type TerminalPrefs, withTerminalPrefs } from './terminal.ts';
-import { buildCss, DEFAULT_THEME, normalizeTheme, sameTheme, themeAttributes, type XyloTheme } from './theme.ts';
+import { buildCss, DEFAULT_THEME, normalizeTheme, sameTheme, themeAttributes, type ZoronTheme } from './theme.ts';
 
-const STYLE_ID = 'xylo-theme';
-const CACHE_KEY = 'xylo:theme';
-export const THEME_URL = '/xylo/theme';
-const PREVIEW_MSG = 'xylo:preview';
-export const READY_MSG = 'xylo:ready';
+const STYLE_ID = 'zoron-theme';
+const CACHE_KEY = 'zoron:theme';
+export const THEME_URL = '/zoron/theme';
+const PREVIEW_MSG = 'zoron:preview';
+export const READY_MSG = 'zoron:ready';
 /**
- * A first visit has no cached theme: the page stays hidden (`data-xylo-pending`, app.css) until loadTheme() settles,
+ * A first visit has no cached theme: the page stays hidden (`data-zoron-pending`, app.css) until loadTheme() settles,
  * and at most this long, so a slow or failing request never leaves it blank.
  */
 const PENDING_MS = 1500;
 
-let saved: XyloTheme = DEFAULT_THEME;
+let saved: ZoronTheme = DEFAULT_THEME;
 /** The theme given to paint (the site's, or a draft in the editor's preview), before the visitor's terminal look. */
-let base: XyloTheme = DEFAULT_THEME;
+let base: ZoronTheme = DEFAULT_THEME;
 /** What is on screen: `base` with the visitor's terminal look over it. */
-let current: XyloTheme = DEFAULT_THEME;
+let current: ZoronTheme = DEFAULT_THEME;
 let terminalPrefs: TerminalPrefs = {};
 let previewing = false;
 let pendingTimer: number | undefined;
@@ -37,7 +37,7 @@ export function subscribeTheme(listener: () => void) {
 }
 
 /** The theme on screen, a draft included while the editor previews one; re-renders when it changes. */
-export const useXyloTheme = () => useSyncExternalStore(subscribeTheme, () => current);
+export const useZoronTheme = () => useSyncExternalStore(subscribeTheme, () => current);
 /** The theme on screen, for code that runs outside a component (route names and filters); no re-render. */
 export const currentTheme = () => current;
 /** The theme before the visitor's terminal look: what "Site default" shows. */
@@ -48,7 +48,7 @@ export const useTerminalPrefs = () => useSyncExternalStore(subscribeTheme, () =>
  * Writes only what changed: a new stylesheet restyles the whole page, so a repaint with the same theme (the fetch
  * after the cached paint) must not replace it.
  */
-function applyTheme(theme: XyloTheme) {
+function applyTheme(theme: ZoronTheme) {
   const shown = inPreviewFrame ? theme : withTerminalPrefs(theme, terminalPrefs);
   let el = document.getElementById(STYLE_ID);
   if (!el) {
@@ -63,7 +63,7 @@ function applyTheme(theme: XyloTheme) {
   for (const [key, value] of Object.entries(themeAttributes(shown))) {
     if (data[key] !== value) data[key] = value;
   }
-  if ('xyloPending' in data) delete data.xyloPending;
+  if ('zoronPending' in data) delete data.zoronPending;
 
   let changed = false;
   if (!sameTheme(theme, base)) {
@@ -80,7 +80,7 @@ function applyTheme(theme: XyloTheme) {
 /** Takes the visitor's terminal look (the picker, or another window's), repainting once the page is shown. */
 function takeTerminalPrefs(prefs: TerminalPrefs) {
   terminalPrefs = prefs;
-  if ('xyloPending' in document.documentElement.dataset) return;
+  if ('zoronPending' in document.documentElement.dataset) return;
   const before = current;
   applyTheme(base);
   // the picker shows the choice even when the look on screen stays the same (the site's own scheme picked)
@@ -101,11 +101,11 @@ export function setTerminalPrefs(prefs: TerminalPrefs) {
 /** Ends the first visit guard with whatever is known by then. */
 function reveal() {
   window.clearTimeout(pendingTimer);
-  if ('xyloPending' in document.documentElement.dataset) applyTheme(previewing ? base : saved);
+  if ('zoronPending' in document.documentElement.dataset) applyTheme(previewing ? base : saved);
 }
 
 /** Makes `theme` the site theme on this page (the editor after a save) and caches it for the next load. */
-export function rememberTheme(theme: XyloTheme) {
+export function rememberTheme(theme: ZoronTheme) {
   saved = theme;
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(theme));
@@ -138,7 +138,7 @@ export function applyCachedTheme() {
     }
   }
   if (cached === null) {
-    document.documentElement.dataset.xyloPending = '';
+    document.documentElement.dataset.zoronPending = '';
     pendingTimer = window.setTimeout(reveal, PENDING_MS);
     return;
   }
@@ -149,7 +149,7 @@ export function applyCachedTheme() {
  * Fetches the site theme and the version the server holds (the editor sends it back on save, so a save over someone
  * else's is refused). The route answers 304 to the browser's revalidation. Null when it failed.
  */
-export async function loadTheme(): Promise<{ theme: XyloTheme; version: string } | null> {
+export async function loadTheme(): Promise<{ theme: ZoronTheme; version: string } | null> {
   try {
     const res = await fetch(THEME_URL, { credentials: 'same-origin', headers: { accept: 'application/json' } });
     if (!res.ok) return null;
@@ -172,7 +172,7 @@ const SCHEME_ATTR = 'data-mantine-color-scheme';
 let previewScheme: PreviewScheme | null = null;
 
 /** The editor renders the panel in an iframe and streams drafts into it, with the scheme to show them in. */
-export function sendPreview(frame: HTMLIFrameElement | null, theme: XyloTheme, scheme: PreviewScheme) {
+export function sendPreview(frame: HTMLIFrameElement | null, theme: ZoronTheme, scheme: PreviewScheme) {
   frame?.contentWindow?.postMessage({ type: PREVIEW_MSG, theme, scheme }, window.location.origin);
 }
 

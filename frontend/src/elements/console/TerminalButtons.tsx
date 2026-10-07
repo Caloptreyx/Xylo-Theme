@@ -8,7 +8,7 @@ import TerminalLook from './TerminalLook.tsx';
 import { terminalNear } from './xterm.ts';
 
 /**
- * Xylo's buttons in core's terminal header (every console: Xylo's page, core's, the popout): the visitor's terminal
+ * Zoron's buttons in core's terminal header (every console: Zoron's page, core's, the popout): the visitor's terminal
  * look while the theme allows it, clear the terminal, and download what it holds as a plain text log. Styled as
  * core's header buttons.
  */

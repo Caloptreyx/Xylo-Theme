@@ -1,8 +1,8 @@
-# Xylo Theme
+# Zoron Theme
 
 A remake of the [Calagopus](https://calagopus.com) panel's look: core's sidebar is replaced by an icon rail (areas,
 and your servers with your server groups as Discord style folders: drag a server onto another to group them)
-beside a collapsible context panel, pages sit on a raised canvas, the servers page shows live usage, and **Xylo
+beside a collapsible context panel, pages sit on a raised canvas, the servers page shows live usage, and **Zoron
 Studio**, a live theme editor, repaints a preview of the real panel as you change things.
 
 The default look, Carbon, is quiet on purpose: an off-black base, one muted accent, solid surfaces and Geist. The
@@ -45,12 +45,18 @@ Needs panel **1.2.0 or newer**.
   width, in dark or light mode; undo and redo; import and export as JSON; Ctrl/⌘+S to save; a warning when
   someone else saved since you opened it.
 
-Open it from **Admin → Xylo Studio** or the extension's card on **Admin → Extensions**. Saving needs
-`settings.update` or the extension's own `xylo-theme.update` admin permission.
+Open it from **Admin → Zoron Studio** or the extension's card on **Admin → Extensions**. Saving needs
+`settings.update` or the extension's own `zoron-theme.update` admin permission.
+
+## Demo
+
+A demo is available at https://zoron-demo.caloptreyx.com: sign in as `demo` with the password `zorondemo`. It has
+two Paper servers to try the rail, folders, server tiles, the console and the server page on, and Zoron Studio to
+look through. Saving is turned off there, and the demo resets every hour.
 
 ## Install
 
-Download `dev_caloptreyx_xylo.c7s.zip` from the releases and add it on **Admin → Extensions**, or build it yourself
+Download `dev_caloptreyx_zoron.c7s.zip` from the releases and add it on **Admin → Extensions**, or build it yourself
 with `python3 scripts/package.py`.
 
 ## Licence

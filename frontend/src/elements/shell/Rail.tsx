@@ -85,7 +85,7 @@ type DragData = { drag: RailDrag; name: string };
 /** How many loose servers (in no group) the rail lists; the rest are a search or the servers page away. */
 const RAIL_SERVERS = 8;
 /** The droppable for the rail's free space, where a server dropped leaves its folder. */
-const LOOSE_ID = 'xylo-loose';
+const LOOSE_ID = 'zoron-loose';
 
 export function AppMark() {
   const app = useGlobalStore((state) => state.settings.app);
@@ -119,7 +119,7 @@ function RailButton({
   const shared = {
     'aria-label': label,
     'data-active': active || undefined,
-    className: `xylo-rail-btn ${className}`,
+    className: `zoron-rail-btn ${className}`,
     style,
   };
   return (
@@ -196,7 +196,7 @@ function ServerButton({
               drop.ref(node);
             }}
             {...drag.listeners}
-            className='xylo-rail-drag'
+            className='zoron-rail-drag'
             data-dragging={drag.isDragging || undefined}
             data-drop={drop.part}
             onContextMenu={(event) => {
@@ -210,7 +210,7 @@ function ServerButton({
               // core's routes take a server's short or full uuid
               active={current === server.uuidShort || current === server.uuid}
               quiet={menu}
-              className={`xylo-rail-server${server.isSuspended ? ' opacity-50' : ''}`}
+              className={`zoron-rail-server${server.isSuspended ? ' opacity-50' : ''}`}
               style={{ background: tile.background }}
             >
               <span className='text-sm font-semibold text-white'>
@@ -252,7 +252,7 @@ function useGroupEdits(): GroupEdits {
       await edit();
     } catch (err) {
       addToast(httpErrorToHuman(err), 'error');
-      await queryClient.invalidateQueries({ queryKey: ['xylo', 'rail-groups'] });
+      await queryClient.invalidateQueries({ queryKey: ['zoron', 'rail-groups'] });
     }
   };
   const setOrder = (uuid: string, serverOrder: string[]) => {
@@ -338,14 +338,14 @@ function RailFolder({
 
   const color = folderColor(group.name);
   const folder = open ? (
-    <div ref={drop.ref} className='xylo-rail-folder-open' data-drop={drop.part}>
+    <div ref={drop.ref} className='zoron-rail-folder-open' data-drop={drop.part}>
       <div
         ref={drag.setNodeRef}
         {...drag.listeners}
-        className='xylo-rail-drag'
+        className='zoron-rail-drag'
         data-dragging={drag.isDragging || undefined}
       >
-        <RailButton label={group.name} onClick={onToggle} expanded quiet={menu} className='xylo-rail-folder-head'>
+        <RailButton label={group.name} onClick={onToggle} expanded quiet={menu} className='zoron-rail-folder-head'>
           <FontAwesomeIcon icon={faFolderOpen} style={{ color }} />
         </RailButton>
       </div>
@@ -367,7 +367,7 @@ function RailFolder({
         drop.ref(node);
       }}
       {...drag.listeners}
-      className='xylo-rail-drag'
+      className='zoron-rail-drag'
       data-dragging={drag.isDragging || undefined}
       data-drop={drop.part}
     >
@@ -377,11 +377,11 @@ function RailFolder({
         expanded={false}
         quiet={menu}
         active={servers.some((server) => current === server.uuidShort || current === server.uuid)}
-        className='xylo-rail-folder'
+        className='zoron-rail-folder'
         style={{ background: `color-mix(in srgb, ${color} 28%, transparent)` }}
       >
         {servers.length > 0 ? (
-          <span className='xylo-rail-folder-grid'>
+          <span className='zoron-rail-folder-grid'>
             {servers.slice(0, FOLDER_PREVIEW).map((server) => {
               const tile = serverTile(server.name, tiles[server.uuid]);
               return (
@@ -571,7 +571,7 @@ function RailServers({ current, signedIn }: { current: string | null; signedIn: 
     useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 6 } }),
   );
   const servers = useQuery({
-    queryKey: ['xylo', 'rail-servers', user?.uuid],
+    queryKey: ['zoron', 'rail-servers', user?.uuid],
     queryFn: () => getServers(1),
     enabled: signedIn,
     staleTime: 60_000,
@@ -675,7 +675,7 @@ function RailServers({ current, signedIn }: { current: string | null; signedIn: 
         <DragOverlay dropAnimation={null}>
           {ghostTile && (
             <div
-              className='xylo-rail-btn xylo-rail-server xylo-rail-ghost'
+              className='zoron-rail-btn zoron-rail-server zoron-rail-ghost'
               style={{ background: ghostTile.background }}
             >
               <span className='text-sm font-semibold text-white'>
@@ -685,7 +685,7 @@ function RailServers({ current, signedIn }: { current: string | null; signedIn: 
           )}
           {ghostColor && (
             <div
-              className='xylo-rail-btn xylo-rail-folder xylo-rail-ghost'
+              className='zoron-rail-btn zoron-rail-folder zoron-rail-ghost'
               style={{ background: `color-mix(in srgb, ${ghostColor} 28%, transparent)` }}
             >
               <FontAwesomeIcon icon={faFolderOpen} style={{ color: ghostColor }} />
@@ -704,7 +704,7 @@ function LooseZone({ dragging, children }: { dragging: boolean; children: ReactN
   return (
     <div
       ref={drop.ref}
-      className='xylo-rail-servers flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-y-auto py-1'
+      className='zoron-rail-servers flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-y-auto py-1'
       data-dragging={dragging || undefined}
       data-drop={drop.part}
     >
@@ -727,7 +727,7 @@ export function Rail({ area, collapsed, onToggle }: { area: Area; collapsed?: bo
 
   return (
     <nav
-      className='xylo-rail flex h-full w-[72px] shrink-0 flex-col items-center gap-2 py-3'
+      className='zoron-rail flex h-full w-[72px] shrink-0 flex-col items-center gap-2 py-3'
       aria-label={t('shell.menu', {})}
     >
       <Link to='/' className='mb-1 grid size-11 place-items-center' aria-label={t('shell.home', {})}>
@@ -748,7 +748,7 @@ export function Rail({ area, collapsed, onToggle }: { area: Area; collapsed?: bo
         </RailButton>
       ))}
 
-      <div className='xylo-rail-sep' />
+      <div className='zoron-rail-sep' />
 
       <RailServers current={current} signedIn={!!user && !user.suspended} />
 
@@ -762,7 +762,7 @@ export function Rail({ area, collapsed, onToggle }: { area: Area; collapsed?: bo
           label={t('shell.account', {})}
           to='/account'
           active={pathname.startsWith('/account')}
-          className='xylo-rail-avatar'
+          className='zoron-rail-avatar'
         >
           <Avatar src={user.avatar} name={user.username} size={40} radius='xl' />
         </RailButton>

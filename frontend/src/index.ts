@@ -18,7 +18,7 @@ import { getExtTranslations } from './translations.ts';
 // the login preview route is the only place that loads it outside core's own lazy auth router
 const Login = lazy(() => import('@/pages/auth/Login.tsx'));
 
-class DevCaloptreyxXyloExtension extends Extension {
+class DevCaloptreyxZoronExtension extends Extension {
   public cardIcon = createElement(FontAwesomeIcon, { icon: faPalette });
   public cardConfigurationPage: React.FC | null = ThemeEditor;
   public cardComponent: React.FC | null = null;
@@ -35,7 +35,7 @@ class DevCaloptreyxXyloExtension extends Extension {
       .enterContainerAll((container) => container.prependComponent(Greeting))
       .enterContainerGrouped((container) => container.prependComponent(Greeting));
 
-    // `homePage` (on by default): core's two server lists become Xylo's servers page (elements/home); the registries
+    // `homePage` (on by default): core's two server lists become Zoron's servers page (elements/home); the registries
     // are compared at render time, where core passes the merged ones
     AccountContentContainer.addRenderInterceptor((element, props) => {
       const home = window.extensionContext.extensionRegistry.pages.dashboard.home;
@@ -43,21 +43,21 @@ class DevCaloptreyxXyloExtension extends Extension {
       return createElement(HomeSwitch, { ...props, element });
     });
 
-    // `sidebar: 'rail'` (the default) swaps core's sidebar for Xylo's rail and panel; the other layouts keep core's
+    // `sidebar: 'rail'` (the default) swaps core's sidebar for Zoron's rail and panel; the other layouts keep core's
     Sidebar.addRenderInterceptor((element, props) => createElement(Shell, { ...props, element }));
 
-    // `serverOverview` (on by default): a server opens on Xylo's overview (elements/server) at `/`, and core's console
+    // `serverOverview` (on by default): a server opens on Zoron's overview (elements/server) at `/`, and core's console
     // moves to `/terminal`, the next link. One route keeps `/` whichever is on, its name and icon read the theme when
     // the sidebar renders and its element when it mounts, so Studio's switch needs no reload. Core's console keeps
     // its own `/console/popout`, which `/terminal` does not own, so an egg's custom sidebar order leaves it reachable.
     // `consolePage` (on by default): wherever the console shows (`/terminal`, or `/` with the overview off), it is
-    // Xylo's console page (elements/console), switched when it mounts as well; the popout stays core's.
+    // Zoron's console page (elements/console), switched when it mounts as well; the popout stays core's.
     ctx.extensionRegistry.routes.addServerRouteInterceptor((routes) => {
       const index = routes.findIndex((route) => route.path === '/');
       if (index === -1) return;
       const consoleRoute = routes[index];
       const CoreConsole = consoleRoute.element;
-      const Console = function XyloConsole() {
+      const Console = function ZoronConsole() {
         return createElement(ConsoleSwitch, { Core: CoreConsole });
       };
       const overview = () => currentTheme().serverOverview;
@@ -77,7 +77,7 @@ class DevCaloptreyxXyloExtension extends Extension {
           get icon() {
             return overview() ? faGauge : consoleIcon;
           },
-          element: function XyloServerHome() {
+          element: function ZoronServerHome() {
             return createElement(ServerHome, { Console });
           },
         },
@@ -90,7 +90,7 @@ class DevCaloptreyxXyloExtension extends Extension {
       );
     });
 
-    // every console (Xylo's page, core's, the popout): the theme's terminal colours, font and line height, live, the
+    // every console (Zoron's page, core's, the popout): the theme's terminal colours, font and line height, live, the
     // highlighting of uncoloured warnings and errors, and clear and download buttons in its header
     ctx.extensionRegistry.pages.server.console
       .enterXTerm((xterm) =>
@@ -108,16 +108,16 @@ class DevCaloptreyxXyloExtension extends Extension {
       element: () => createElement(Login),
     });
 
-    // the backend's `xylo-theme` admin permission group (backend/src/permissions.rs) in core's role editor
+    // the backend's `zoron-theme` admin permission group (backend/src/permissions.rs) in core's role editor
     ctx.extensionRegistry.enterPermissionIcons((icons) =>
-      icons.addAdminPermissionIcon('xylo-theme', createElement(FontAwesomeIcon, { icon: faPalette })),
+      icons.addAdminPermissionIcon('zoron-theme', createElement(FontAwesomeIcon, { icon: faPalette })),
     );
     ctx.extensionRegistry.routes.addAdminRoute({
       name: () => getExtTranslations().t('nav.editor', {}),
       icon: faPalette,
-      path: '/xylo',
+      path: '/zoron',
       category: 'system',
-      // core shows it to roles holding either; saving needs settings.update or xylo-theme.update (lib/permissions.ts)
+      // core shows it to roles holding either; saving needs settings.update or zoron-theme.update (lib/permissions.ts)
       permission: ['settings.read', THEME_UPDATE_PERMISSION],
       element: ThemeEditor,
       exact: true,
@@ -125,4 +125,4 @@ class DevCaloptreyxXyloExtension extends Extension {
   }
 }
 
-export default new DevCaloptreyxXyloExtension();
+export default new DevCaloptreyxZoronExtension();

@@ -9,7 +9,7 @@
 import { HEX, hsl, mix } from './color.ts';
 
 /** The user setting holding the map. */
-export const TILES_KEY = 'xylo::server_tiles';
+export const TILES_KEY = 'zoron::server_tiles';
 /** Servers a map keeps at most; saving one more drops the one edited longest ago. */
 export const MAX_TILE_SERVERS = 300;
 /** A custom name's length, in characters. */

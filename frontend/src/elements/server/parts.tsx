@@ -15,8 +15,8 @@ import { levelOf, percentOf } from './overview.ts';
 export function StatusChip({ phase }: { phase: Phase }) {
   const { t } = useExtTranslations();
   return (
-    <span className='xylo-status' data-phase={phase}>
-      <span className='xylo-status-dot' />
+    <span className='zoron-status' data-phase={phase}>
+      <span className='zoron-status-dot' />
       {t(`home.${phase}`, {})}
     </span>
   );
@@ -25,7 +25,7 @@ export function StatusChip({ phase }: { phase: Phase }) {
 /** A card with a heading and an optional link on the right of it. */
 export function Section({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <Card className='xylo-ov-section'>
+    <Card className='zoron-ov-section'>
       <div className='flex items-center justify-between gap-3'>
         <h2 className='text-base font-semibold tracking-tight'>{title}</h2>
         {action}
@@ -38,9 +38,9 @@ export function Section({ title, action, children }: { title: string; action?: R
 /** A labelled value people copy (address, SFTP host, username, ID); a click copies it. */
 function CopyRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className='xylo-ov-row'>
+    <div className='zoron-ov-row'>
       <span className='text-xs text-(--mantine-color-dimmed)'>{label}</span>
-      <CopyOnClick content={value} className='xylo-ov-copy'>
+      <CopyOnClick content={value} className='zoron-ov-copy'>
         <span className='truncate'>{value}</span>
         <FontAwesomeIcon icon={faCopy} className='shrink-0 opacity-50' />
       </CopyOnClick>
@@ -61,7 +61,7 @@ export function ConnectDetails() {
       {address ? (
         <CopyRow label={t('overview.address', {})} value={address} />
       ) : (
-        <div className='xylo-ov-row'>
+        <div className='zoron-ov-row'>
           <span className='text-xs text-(--mantine-color-dimmed)'>{t('overview.address', {})}</span>
           <span className='text-sm text-(--mantine-color-dimmed)'>{t('overview.noAddress', {})}</span>
         </div>
@@ -72,7 +72,7 @@ export function ConnectDetails() {
       {sftpUser && (
         <a
           href={`sftp://${sftpUser}@${server.sftpHost}:${server.sftpPort}`}
-          className='xylo-ov-link inline-flex items-center gap-1.5'
+          className='zoron-ov-link inline-flex items-center gap-1.5'
         >
           {t('overview.openSftp', {})}
           <FontAwesomeIcon icon={faArrowUpRightFromSquare} className='text-[0.7em]' />
@@ -92,14 +92,14 @@ function Spark({ samples, max, live }: { samples: number[]; max: number; live: b
   const path = live ? sparkPath(samples, SPARK_WIDTH, SPARK_HEIGHT, max) : { line: FLAT, area: '' };
   return (
     <svg
-      className='xylo-stat-spark'
+      className='zoron-stat-spark'
       viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
       preserveAspectRatio='none'
       aria-hidden='true'
       data-live={live || undefined}
     >
-      {path.area && <path className='xylo-stat-spark-area' d={path.area} />}
-      <path className='xylo-stat-spark-line' d={path.line} vectorEffect='non-scaling-stroke' />
+      {path.area && <path className='zoron-stat-spark-area' d={path.area} />}
+      <path className='zoron-stat-spark-line' d={path.line} vectorEffect='non-scaling-stroke' />
     </svg>
   );
 }
@@ -119,15 +119,15 @@ function Stat({
   chart?: ReactNode;
 }) {
   return (
-    <div className='xylo-stat'>
+    <div className='zoron-stat'>
       <span className='text-sm text-(--mantine-color-dimmed)'>{label}</span>
-      <span className='xylo-stat-value whitespace-nowrap font-semibold tabular-nums tracking-tight'>{value}</span>
+      <span className='zoron-stat-value whitespace-nowrap font-semibold tabular-nums tracking-tight'>{value}</span>
       <span className='truncate text-xs text-(--mantine-color-dimmed)'>{detail}</span>
       {chart}
       {percent !== undefined && (
-        <div className='xylo-meter' data-level={levelOf(percent)}>
-          <div className='xylo-meter-track'>
-            <div className='xylo-meter-fill' style={{ width: `${percent ?? 0}%` }} />
+        <div className='zoron-meter' data-level={levelOf(percent)}>
+          <div className='zoron-meter-track'>
+            <div className='zoron-meter-fill' style={{ width: `${percent ?? 0}%` }} />
           </div>
         </div>
       )}
@@ -171,7 +171,7 @@ function UsageCard({ usage, history }: { usage: OverviewUsage; history: Telemetr
   const rate = (samples: number[]) => t('console.rate', { amount: bytesToString(live ? (samples.at(-1) ?? 0) : 0, 1) });
 
   return (
-    <Card className='xylo-stats' data-usage={usage}>
+    <Card className='zoron-stats' data-usage={usage}>
       <Stat
         label={t('overview.cpu', {})}
         value={`${cpu.toFixed(1)}%`}

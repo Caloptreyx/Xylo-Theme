@@ -229,7 +229,7 @@ mod put {
         settings.save().await?;
 
         activity_logger
-            .log("xylo:theme.update", serde_json::json!({}))
+            .log("zoron:theme.update", serde_json::json!({}))
             .await;
 
         ApiResponse::new_serialized(Response { version }).ok()

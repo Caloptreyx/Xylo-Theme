@@ -25,7 +25,7 @@ const NONE: ServerTiles = {};
 
 /**
  * The map being saved, shown until the panel answers. Core's own setter is optimistic too, but it retries in the
- * background and only logs a refusal (a map over the panel's size limit, an impersonating admin), so Xylo sends the
+ * background and only logs a refusal (a map over the panel's size limit, an impersonating admin), so Zoron sends the
  * map itself and hands it to core's store once the panel took it.
  */
 let pending: { id: number; tiles: ServerTiles } | null = null;

@@ -1,4 +1,4 @@
-//! Xylo's own admin permission, so a role can be allowed to save the theme without being allowed to change
+//! Zoron's own admin permission, so a role can be allowed to save the theme without being allowed to change
 //! every panel setting.
 
 use shared::{
@@ -6,19 +6,19 @@ use shared::{
     permissions::PermissionGroup, response::ApiResponse,
 };
 
-const GROUP: &str = "xylo-theme";
+const GROUP: &str = "zoron-theme";
 /// Saving the site theme without access to the rest of the panel settings.
-pub(crate) const UPDATE: &str = "xylo-theme.update";
+pub(crate) const UPDATE: &str = "zoron-theme.update";
 
-/// Adds the `xylo-theme` group to the admin permissions roles can grant.
+/// Adds the `zoron-theme` group to the admin permissions roles can grant.
 pub(crate) fn register(builder: ExtensionPermissionsBuilder) -> ExtensionPermissionsBuilder {
     let mut group = PermissionGroup {
-        description: "Permissions that control the ability to manage the Xylo theme without access to panel settings.",
+        description: "Permissions that control the ability to manage the Zoron theme without access to panel settings.",
         permissions: Default::default(),
     };
     group.add_permission(
         "update",
-        "Allows saving the site theme in the Xylo theme editor without access to the rest of the panel settings.",
+        "Allows saving the site theme in the Zoron theme editor without access to the rest of the panel settings.",
     );
 
     builder.add_admin_permission_group(GROUP, group)
@@ -39,7 +39,7 @@ fn any_of<E>(permissions: &[&str], mut check: impl FnMut(&str) -> Result<(), E>)
     first.map_or(Ok(()), Err)
 }
 
-/// Theme saves: `settings.update` or `xylo-theme.update`.
+/// Theme saves: `settings.update` or `zoron-theme.update`.
 pub(crate) fn can_update(permissions: &PermissionManager) -> Result<(), ApiResponse> {
     any_of(&["settings.update", UPDATE], |p| {
         permissions.has_admin_permission(p)
@@ -62,15 +62,15 @@ mod tests {
 
     #[test]
     fn any_of_passes_on_either_permission() {
-        let wanted = ["settings.update", "xylo-theme.update"];
+        let wanted = ["settings.update", "zoron-theme.update"];
         assert!(any_of(&wanted, granted(&["settings.update"])).is_ok());
-        assert!(any_of(&wanted, granted(&["xylo-theme.update"])).is_ok());
-        assert!(any_of(&wanted, granted(&["settings.read", "xylo-theme.update"])).is_ok());
+        assert!(any_of(&wanted, granted(&["zoron-theme.update"])).is_ok());
+        assert!(any_of(&wanted, granted(&["settings.read", "zoron-theme.update"])).is_ok());
     }
 
     #[test]
     fn any_of_refuses_with_the_first_permission() {
-        let wanted = ["settings.update", "xylo-theme.update"];
+        let wanted = ["settings.update", "zoron-theme.update"];
         assert_eq!(
             any_of(&wanted, granted(&["settings.read"])),
             Err("missing settings.update".to_string())

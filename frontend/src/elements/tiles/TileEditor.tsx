@@ -90,11 +90,11 @@ export function TileEditor({ server, onClose }: { server: TileServer; onClose: (
               onChange={(event) => setQuery(event.currentTarget.value)}
             />
           </div>
-          <div className='xylo-server-tile-picks' role='group' aria-label={t('tiles.icon', {})}>
+          <div className='zoron-server-tile-picks' role='group' aria-label={t('tiles.icon', {})}>
             <Tooltip label={t('tiles.initials', {})}>
               <button
                 type='button'
-                className='xylo-server-tile-pick'
+                className='zoron-server-tile-pick'
                 aria-pressed={icon === null}
                 aria-label={t('tiles.initials', {})}
                 onClick={() => setIcon(null)}
@@ -106,7 +106,7 @@ export function TileEditor({ server, onClose }: { server: TileServer; onClose: (
               <Tooltip key={candidate} label={t(`tiles.icons.${candidate}`, {})}>
                 <button
                   type='button'
-                  className='xylo-server-tile-pick'
+                  className='zoron-server-tile-pick'
                   aria-pressed={icon === candidate}
                   aria-label={t(`tiles.icons.${candidate}`, {})}
                   onClick={() => setIcon(candidate)}
@@ -121,11 +121,11 @@ export function TileEditor({ server, onClose }: { server: TileServer; onClose: (
 
         <section className='flex flex-col gap-2'>
           <h3 className='text-sm font-medium'>{t('tiles.color', {})}</h3>
-          <div className='xylo-server-tile-picks' role='group' aria-label={t('tiles.color', {})}>
+          <div className='zoron-server-tile-picks' role='group' aria-label={t('tiles.color', {})}>
             <Tooltip label={t('tiles.autoColor', {})}>
               <button
                 type='button'
-                className='xylo-server-tile-swatch'
+                className='zoron-server-tile-swatch'
                 aria-pressed={color === ''}
                 aria-label={t('tiles.autoColor', {})}
                 style={{ background: serverTile(server.name).background }}
@@ -136,7 +136,7 @@ export function TileEditor({ server, onClose }: { server: TileServer; onClose: (
               <button
                 key={swatch}
                 type='button'
-                className='xylo-server-tile-swatch'
+                className='zoron-server-tile-swatch'
                 aria-pressed={color.toLowerCase() === swatch}
                 aria-label={swatch}
                 style={{ background: swatch }}
@@ -197,7 +197,7 @@ export function TileButton({ server, size }: { server: TileServer; size: number 
       <Tooltip label={t('tiles.customize', {})}>
         <button
           type='button'
-          className='xylo-server-tile-button'
+          className='zoron-server-tile-button'
           aria-label={t('tiles.customizeNamed', { name: tile.label })}
           onClick={() => setEditing(true)}
         >

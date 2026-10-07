@@ -4,7 +4,7 @@ const translations = defineTranslations({
   items: {},
   translations: {
     nav: {
-      editor: 'Xylo Studio',
+      editor: 'Zoron Studio',
     },
     shell: {
       menu: 'Menu',
@@ -34,7 +34,7 @@ const translations = defineTranslations({
       night: 'Working late, {name}?',
     },
     editor: {
-      title: 'Xylo Studio',
+      title: 'Zoron Studio',
       subtitle: 'Theme editor',
       close: 'Close the editor',
       undo: 'Undo',
@@ -46,7 +46,7 @@ const translations = defineTranslations({
       reset: 'Reset to the default look',
       resetTitle: 'Reset the theme?',
       resetBody:
-        'The draft goes back to the default Xylo look; your saved presets stay. Nothing is saved until you press Save.',
+        'The draft goes back to the default Zoron look; your saved presets stay. Nothing is saved until you press Save.',
       resetConfirm: 'Reset',
       save: 'Save',
       saved: 'Theme saved. Everyone sees it on their next page load.',
@@ -57,7 +57,7 @@ const translations = defineTranslations({
       retry: 'Retry',
       noPermission: 'Your role can preview themes but not save them.',
       imported: 'Theme imported into the draft.',
-      importFailed: "That file isn't a Xylo theme.",
+      importFailed: "That file isn't a Zoron theme.",
       conflictTitle: 'The theme was saved elsewhere',
       conflictBody:
         'Someone saved the theme after you opened the editor. Load their version (your draft is replaced) or overwrite it with yours.',
@@ -112,7 +112,7 @@ const translations = defineTranslations({
       glass: 'Glass',
       minimal: 'Minimal',
       generate: 'Generate a palette',
-      generateHint: 'Pick a hue; Xylo builds matching accents and tinted neutrals.',
+      generateHint: 'Pick a hue; Zoron builds matching accents and tinted neutrals.',
       hue: 'Hue',
       shuffle: 'Shuffle',
       applyPalette: 'Use this palette',
@@ -226,7 +226,7 @@ const translations = defineTranslations({
       spacious: 'Spacious',
       scale: 'Interface size',
       home: 'Pages',
-      homePage: "Xylo's servers page",
+      homePage: "Zoron's servers page",
       homePageHint: "Search, filters and power controls in place of the panel's list.",
     },
     typography: {
@@ -278,7 +278,7 @@ const translations = defineTranslations({
     },
     consoleSection: {
       page: 'Page',
-      consolePage: 'Xylo console',
+      consolePage: 'Zoron console',
       consolePageHint:
         "One full height workspace: live telemetry, the terminal, quick commands and the server's details, in place of the panel's console layout.",
       density: 'Spacing',
@@ -336,7 +336,7 @@ const translations = defineTranslations({
       phosphor: 'Phosphor',
       amber: 'Amber',
       frame: 'Frame',
-      frameHint: "Around every console: Xylo's whole console workspace, and the panel's console and pop-out window.",
+      frameHint: "Around every console: Zoron's whole console workspace, and the panel's console and pop-out window.",
       card: 'Card',
       window: 'Window',
       flush: 'Flush',
