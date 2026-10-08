@@ -8,6 +8,7 @@ console workspace, a server page of its own, and **Zoron Studio**, a live theme 
 [![Calagopus 1.2.0+](https://img.shields.io/badge/Calagopus-1.2.0%2B-3b6cde)](https://calagopus.com)
 [![Latest release](https://img.shields.io/github/v/release/Caloptreyx/Zoron-Theme?label=release)](https://github.com/Caloptreyx/Zoron-Theme/releases/latest)
 [![License: MIT](https://img.shields.io/github/license/Caloptreyx/Zoron-Theme)](LICENSE)
+[![Discord](https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white)](https://discord.gg/4qjMWU7S8x)
 [![Built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-D97757?logo=claude&logoColor=white)](https://claude.com/claude-code)
 
 <img src="docs/console.png" alt="Zoron Theme's console workspace" width="100%">
@@ -116,6 +117,13 @@ turned off there, and the demo resets every hour.
 
 The extension is listed as **Zoron Theme** (`dev.caloptreyx.zoron`). To build the zip yourself, run
 `python3 scripts/package.py`.
+
+**Admin → Updates** tells you when a newer release is out, with the changes since yours (checked against this
+repository's GitHub releases, at most every 10 minutes).
+
+## Support
+
+Need help or want to request a feature? Join the [Caloptreyx Discord](https://discord.gg/4qjMWU7S8x).
 
 ## Licence
 

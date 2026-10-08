@@ -11,6 +11,8 @@ backend/src/lib.rs                Extension impl: routers, permissions, settings
 backend/src/settings.rs           one opaque setting, `theme` (the editor's JSON, empty for the default look)
 backend/src/routes.rs             GET /zoron/theme (public, `{ theme, version }`, ETag, 304) and the admin PUT
 backend/src/permissions.rs        the `zoron-theme.update` admin permission; the PUT takes it or settings.update
+backend/src/updates.rs            Admin → Updates: the newest GitHub release carrying the zip above the installed version,
+                                  with every newer release's bullet points (Mint's checker; 10 minute cache, ETag)
 frontend/src/index.ts             entry: applies the theme, greeting, servers page, server routes, console hooks, login
                                   preview route, admin route
 frontend/src/lib/theme.ts         the theme model, presets, normalizeTheme(), buildCss(), themeAttributes()
@@ -418,4 +420,6 @@ runs the check, refuses a tag that doesn't match the version, packages the zip a
 
 The public demo (https://zoron-demo.caloptreyx.com, `/root/zoron-demo` on the VM, like the Mint demo) installs the
 newest release every 15 minutes (`update.sh`, systemd `zoron-demo-update.timer`) and resets to its clean snapshot
-every hour (`reset.sh`). Its sign in links (the demo login chip) are part of its saved theme.
+every hour (`reset.sh`). Its sign in links (the demo login, Get Zoron Theme, Discord) are part of its saved theme and
+its welcome banner (with the Discord link) is a panel announcement; change either on a clean reset, then
+`reset.sh snapshot`, or the next reset drops it.
