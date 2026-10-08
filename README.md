@@ -82,6 +82,14 @@ Open Studio from **Admin â†’ Zoron Studio** or the extension's card on **Admin â
 | --- | --- |
 | ![Zoron Studio previewing the Aurora preset](docs/studio.png) | ![Studio's Console tab](docs/studio-console.png) |
 
+| Servers page layouts | Arranging the server page |
+| --- | --- |
+| ![Studio's servers page layouts, the list previewed](docs/studio-servers.png) | ![Studio's Server page tab arranging the overview's blocks](docs/studio-arrange.png) |
+
+| Arranging the console | Servers as a list |
+| --- | --- |
+| ![Studio's Console tab with the figures in a bottom bar and the inspector on the left](docs/studio-console-arrange.png) | ![The servers page as a list](docs/servers-list.png) |
+
 | Server tiles | Sign in page |
 | --- | --- |
 | ![Customize tile](docs/tile-editor.png) | ![Sign in page with its links](docs/login.png) |
