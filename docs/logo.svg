@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+    <rect x="9" y="9" width="22" height="22" rx="7" fill="#f1eeff" stroke="#7c5cff" stroke-width="3.2"/>
+    <rect x="37" y="9" width="22" height="22" rx="7" fill="#f1eeff" stroke="#7c5cff" stroke-width="3.2"/>
+    <rect x="65" y="9" width="22" height="22" rx="7" fill="#f1eeff" stroke="#7c5cff" stroke-width="3.2"/>
+    <rect x="93" y="9" width="22" height="22" rx="7" fill="#7c5cff" stroke="#7c5cff" stroke-width="3.2"/>
+    <rect x="65" y="37" width="22" height="22" rx="7" fill="#f1eeff" stroke="#7c5cff" stroke-width="3.2"/>
+    <rect x="37" y="65" width="22" height="22" rx="7" fill="#f1eeff" stroke="#7c5cff" stroke-width="3.2"/>
+    <rect x="9" y="93" width="22" height="22" rx="7" fill="#f1eeff" stroke="#7c5cff" stroke-width="3.2"/>
+    <rect x="37" y="93" width="22" height="22" rx="7" fill="#f1eeff" stroke="#7c5cff" stroke-width="3.2"/>
+    <rect x="65" y="93" width="22" height="22" rx="7" fill="#f1eeff" stroke="#7c5cff" stroke-width="3.2"/>
+    <rect x="93" y="93" width="22" height="22" rx="7" fill="#f1eeff" stroke="#7c5cff" stroke-width="3.2"/>
+</svg>

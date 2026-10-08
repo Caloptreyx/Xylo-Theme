@@ -1,6 +1,11 @@
 <div align="center">
 
-# Zoron Theme
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.svg">
+    <img src="docs/logo-light.svg" alt="Zoron Theme" width="460">
+  </picture>
+</h1>
 
 A theme for [Calagopus Panel](https://calagopus.com): an icon rail with your servers and folders, a full height
 console workspace, a server page of its own, and **Zoron Studio**, a live theme editor.
