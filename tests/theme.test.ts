@@ -6,6 +6,7 @@ import {
   applyPreset,
   buildCss,
   contrastIssues,
+  CONSOLE_BAR_ITEMS,
   CONSOLE_METRICS,
   DEFAULT_THEME,
   generatePalette,
@@ -17,6 +18,7 @@ import {
   NAMED_TERMINALS,
   normalizeTheme,
   OVERVIEW_SECTIONS,
+  overviewTemplate,
   PRESETS,
   sameTheme,
   TERMINAL_SCHEME_GROUPS,
@@ -90,33 +92,98 @@ describe('normalizeTheme', () => {
   });
 
   test("server page fields: today's look by default", () => {
-    assert.deepEqual(DEFAULT_THEME.overviewSections, ['usage', 'activity', 'connect', 'glance']);
-    assert.equal(DEFAULT_THEME.overviewLayout, 'split');
+    assert.deepEqual(DEFAULT_THEME.overviewGrid, [
+      { block: 'usage', x: 0, y: 0, w: 12, h: 1 },
+      { block: 'activity', x: 0, y: 1, w: 7, h: 2 },
+      { block: 'connect', x: 7, y: 1, w: 5, h: 1 },
+      { block: 'glance', x: 7, y: 2, w: 5, h: 1 },
+    ]);
     assert.equal(DEFAULT_THEME.overviewUsage, 'bars');
     assert.equal(DEFAULT_THEME.overviewActivityCount, 8);
     assert.equal(DEFAULT_THEME.overviewHeader, 'plain');
     assert.equal(DEFAULT_THEME.overviewDescription, true);
   });
 
-  test('overview blocks: allow listed, each once, in the order given; none is a choice', () => {
-    assert.deepEqual(
-      normalizeTheme({ overviewSections: ['glance', 'usage', 'chat', 'glance', 3, null, 'activity'] }).overviewSections,
-      ['glance', 'usage', 'activity'],
-    );
-    assert.deepEqual(normalizeTheme({ overviewSections: [] }).overviewSections, []);
-    assert.deepEqual(normalizeTheme({ overviewSections: 'usage' }).overviewSections, [...OVERVIEW_SECTIONS]);
-    assert.deepEqual(normalizeTheme({ overviewSections: { 0: 'usage' } }).overviewSections, [...OVERVIEW_SECTIONS]);
+  test('overview grid: known blocks once, numbers inside the grid, settled; empty hides every block', () => {
+    const grid = normalizeTheme({
+      overviewGrid: [
+        { block: 'glance', x: 20, y: 5, w: 6.4, h: 9 },
+        { block: 'chat', x: 0, y: 0, w: 12, h: 1 },
+        { block: 'glance', x: 0, y: 0, w: 12, h: 1 },
+        { block: 'usage', x: -3, y: 0, w: 1, h: 1 },
+        { block: 'connect', x: '0', y: null },
+        'activity',
+        null,
+      ],
+    }).overviewGrid;
+    // glance fits beside usage; connect, full width and asked to be last, goes under glance's four rows
+    assert.deepEqual(grid, [
+      { block: 'usage', x: 0, y: 0, w: 3, h: 1 },
+      { block: 'glance', x: 6, y: 0, w: 6, h: 4 },
+      { block: 'connect', x: 0, y: 4, w: 12, h: 1 },
+    ]);
+    assert.deepEqual(normalizeTheme({ overviewGrid: [] }).overviewGrid, []);
+    assert.deepEqual(normalizeTheme({ overviewGrid: 'usage' }).overviewGrid, DEFAULT_THEME.overviewGrid);
   });
 
-  test('overview layout, usage and header are allow listed', () => {
-    assert.equal(normalizeTheme({ overviewLayout: 'wide' }).overviewLayout, 'wide');
-    assert.equal(normalizeTheme({ overviewLayout: 'stacked' }).overviewLayout, 'stacked');
-    assert.equal(normalizeTheme({ overviewLayout: 'grid"]' }).overviewLayout, 'split');
+  test('a theme saved before the grid keeps its blocks, order and layout', () => {
+    assert.deepEqual(
+      normalizeTheme({ overviewSections: ['connect', 'activity', 'usage', 3, 'connect'], overviewLayout: 'split' })
+        .overviewGrid,
+      [
+        { block: 'connect', x: 0, y: 0, w: 5, h: 1 },
+        { block: 'activity', x: 5, y: 0, w: 7, h: 1 },
+        { block: 'usage', x: 0, y: 1, w: 12, h: 1 },
+      ],
+    );
+    assert.deepEqual(
+      normalizeTheme({ overviewLayout: 'wide' }).overviewGrid,
+      overviewTemplate(OVERVIEW_SECTIONS, 'wide'),
+    );
+    assert.deepEqual(normalizeTheme({ overviewSections: [], overviewLayout: 'stacked' }).overviewGrid, []);
+    // a saved grid wins, and the old fields are gone
+    const theme = normalizeTheme({ overviewGrid: [], overviewSections: ['usage'], overviewLayout: 'wide' });
+    assert.deepEqual(theme.overviewGrid, []);
+    assert.equal('overviewSections' in theme, false);
+    assert.equal('overviewLayout' in theme, false);
+  });
+
+  test('overview templates', () => {
+    assert.deepEqual(overviewTemplate(['glance', 'usage'], 'stacked'), [
+      { block: 'glance', x: 0, y: 0, w: 12, h: 1 },
+      { block: 'usage', x: 0, y: 1, w: 12, h: 1 },
+    ]);
+    assert.deepEqual(overviewTemplate(OVERVIEW_SECTIONS, 'wide'), [
+      { block: 'usage', x: 0, y: 0, w: 12, h: 1 },
+      { block: 'activity', x: 0, y: 1, w: 12, h: 1 },
+      { block: 'connect', x: 0, y: 2, w: 6, h: 1 },
+      { block: 'glance', x: 6, y: 2, w: 6, h: 1 },
+    ]);
+    assert.deepEqual(overviewTemplate(['connect', 'glance'], 'split'), [
+      { block: 'connect', x: 0, y: 0, w: 12, h: 1 },
+      { block: 'glance', x: 0, y: 1, w: 12, h: 1 },
+    ]);
+    assert.deepEqual(overviewTemplate([], 'split'), []);
+  });
+
+  test('overview usage and header are allow listed', () => {
     assert.equal(normalizeTheme({ overviewUsage: 'graphs' }).overviewUsage, 'graphs');
     assert.equal(normalizeTheme({ overviewUsage: 'numbers' }).overviewUsage, 'numbers');
     assert.equal(normalizeTheme({ overviewUsage: 'pie' }).overviewUsage, 'bars');
     assert.equal(normalizeTheme({ overviewHeader: 'banner' }).overviewHeader, 'banner');
     assert.equal(normalizeTheme({ overviewHeader: 'hero' }).overviewHeader, 'plain');
+  });
+
+  test('servers page fields: cards by default, layout allow listed, flags flags', () => {
+    assert.equal(DEFAULT_THEME.homeLayout, 'cards');
+    assert.equal(DEFAULT_THEME.homeGroups, false);
+    assert.equal(DEFAULT_THEME.homeLayoutChoice, true);
+    assert.equal(normalizeTheme({ homeLayout: 'list' }).homeLayout, 'list');
+    assert.equal(normalizeTheme({ homeLayout: 'compact' }).homeLayout, 'compact');
+    assert.equal(normalizeTheme({ homeLayout: 'table"]' }).homeLayout, 'cards');
+    assert.equal(normalizeTheme({ homeGroups: true }).homeGroups, true);
+    assert.equal(normalizeTheme({ homeGroups: 1 }).homeGroups, false);
+    assert.equal(normalizeTheme({ homeLayoutChoice: false }).homeLayoutChoice, false);
   });
 
   test('overview activity entries: whole numbers clamped to 3..20', () => {
@@ -165,13 +232,31 @@ describe('normalizeTheme', () => {
     assert.equal(normalizeTheme({ consoleQuickCommands: 'no' }).consoleQuickCommands, true);
   });
 
-  test('console figures: allow listed, each once, in their own order; none is a choice', () => {
+  test('console figures: allow listed, each once, in the order given; none is a choice', () => {
     assert.deepEqual(normalizeTheme({ consoleMetrics: ['netOut', 'cpu', 'gpu', 'cpu', 3, null] }).consoleMetrics, [
-      'cpu',
       'netOut',
+      'cpu',
     ]);
     assert.deepEqual(normalizeTheme({ consoleMetrics: [] }).consoleMetrics, []);
     assert.deepEqual(normalizeTheme({ consoleMetrics: 'cpu' }).consoleMetrics, [...CONSOLE_METRICS]);
+  });
+
+  test('console bars: every item in the top bar by default, each in one bar at most, chips allow listed', () => {
+    assert.deepEqual(DEFAULT_THEME.consoleBar, [...CONSOLE_BAR_ITEMS]);
+    assert.deepEqual(DEFAULT_THEME.consoleFooter, []);
+    assert.equal(DEFAULT_THEME.consoleChips, 'prompt');
+    const both = normalizeTheme({ consoleBar: ['power', 'clock', 'power', 'identity'], consoleFooter: ['identity', 'metrics'] });
+    assert.deepEqual(both.consoleBar, ['power', 'identity']);
+    assert.deepEqual(both.consoleFooter, ['metrics']);
+    // a bottom bar given alone takes its items from the default top bar
+    const footer = normalizeTheme({ consoleFooter: ['power'] });
+    assert.deepEqual(footer.consoleBar, ['identity', 'metrics']);
+    assert.deepEqual(footer.consoleFooter, ['power']);
+    assert.deepEqual(normalizeTheme({ consoleBar: [], consoleFooter: 'power' }).consoleBar, []);
+    assert.deepEqual(normalizeTheme({ consoleBar: [], consoleFooter: 'power' }).consoleFooter, []);
+    assert.equal(normalizeTheme({ consoleChips: 'toolbar' }).consoleChips, 'toolbar');
+    assert.equal(normalizeTheme({ consoleChips: 'off' }).consoleChips, 'off');
+    assert.equal(normalizeTheme({ consoleChips: 'top"]' }).consoleChips, 'prompt');
   });
 
   test('site commands: strings only, control characters dropped, trimmed, 1 to 200 characters, unique, at most 12', () => {

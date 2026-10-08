@@ -1,13 +1,27 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import {
+  dropGrid,
   eventLabel,
   levelOf,
   newest,
-  overviewRows,
+  nudgeItem,
   percentOf,
+  snapCell,
+  snapSize,
   timeAgo,
+  visibleGrid,
 } from '../frontend/src/elements/server/overview.ts';
+import type { OverviewItem } from '../frontend/src/lib/theme.ts';
+
+/** The default grid: usage across, activity two rows tall beside the connect and glance cards. */
+const GRID: OverviewItem[] = [
+  { block: 'usage', x: 0, y: 0, w: 12, h: 1 },
+  { block: 'activity', x: 0, y: 1, w: 7, h: 2 },
+  { block: 'connect', x: 7, y: 1, w: 5, h: 1 },
+  { block: 'glance', x: 7, y: 2, w: 5, h: 1 },
+];
+const ALL = { usage: true, activity: true, connect: true, glance: true };
 
 describe('server overview', () => {
   test('activity events read as short labels', () => {
@@ -48,42 +62,65 @@ describe('server overview', () => {
     assert.equal(newest([{ at: null }], (item) => item.at), null);
   });
 
-  test("the split layout is today's page: usage across, activity beside the connect and glance cards", () => {
-    assert.deepEqual(overviewRows(['usage', 'activity', 'connect', 'glance'], 'split'), [
-      { kind: 'single', columns: [['usage']] },
-      { kind: 'mainSide', columns: [['activity'], ['connect', 'glance']] },
+  test('a visitor sees the grid as is, or settled and widened over the blocks they may not see', () => {
+    assert.deepEqual(visibleGrid(GRID, ALL), GRID);
+    assert.deepEqual(visibleGrid(GRID, { ...ALL, activity: false }), [
+      { block: 'usage', x: 0, y: 0, w: 12, h: 1 },
+      { block: 'connect', x: 0, y: 1, w: 12, h: 1 },
+      { block: 'glance', x: 0, y: 2, w: 12, h: 1 },
+    ]);
+    assert.deepEqual(visibleGrid(GRID, { ...ALL, glance: false }), GRID.slice(0, 3));
+    assert.deepEqual(visibleGrid(GRID, { usage: false, activity: false, connect: false, glance: false }), []);
+  });
+
+  test('a dragged block snaps to the nearest cell, inside the columns and no lower than the bottom', () => {
+    assert.deepEqual(snapCell(130, 50, 25, 44, 5, 3), { x: 5, y: 1 });
+    assert.deepEqual(snapCell(-40, 400, 25, 44, 5, 3), { x: 0, y: 3 });
+    assert.deepEqual(snapCell(1000, -10, 25, 44, 5, 3), { x: 7, y: 0 });
+  });
+
+  test('a dragged corner resizes in whole columns and rows, within the grid and the size limits', () => {
+    assert.deepEqual(snapSize(GRID[1], 60, 50, 25, 44), { w: 9, h: 3 });
+    assert.deepEqual(snapSize(GRID[1], -200, -200, 25, 44), { w: 3, h: 1 });
+    assert.deepEqual(snapSize(GRID[2], 300, 300, 25, 44), { w: 5, h: 4 });
+  });
+
+  test('a drop moves a block, hides it, adds a hidden one at its size, or changes nothing', () => {
+    assert.deepEqual(dropGrid(GRID, 'usage', null), GRID);
+    assert.deepEqual(dropGrid(GRID, 'usage', 'hide'), [
+      { block: 'activity', x: 0, y: 0, w: 7, h: 2 },
+      { block: 'connect', x: 7, y: 0, w: 5, h: 1 },
+      { block: 'glance', x: 7, y: 1, w: 5, h: 1 },
+    ]);
+    assert.deepEqual(dropGrid(GRID, 'usage', { x: 0, y: 3 }), [
+      { block: 'activity', x: 0, y: 0, w: 7, h: 2 },
+      { block: 'connect', x: 7, y: 0, w: 5, h: 1 },
+      { block: 'glance', x: 7, y: 1, w: 5, h: 1 },
+      { block: 'usage', x: 0, y: 2, w: 12, h: 1 },
+    ]);
+    // from the hidden blocks: 5 columns wide, so a drop at column 9 lands at column 7
+    assert.deepEqual(dropGrid(GRID.slice(0, 3), 'glance', { x: 9, y: 2 }), GRID);
+    assert.deepEqual(dropGrid(GRID.slice(0, 3), 'glance', { x: 0, y: 3 }), [
+      ...GRID.slice(0, 3),
+      { block: 'glance', x: 0, y: 3, w: 5, h: 1 },
     ]);
   });
 
-  test('the split layout follows the order: side first puts the stack on the left, usage splits the rows', () => {
-    assert.deepEqual(overviewRows(['connect', 'activity', 'usage', 'glance'], 'split'), [
-      { kind: 'sideMain', columns: [['connect'], ['activity']] },
-      { kind: 'single', columns: [['usage']] },
-      { kind: 'single', columns: [['glance']] },
+  test('keyboard steps move or resize by one, and a step past an edge changes nothing', () => {
+    assert.deepEqual(nudgeItem(GRID, 'usage', 0, 1, false), [
+      { block: 'connect', x: 7, y: 0, w: 5, h: 1 },
+      { block: 'usage', x: 0, y: 1, w: 12, h: 1 },
+      { block: 'activity', x: 0, y: 2, w: 7, h: 2 },
+      { block: 'glance', x: 7, y: 2, w: 5, h: 1 },
     ]);
-    assert.deepEqual(overviewRows(['connect', 'glance'], 'split'), [
-      { kind: 'single', columns: [['connect', 'glance']] },
+    assert.deepEqual(nudgeItem(GRID, 'activity', -1, 0, true), [
+      GRID[0],
+      { block: 'activity', x: 0, y: 1, w: 6, h: 2 },
+      GRID[2],
+      GRID[3],
     ]);
-    assert.deepEqual(overviewRows([], 'split'), []);
-  });
-
-  test('the stacked layout is one block a row', () => {
-    assert.deepEqual(overviewRows(['glance', 'usage'], 'stacked'), [
-      { kind: 'single', columns: [['glance']] },
-      { kind: 'single', columns: [['usage']] },
-    ]);
-  });
-
-  test('the wide layout gives usage and activity rows and pairs neighbouring side cards', () => {
-    assert.deepEqual(overviewRows(['usage', 'activity', 'connect', 'glance'], 'wide'), [
-      { kind: 'single', columns: [['usage']] },
-      { kind: 'single', columns: [['activity']] },
-      { kind: 'even', columns: [['connect'], ['glance']] },
-    ]);
-    assert.deepEqual(overviewRows(['connect', 'activity', 'glance'], 'wide'), [
-      { kind: 'single', columns: [['connect']] },
-      { kind: 'single', columns: [['activity']] },
-      { kind: 'single', columns: [['glance']] },
-    ]);
+    assert.deepEqual(nudgeItem(GRID, 'connect', 1, 0, false), GRID);
+    assert.deepEqual(nudgeItem(GRID, 'usage', 0, -1, true), GRID);
+    assert.deepEqual(nudgeItem(GRID, 'connect', 1, 0, true), GRID);
   });
 });

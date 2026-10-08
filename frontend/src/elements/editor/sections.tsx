@@ -15,27 +15,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Slider } from '@mantine/core';
 import { type CSSProperties, useState } from 'react';
 import { hsl } from '../../lib/color.ts';
-import {
-  ActionIcon,
-  Button,
-  Menu,
-  Modal,
-  ModalFooter,
-  SegmentedControl,
-  Switch,
-  TextInput,
-  Tooltip,
-} from '../../lib/core.ts';
+import { ActionIcon, Button, Menu, Modal, ModalFooter, SegmentedControl, TextInput, Tooltip } from '../../lib/core.ts';
 import {
   applyPreset,
   BACKDROPS,
   BUTTON_STYLES,
   CONSOLE_GRAPHS,
-  CONSOLE_INSPECTORS,
   CONSOLE_METRICS,
   type ConsoleGraph,
-  type ConsoleInspector,
-  type ConsoleMetric,
   type ContrastIssue,
   type CustomPreset,
   contrastIssues,
@@ -43,6 +30,7 @@ import {
   type Density,
   FONTS,
   generatePalette,
+  HOME_LAYOUTS,
   LOGIN_LINK_ICONS,
   LOOK_KEYS,
   type LoginLink,
@@ -61,10 +49,7 @@ import {
   type Motion,
   NAV_STYLES,
   OVERVIEW_HEADERS,
-  OVERVIEW_LAYOUTS,
-  OVERVIEW_SECTIONS,
   OVERVIEW_USAGE,
-  type OverviewSection,
   PATTERNS,
   PRESETS,
   type PresetLook,
@@ -84,16 +69,16 @@ import {
 } from '../../lib/theme.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { LOGIN_LINK_GLYPHS } from '../LoginLinks.tsx';
+import { ConsoleArrange, METRIC_LABEL } from './ConsoleArrange.tsx';
 import { ChoiceTiles, ColorField, Group, Setting, SliderField, ToggleChips, ToggleField } from './controls.tsx';
 import {
   BackdropMock,
   ButtonMock,
   ConsoleGraphMock,
-  ConsoleInspectorMock,
   FontMock,
+  HomeLayoutMock,
   NavMock,
   OverviewHeaderMock,
-  OverviewLayoutMock,
   OverviewUsageMock,
   PatternMock,
   PresetMock,
@@ -103,6 +88,7 @@ import {
   TerminalSkinMock,
   TransitionMock,
 } from './mocks.tsx';
+import { OverviewArrange } from './OverviewArrange.tsx';
 
 export interface SectionProps {
   /** The raw draft: colour fields may hold half typed text. */
@@ -687,6 +673,12 @@ const BUTTON_LABEL = {
   outline: 'layout.outline',
 } as const satisfies Record<ZoronTheme['buttonStyle'], string>;
 
+const HOME_LAYOUT_LABEL = {
+  cards: 'layout.homeCards',
+  compact: 'layout.homeCompact',
+  list: 'layout.homeList',
+} as const satisfies Record<ZoronTheme['homeLayout'], string>;
+
 export function LayoutSection({ draft, valid, set }: SectionProps) {
   const { t } = useExtTranslations();
   return (
@@ -713,6 +705,36 @@ export function LayoutSection({ draft, valid, set }: SectionProps) {
           checked={valid.homePage}
           onChange={(homePage) => set({ homePage })}
         />
+        {valid.homePage && (
+          <>
+            <ChoiceTiles
+              field='homeLayout'
+              label={t('layout.homeLayout', {})}
+              columns={3}
+              value={valid.homeLayout}
+              onChange={(homeLayout) => set({ homeLayout })}
+              options={HOME_LAYOUTS.map((layout) => ({
+                value: layout,
+                label: t(HOME_LAYOUT_LABEL[layout], {}),
+                preview: <HomeLayoutMock look={valid} layout={layout} />,
+              }))}
+            />
+            <ToggleField
+              field='homeGroups'
+              label={t('layout.homeGroups', {})}
+              description={t('layout.homeGroupsHint', {})}
+              checked={valid.homeGroups}
+              onChange={(homeGroups) => set({ homeGroups })}
+            />
+            <ToggleField
+              field='homeLayoutChoice'
+              label={t('layout.homeLayoutChoice', {})}
+              description={t('layout.homeLayoutChoiceHint', {})}
+              checked={valid.homeLayoutChoice}
+              onChange={(homeLayoutChoice) => set({ homeLayoutChoice })}
+            />
+          </>
+        )}
       </Group>
 
       <Group title={t('layout.nav', {})}>
@@ -859,73 +881,6 @@ function LoginLinksField({ draft, set }: Pick<SectionProps, 'draft' | 'set'>) {
   );
 }
 
-/**
- * The overview's blocks, each with a switch and buttons to move it: those on in the theme's order, then those off.
- * A block switched on joins the end of the ones on; the buttons swap a block with its neighbour.
- */
-function BlockList({
-  value,
-  onChange,
-}: {
-  value: readonly OverviewSection[];
-  onChange: (value: OverviewSection[]) => void;
-}) {
-  const { t } = useExtTranslations();
-  const rows = [...value, ...OVERVIEW_SECTIONS.filter((block) => !value.includes(block))];
-  const swap = (from: number, to: number) => {
-    const next = [...value];
-    [next[from], next[to]] = [next[to], next[from]];
-    onChange(next);
-  };
-  return (
-    <Setting field='overviewSections'>
-      <ul
-        className='flex flex-col divide-y divide-(--mantine-color-default-border) rounded-lg border border-(--mantine-color-default-border)'
-        aria-label={t('overviewSection.blocks', {})}
-      >
-        {rows.map((block, i) => {
-          const on = i < value.length;
-          const name = t(`overviewSection.${block}`, {});
-          return (
-            <li key={block} className='flex items-center gap-1 py-1.5 pr-1.5 pl-3'>
-              <div className='min-w-0 flex-1'>
-                <Switch
-                  size='sm'
-                  label={name}
-                  checked={on}
-                  onChange={(e) =>
-                    onChange(e.currentTarget.checked ? [...value, block] : value.filter((other) => other !== block))
-                  }
-                />
-              </div>
-              <ActionIcon
-                variant='subtle'
-                color='gray'
-                size='sm'
-                disabled={!on || i === 0}
-                onClick={() => swap(i, i - 1)}
-                aria-label={t('overviewSection.moveUp', { name })}
-              >
-                <FontAwesomeIcon icon={faArrowUp} className='text-xs' />
-              </ActionIcon>
-              <ActionIcon
-                variant='subtle'
-                color='gray'
-                size='sm'
-                disabled={!on || i === value.length - 1}
-                onClick={() => swap(i, i + 1)}
-                aria-label={t('overviewSection.moveDown', { name })}
-              >
-                <FontAwesomeIcon icon={faArrowDown} className='text-xs' />
-              </ActionIcon>
-            </li>
-          );
-        })}
-      </ul>
-    </Setting>
-  );
-}
-
 export function ServerSection({ valid, set }: SectionProps) {
   const { t } = useExtTranslations();
   return (
@@ -945,22 +900,14 @@ export function ServerSection({ valid, set }: SectionProps) {
 
       {valid.serverOverview && (
         <>
-          <Group title={t('overviewSection.blocks', {})} hint={t('overviewSection.blocksHint', {})}>
-            <BlockList value={valid.overviewSections} onChange={(overviewSections) => set({ overviewSections })} />
-          </Group>
-
-          <Group title={t('overviewSection.layout', {})}>
-            <ChoiceTiles
-              field='overviewLayout'
-              columns={3}
-              value={valid.overviewLayout}
-              onChange={(overviewLayout) => set({ overviewLayout })}
-              options={OVERVIEW_LAYOUTS.map((layout) => ({
-                value: layout,
-                label: t(`overviewSection.${layout}`, {}),
-                preview: <OverviewLayoutMock look={valid} layout={layout} blocks={valid.overviewSections} />,
-              }))}
-            />
+          <Group title={t('overviewSection.arrange', {})} hint={t('overviewSection.arrangeHint', {})}>
+            <Setting field='overviewGrid'>
+              <OverviewArrange
+                look={valid}
+                grid={valid.overviewGrid}
+                onChange={(overviewGrid) => set({ overviewGrid })}
+              />
+            </Setting>
           </Group>
 
           <Group title={t('overviewSection.usageStyle', {})}>
@@ -1067,26 +1014,12 @@ export function TypographySection({ valid, set }: SectionProps) {
   );
 }
 
-const METRIC_LABEL = {
-  cpu: 'overview.cpu',
-  memory: 'overview.memory',
-  disk: 'overview.disk',
-  netIn: 'console.netIn',
-  netOut: 'console.netOut',
-} as const satisfies Record<ConsoleMetric, string>;
-
 const GRAPH_LABEL = {
   area: 'consoleSection.graphArea',
   line: 'consoleSection.graphLine',
   bars: 'consoleSection.graphBars',
   none: 'consoleSection.graphNone',
 } as const satisfies Record<ConsoleGraph, string>;
-
-const INSPECTOR_LABEL = {
-  right: 'consoleSection.inspectorRight',
-  left: 'consoleSection.inspectorLeft',
-  off: 'consoleSection.inspectorOff',
-} as const satisfies Record<ConsoleInspector, string>;
 
 /**
  * The quick commands every console user gets (`consoleCommands`): added with Enter or the button, removed, moved up
@@ -1230,11 +1163,17 @@ export function ConsoleSection({ valid, set }: SectionProps) {
       {/* the rest of Zoron's own page; core's console has none of it */}
       {valid.consolePage && (
         <>
+          <Group title={t('consoleSection.arrange', {})} hint={t('consoleSection.arrangeHint', {})}>
+            <ConsoleArrange valid={valid} set={set} />
+          </Group>
+
           <Group title={t('consoleSection.commandBar', {})} hint={t('consoleSection.metricsHint', {})}>
+            {/* the canvas above orders the figures; switching one on here adds it at the end */}
             <ToggleChips
               field='consoleMetrics'
               label={t('consoleSection.metrics', {})}
               value={valid.consoleMetrics}
+              keepOrder
               onChange={(consoleMetrics) => set({ consoleMetrics })}
               options={CONSOLE_METRICS.map((metric) => ({ value: metric, label: t(METRIC_LABEL[metric], {}) }))}
             />
@@ -1252,19 +1191,9 @@ export function ConsoleSection({ valid, set }: SectionProps) {
             />
           </Group>
 
-          <Group title={t('consoleSection.inspector', {})} hint={t('consoleSection.inspectorHint', {})}>
-            <ChoiceTiles
-              field='consoleInspector'
-              columns={3}
-              value={valid.consoleInspector}
-              onChange={(consoleInspector) => set({ consoleInspector })}
-              options={CONSOLE_INSPECTORS.map((side) => ({
-                value: side,
-                label: t(INSPECTOR_LABEL[side], {}),
-                preview: <ConsoleInspectorMock look={valid} palette={palette} side={side} />,
-              }))}
-            />
-            {valid.consoleInspector !== 'off' && (
+          {/* the canvas above places the inspector or hides it */}
+          {valid.consoleInspector !== 'off' && (
+            <Group title={t('consoleSection.inspector', {})} hint={t('consoleSection.inspectorHint', {})}>
               <ToggleField
                 field='consoleInspectorOpen'
                 label={t('consoleSection.inspectorOpen', {})}
@@ -1272,8 +1201,8 @@ export function ConsoleSection({ valid, set }: SectionProps) {
                 checked={valid.consoleInspectorOpen}
                 onChange={(consoleInspectorOpen) => set({ consoleInspectorOpen })}
               />
-            )}
-          </Group>
+            </Group>
+          )}
 
           <Group title={t('consoleSection.quickCommands', {})}>
             <ToggleField

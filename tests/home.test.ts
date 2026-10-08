@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import {
+  type HomeGroup,
   type HomeServer,
   type HomeUsage,
+  homeLayoutOf,
+  parseLayoutPick,
   phaseOf,
+  sectionsOf,
   statusCounts,
   visibleServers,
 } from '../frontend/src/elements/home/home.ts';
@@ -74,5 +78,52 @@ describe('servers page', () => {
     // sorted by the shown names: Aardvark (zeta), alpha, beta
     assert.deepEqual(real(visibleServers(servers, {}, { ...opts, query: '' }, custom)), ['zeta', 'alpha', 'beta']);
     assert.equal(statusCounts(servers, {}, 'aard', custom).all, 1);
+  });
+
+  test('a stored layout pick is allow listed, and applies only while visitors may pick', () => {
+    assert.deepEqual(parseLayoutPick('list'), { layout: 'list', over: null });
+    assert.equal(parseLayoutPick('grid'), null);
+    assert.equal(parseLayoutPick(null), null);
+    const site = { homeLayout: 'cards', homeLayoutChoice: true } as const;
+    assert.equal(homeLayoutOf(site, null), 'cards');
+    assert.equal(homeLayoutOf(site, { layout: 'list', over: null }), 'list');
+    assert.equal(homeLayoutOf({ ...site, homeLayoutChoice: false }, { layout: 'list', over: null }), 'cards');
+    // a pick in Studio's preview gives way once the draft's layout changes
+    assert.equal(homeLayoutOf(site, { layout: 'compact', over: 'cards' }), 'compact');
+    assert.equal(homeLayoutOf({ ...site, homeLayout: 'list' }, { layout: 'compact', over: 'cards' }), 'list');
+  });
+
+  test('sections follow the groups, repeat a server in several groups, put the ungrouped last', () => {
+    const shown = ['a', 'b', 'c', 'd', 'e'].map((uuid) => server(uuid));
+    const group = (uuid: string, order: number, serverOrder: string[]): HomeGroup => ({
+      uuid,
+      name: uuid,
+      order,
+      serverOrder,
+    });
+    const groups = [group('second', 2, ['b', 'a']), group('first', 1, ['c', 'a', 'gone']), group('empty', 3, ['x'])];
+    const view = (sort: 'default' | 'name') =>
+      sectionsOf(shown, groups, sort).map((section) => [
+        section.group?.uuid ?? null,
+        section.servers.map((s) => s.uuid),
+      ]);
+
+    // the default sort follows each group's own order; empty sections are left out
+    assert.deepEqual(view('default'), [
+      ['first', ['c', 'a']],
+      ['second', ['b', 'a']],
+      [null, ['d', 'e']],
+    ]);
+    // any other sort keeps the order the servers were shown in
+    assert.deepEqual(view('name'), [
+      ['first', ['a', 'c']],
+      ['second', ['a', 'b']],
+      [null, ['d', 'e']],
+    ]);
+    // nothing ungrouped shown: no "other servers" section
+    assert.deepEqual(
+      sectionsOf([server('b')], groups, 'default').map((section) => section.group?.uuid ?? null),
+      ['second'],
+    );
   });
 });

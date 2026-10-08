@@ -1,8 +1,20 @@
-import type { OverviewLayout, OverviewSection } from '../../lib/theme.ts';
+import {
+  fillGaps,
+  GRID_COLUMNS,
+  GRID_MAX_HEIGHT,
+  GRID_MIN_WIDTH,
+  moveItem,
+  placeItem,
+  removeItem,
+  resizeItem,
+  settleGrid,
+} from '../../lib/grid.ts';
+import type { OverviewItem, OverviewSection } from '../../lib/theme.ts';
 
 /**
- * The server overview's small rules: activity labels, relative times, usage levels and how its blocks lay out. Pure,
- * so the tests can run it without the panel.
+ * The server overview's small rules: activity labels, relative times, usage levels, the grid a visitor sees, and the
+ * geometry of Studio's arrange canvas (pointer distances to cells, drops, keyboard nudges). Pure, so the tests can run
+ * it without the panel.
  */
 
 /** An activity event as a short sentence-case label: `server:power.start` reads "Power start". */
@@ -59,45 +71,82 @@ export function newest<T>(items: readonly T[], dateOf: (item: T) => Date | null)
 }
 
 /**
- * One row of the overview: 'single' stacks its blocks across the page; 'mainSide' and 'sideMain' put the activity
- * card beside a narrower stack of the others (on its right or left); 'even' sets its columns side by side at equal
- * widths. Below the wide breakpoint every row is one column, in the order the theme lists the blocks.
+ * The theme's grid as a visitor sees it: without the blocks they may not see. When one was left out, the rest settle
+ * and widen over the empty columns beside them, so the page has no hole; otherwise the grid is the theme's as is.
  */
-export interface OverviewRow {
-  kind: 'single' | 'mainSide' | 'sideMain' | 'even';
-  columns: OverviewSection[][];
+export function visibleGrid(grid: readonly OverviewItem[], allowed: Record<OverviewSection, boolean>): OverviewItem[] {
+  const shown = grid.filter((item) => allowed[item.block]);
+  return shown.length === grid.length ? [...grid] : fillGaps(settleGrid(shown));
+}
+
+/** The size a block takes when it is added to the grid: usage across the page, activity tall beside the cards. */
+export const BLOCK_SIZE: Record<OverviewSection, { w: number; h: number }> = {
+  usage: { w: GRID_COLUMNS, h: 1 },
+  activity: { w: 7, h: 2 },
+  connect: { w: 5, h: 1 },
+  glance: { w: 5, h: 1 },
+};
+
+const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+
+/**
+ * The cell a dragged block `w` columns wide snaps to when its top left corner is `left`, `top` pixels from the grid's
+ * top left corner: the nearest one, kept inside the columns and no lower than `rows` (the row just under the others,
+ * the bottom a block can be dropped at).
+ */
+export function snapCell(left: number, top: number, cellWidth: number, rowHeight: number, w: number, rows: number) {
+  return {
+    x: clamp(Math.round(left / cellWidth), 0, GRID_COLUMNS - w),
+    y: clamp(Math.round(top / rowHeight), 0, rows),
+  };
 }
 
 /**
- * The rows `blocks` (the ones shown, in the theme's order) make in `layout`. 'stacked' is one block a row. 'split'
- * (the original look) gives usage a row of its own and sets activity beside the blocks listed next to it, on the
- * side it was listed. 'wide' gives usage and activity rows of their own and pairs the connect and glance cards when
- * they are listed one after the other.
+ * The size a block at column `item.x` takes when its corner is dragged `dx`, `dy` pixels: whole columns and rows, at
+ * least GRID_MIN_WIDTH columns and no wider than the columns right of `item.x`, 1 to GRID_MAX_HEIGHT rows.
  */
-export function overviewRows(blocks: readonly OverviewSection[], layout: OverviewLayout): OverviewRow[] {
-  if (layout === 'stacked') return blocks.map((block) => ({ kind: 'single', columns: [[block]] }));
-
-  const rows: OverviewRow[] = [];
-  let run: OverviewSection[] = [];
-  const flush = () => {
-    if (run.length === 0) return;
-    const main = run.filter((block) => block === 'activity');
-    const side = run.filter((block) => block !== 'activity');
-    if (layout === 'wide') rows.push({ kind: side.length > 1 ? 'even' : 'single', columns: side.map((b) => [b]) });
-    else if (main.length === 0 || side.length === 0) rows.push({ kind: 'single', columns: [run] });
-    else if (run[0] === 'activity') rows.push({ kind: 'mainSide', columns: [main, side] });
-    else rows.push({ kind: 'sideMain', columns: [side, main] });
-    run = [];
+export function snapSize(item: OverviewItem, dx: number, dy: number, cellWidth: number, rowHeight: number) {
+  return {
+    w: clamp(item.w + Math.round(dx / cellWidth), GRID_MIN_WIDTH, GRID_COLUMNS - item.x),
+    h: clamp(item.h + Math.round(dy / rowHeight), 1, GRID_MAX_HEIGHT),
   };
-  for (const block of blocks) {
-    // the blocks that always take a row of their own in this layout
-    if (block === 'usage' || (layout === 'wide' && block === 'activity')) {
-      flush();
-      rows.push({ kind: 'single', columns: [[block]] });
-    } else {
-      run.push(block);
-    }
+}
+
+/**
+ * Where a drag of `block` leaves the grid: dropped on a cell it moves there (or, from the hidden blocks, joins at its
+ * BLOCK_SIZE, kept inside the columns), dropped on the hidden blocks it leaves the grid, and dropped nowhere nothing
+ * changes.
+ */
+export function dropGrid(
+  grid: readonly OverviewItem[],
+  block: OverviewSection,
+  target: { x: number; y: number } | 'hide' | null,
+): OverviewItem[] {
+  if (target === 'hide') return removeItem(grid, block);
+  if (!target) return [...grid];
+  if (grid.some((item) => item.block === block)) return moveItem(grid, block, target.x, target.y);
+  return placeItem(grid, { block, ...BLOCK_SIZE[block], ...target });
+}
+
+/**
+ * A keyboard step on `block`: moved one cell (`dx`, `dy` of -1, 0 or 1), or with `resize` grown or shrunk by one
+ * column or row from its top left corner. A step past an edge changes nothing.
+ */
+export function nudgeItem(
+  grid: readonly OverviewItem[],
+  block: OverviewSection,
+  dx: number,
+  dy: number,
+  resize: boolean,
+): OverviewItem[] {
+  const item = grid.find((other) => other.block === block);
+  if (!item) return [...grid];
+  if (resize) {
+    const w = clamp(item.w + dx, GRID_MIN_WIDTH, GRID_COLUMNS - item.x);
+    const h = clamp(item.h + dy, 1, GRID_MAX_HEIGHT);
+    return w === item.w && h === item.h ? [...grid] : resizeItem(grid, block, w, h);
   }
-  flush();
-  return rows;
+  const x = clamp(item.x + dx, 0, GRID_COLUMNS - item.w);
+  const y = Math.max(0, item.y + dy);
+  return x === item.x && y === item.y ? [...grid] : moveItem(grid, block, x, y);
 }

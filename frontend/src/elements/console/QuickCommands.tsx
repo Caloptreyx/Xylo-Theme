@@ -39,8 +39,8 @@ function saveCommands(key: string, next: string[]) {
 }
 
 /**
- * A server's quick commands (`zoron:commands:<uuid>`, per browser), shared by every part showing them (the chips
- * above the prompt, the inspector's list), with the setter that saves them.
+ * A server's quick commands (`zoron:commands:<uuid>`, per browser), shared by every part showing them (the chips,
+ * the inspector's list), with the setter that saves them.
  */
 function useQuickCommands(uuid: string) {
   const key = commandsKey(uuid);
@@ -68,7 +68,8 @@ function useCommandSender() {
 }
 
 /**
- * The quick commands as a row of chips just above the prompt, a click sending one while the console can take it
+ * The quick commands as a row of chips, just above the prompt or just under the terminal's toolbar (`consoleChips`,
+ * `data-chips` on the workspace places it; 'off' shows none), a click sending one while the console can take it
  * (its title says why not otherwise): the site's (`consoleCommands`, set in Studio, marked quietly) first, then the
  * visitor's own saved ones that are not already among them, and a last chip opening the inspector at the list. With
  * none saved, only that chip, which says what it is. Without `onEdit` (the inspector is off) there is nowhere to
@@ -84,7 +85,9 @@ export function CommandChips({ onEdit }: { onEdit?: () => void }) {
   const { ready, reason, send } = useCommandSender();
 
   const site = theme.consoleCommands;
-  if (!canConsole || !theme.consoleQuickCommands || (!onEdit && site.length === 0)) return null;
+  if (!canConsole || !theme.consoleQuickCommands || theme.consoleChips === 'off' || (!onEdit && site.length === 0)) {
+    return null;
+  }
   const own = onEdit ? saved.filter((command) => !site.includes(command)) : [];
 
   // the site's and the visitor's own never overlap, so the command is a unique key

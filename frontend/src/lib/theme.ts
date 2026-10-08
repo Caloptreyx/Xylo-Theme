@@ -1,4 +1,5 @@
 import { alpha, contrastRatio, HEX, hsl, luminance, mix, readable, shades } from './color.ts';
+import { GRID_COLUMNS, type GridItem, normalizeGrid, settleGrid } from './grid.ts';
 
 /**
  * The saved theme is operator supplied JSON that ends up in a stylesheet served to every visitor (the login page
@@ -40,12 +41,15 @@ export type Transition = (typeof TRANSITIONS)[number];
 /** The server overview's blocks: live usage, recent activity, how to connect, and backups, schedules, addresses. */
 export const OVERVIEW_SECTIONS = ['usage', 'activity', 'connect', 'glance'] as const;
 export type OverviewSection = (typeof OVERVIEW_SECTIONS)[number];
+/** A block on the overview's snap grid (lib/grid.ts). */
+export type OverviewItem = GridItem<OverviewSection>;
 /**
- * How the overview lays its blocks out: activity beside a column of the connect and glance cards (usage across the
- * top), one column, or every block across with the connect and glance cards side by side.
+ * Ready made overview grids (`overviewTemplate()`), which Studio offers to start from and which themes saved before
+ * the grid had as `overviewLayout`: activity beside a column of the connect and glance cards (usage across the
+ * top), one block a row, or usage and activity across with the connect and glance cards side by side.
  */
-export const OVERVIEW_LAYOUTS = ['split', 'stacked', 'wide'] as const;
-export type OverviewLayout = (typeof OVERVIEW_LAYOUTS)[number];
+export const OVERVIEW_TEMPLATES = ['split', 'stacked', 'wide'] as const;
+export type OverviewTemplate = (typeof OVERVIEW_TEMPLATES)[number];
 /** The usage figures: a bar against the limit, a sparkline of the last minute, or the figures alone. */
 export const OVERVIEW_USAGE = ['bars', 'graphs', 'numbers'] as const;
 export type OverviewUsage = (typeof OVERVIEW_USAGE)[number];
@@ -55,6 +59,10 @@ export type OverviewHeader = (typeof OVERVIEW_HEADERS)[number];
 /** How many activity entries the overview may list; one page of core's activity holds 25. */
 export const MIN_OVERVIEW_ACTIVITY = 3;
 export const MAX_OVERVIEW_ACTIVITY = 20;
+
+/** The servers page: a grid of cards, a denser grid of small tiles, or one row per server. */
+export const HOME_LAYOUTS = ['cards', 'compact', 'list'] as const;
+export type HomeLayout = (typeof HOME_LAYOUTS)[number];
 
 /**
  * The console's colours: derived from the theme, core's own (no override), or a named scheme. Named schemes keep
@@ -113,9 +121,18 @@ export const TERMINAL_SCHEME_GROUPS = [
 export const TERMINAL_SKINS = ['card', 'window', 'flush', 'glass', 'crt', 'neon'] as const;
 export type TerminalSkin = (typeof TERMINAL_SKINS)[number];
 
-/** The figures the console's command bar can show, in the order it shows them. */
+/** The figures the console's command bar can show; `consoleMetrics` keeps its own order of them. */
 export const CONSOLE_METRICS = ['cpu', 'memory', 'disk', 'netIn', 'netOut'] as const;
 export type ConsoleMetric = (typeof CONSOLE_METRICS)[number];
+/**
+ * What the console's bars hold: the server's name, state and uptime; the live figures; core's power controls. Each
+ * sits in the bar above the terminal (`consoleBar`), the one under it (`consoleFooter`), or neither (hidden).
+ */
+export const CONSOLE_BAR_ITEMS = ['identity', 'metrics', 'power'] as const;
+export type ConsoleBarItem = (typeof CONSOLE_BAR_ITEMS)[number];
+/** Where the quick command chips sit: just above the prompt, just under the terminal's toolbar, or nowhere. */
+export const CONSOLE_CHIPS = ['prompt', 'toolbar', 'off'] as const;
+export type ConsoleChips = (typeof CONSOLE_CHIPS)[number];
 /** The command bar's sparklines: a line over a faint fill, the line alone, thin columns, or none (figures only). */
 export const CONSOLE_GRAPHS = ['area', 'line', 'bars', 'none'] as const;
 export type ConsoleGraph = (typeof CONSOLE_GRAPHS)[number];
@@ -192,13 +209,21 @@ export interface ZoronTheme {
   hoverLift: boolean;
   /** A greeting with the user's name above the servers list. */
   greeting: boolean;
-  /** Zoron's servers page (elements/home): live stats, filters and power controls in place of core's list. */
+  /** Zoron's servers page (elements/home): filters, sorts and power controls in place of core's list. */
   homePage: boolean;
+  /** How the servers page lays its servers out, unless the visitor picked their own (`homeLayoutChoice`). */
+  homeLayout: HomeLayout;
+  /** Whether the servers page shows a section per server group (the rail's folders), ungrouped servers last. */
+  homeGroups: boolean;
+  /** A switch on the servers page lets each visitor pick their own layout, kept in their browser. */
+  homeLayoutChoice: boolean;
   /** Zoron's server overview (elements/server) as the page a server opens on; the console moves to `/terminal`. */
   serverOverview: boolean;
-  /** The overview's blocks in the order they show; one left out is hidden (each also needs its permission). */
-  overviewSections: OverviewSection[];
-  overviewLayout: OverviewLayout;
+  /**
+   * The overview's blocks on its snap grid (lib/grid.ts), settled: no overlaps, no empty rows. A block not on it is
+   * hidden; each also needs its permission.
+   */
+  overviewGrid: OverviewItem[];
   overviewUsage: OverviewUsage;
   /** How many recent activity entries the overview lists, MIN_OVERVIEW_ACTIVITY to MAX_OVERVIEW_ACTIVITY. */
   overviewActivityCount: number;
@@ -218,16 +243,21 @@ export interface ZoronTheme {
    * (lib/terminal.ts, lib/store.ts).
    */
   terminalUserChoice: boolean;
-  /** The figures the console's command bar shows; none hides the telemetry. */
+  /** The figures the console's command bar shows, in this order; none hides the telemetry. */
   consoleMetrics: ConsoleMetric[];
   /** How the command bar draws each figure's last minute. */
   consoleGraphs: ConsoleGraph;
   consoleInspector: ConsoleInspector;
+  /** The bar above the terminal: its items in order. The inspector toggle ends it. */
+  consoleBar: ConsoleBarItem[];
+  /** A bar under the terminal: its items in order, none in `consoleBar`; empty for no such bar. */
+  consoleFooter: ConsoleBarItem[];
+  consoleChips: ConsoleChips;
   /** Whether the docked inspector starts open for visitors who never toggled it (`zoron:console-panel` wins). */
   consoleInspectorOpen: boolean;
   /** The spacing of the console's command bar, toolbar, chip row and prompt. */
   consoleDensity: Density;
-  /** Quick commands at all: the chip row above the prompt and the inspector's Commands tab. */
+  /** Quick commands at all: the chip row (where `consoleChips` puts it) and the inspector's Commands tab. */
   consoleQuickCommands: boolean;
   /** Quick commands the admins set for everyone who may use the console, shown before each visitor's own. */
   consoleCommands: string[];
@@ -357,9 +387,11 @@ export const DEFAULT_THEME: ZoronTheme = {
   hoverLift: true,
   greeting: true,
   homePage: true,
+  homeLayout: 'cards',
+  homeGroups: false,
+  homeLayoutChoice: true,
   serverOverview: true,
-  overviewSections: [...OVERVIEW_SECTIONS],
-  overviewLayout: 'split',
+  overviewGrid: overviewTemplate(OVERVIEW_SECTIONS, 'split'),
   overviewUsage: 'bars',
   overviewActivityCount: 8,
   overviewHeader: 'plain',
@@ -373,6 +405,9 @@ export const DEFAULT_THEME: ZoronTheme = {
   consoleMetrics: [...CONSOLE_METRICS],
   consoleGraphs: 'area',
   consoleInspector: 'right',
+  consoleBar: [...CONSOLE_BAR_ITEMS],
+  consoleFooter: [],
+  consoleChips: 'prompt',
   consoleInspectorOpen: true,
   consoleDensity: 'comfortable',
   consoleQuickCommands: true,
@@ -697,20 +732,97 @@ function loginLinks(v: unknown, fallback: LoginLink[]): LoginLink[] {
   return out;
 }
 
-/** The allow listed figures in `v`, each once, in CONSOLE_METRICS order. */
+/** The allow listed figures in `v`, each once, in the order given. */
 function consoleMetrics(v: unknown, fallback: ConsoleMetric[]): ConsoleMetric[] {
   if (!Array.isArray(v)) return fallback;
-  return CONSOLE_METRICS.filter((metric) => v.includes(metric));
+  return [...new Set(v)].filter((item): item is ConsoleMetric => CONSOLE_METRICS.includes(item));
 }
 
-/** The allow listed overview blocks in `v`, each once, in the order given. */
-function overviewSections(v: unknown, fallback: OverviewSection[]): OverviewSection[] {
-  if (!Array.isArray(v)) return fallback;
-  const out: OverviewSection[] = [];
-  for (const item of v) {
-    if (OVERVIEW_SECTIONS.includes(item) && !out.includes(item)) out.push(item);
+/**
+ * The bars' items: allow listed, each once, in the order given, and none in both bars: a bar given wins over one
+ * taken from the fallback, and the top bar over the bottom one when both are given.
+ */
+function consoleBars(r: Record<string, unknown>, d: ZoronTheme): Pick<ZoronTheme, 'consoleBar' | 'consoleFooter'> {
+  const items = (v: unknown, taken: readonly ConsoleBarItem[]) =>
+    [...new Set(Array.isArray(v) ? v : [])].filter(
+      (item): item is ConsoleBarItem => CONSOLE_BAR_ITEMS.includes(item) && !taken.includes(item),
+    );
+  if (!Array.isArray(r.consoleBar) && Array.isArray(r.consoleFooter)) {
+    const consoleFooter = items(r.consoleFooter, []);
+    return { consoleBar: items(d.consoleBar, consoleFooter), consoleFooter };
   }
-  return out;
+  const consoleBar = items(Array.isArray(r.consoleBar) ? r.consoleBar : d.consoleBar, []);
+  return {
+    consoleBar,
+    consoleFooter: items(Array.isArray(r.consoleFooter) ? r.consoleFooter : d.consoleFooter, consoleBar),
+  };
+}
+
+/**
+ * `blocks` (the shown ones, in order) laid on the grid as `template` lays them. 'split' gives usage a row and sets
+ * activity, as tall as the blocks listed next to it, beside a narrower column of them, on the side it was listed;
+ * 'stacked' is one block a row; 'wide' gives usage and activity rows and sets neighbouring connect and glance cards
+ * side by side at equal widths.
+ */
+export function overviewTemplate(blocks: readonly OverviewSection[], template: OverviewTemplate): OverviewItem[] {
+  const items: OverviewItem[] = [];
+  let y = 0;
+  const row = (block: OverviewSection, x = 0, w = GRID_COLUMNS, h = 1) => items.push({ block, x, y, w, h });
+  if (template === 'stacked') {
+    for (const block of blocks) {
+      row(block);
+      y++;
+    }
+    return items;
+  }
+  // the main column takes 7 of the 12 columns, near the 3 to 2 the overview had before its grid
+  const MAIN = 7;
+  let run: OverviewSection[] = [];
+  const flush = () => {
+    const side = run.filter((block) => block !== 'activity');
+    if (template === 'wide') {
+      side.forEach((block, i) => row(block, i * (GRID_COLUMNS / side.length), GRID_COLUMNS / side.length));
+      if (side.length > 0) y++;
+    } else if (side.length === run.length || side.length === 0) {
+      for (const block of run) {
+        row(block);
+        y++;
+      }
+    } else {
+      const mainFirst = run[0] === 'activity';
+      row('activity', mainFirst ? 0 : GRID_COLUMNS - MAIN, MAIN, side.length);
+      side.forEach((block, i) => {
+        items.push({ block, x: mainFirst ? MAIN : 0, y: y + i, w: GRID_COLUMNS - MAIN, h: 1 });
+      });
+      y += side.length;
+    }
+    run = [];
+  };
+  for (const block of blocks) {
+    if (block === 'usage' || (template === 'wide' && block === 'activity')) {
+      flush();
+      row(block);
+      y++;
+    } else {
+      run.push(block);
+    }
+  }
+  flush();
+  return settleGrid(items);
+}
+
+/**
+ * The saved grid; a theme saved before the grid had `overviewSections` (the shown blocks in order) and
+ * `overviewLayout` (a template), which become the grid they drew.
+ */
+function overviewGrid(r: Record<string, unknown>, fallback: OverviewItem[]): OverviewItem[] {
+  const grid = normalizeGrid(r.overviewGrid, OVERVIEW_SECTIONS);
+  if (grid) return grid;
+  if (!Array.isArray(r.overviewSections) && r.overviewLayout === undefined) return fallback;
+  const blocks = Array.isArray(r.overviewSections)
+    ? [...new Set(r.overviewSections)].filter((block): block is OverviewSection => OVERVIEW_SECTIONS.includes(block))
+    : [...OVERVIEW_SECTIONS];
+  return overviewTemplate(blocks, choice(r.overviewLayout, OVERVIEW_TEMPLATES, 'split'));
 }
 
 /** At most MAX_CUSTOM_PRESETS entries with a valid, unique name; each look normalized like a theme. */
@@ -786,9 +898,11 @@ export function normalizeTheme(raw: unknown, d: ZoronTheme = DEFAULT_THEME): Zor
     hoverLift: flag(r.hoverLift, d.hoverLift),
     greeting: flag(r.greeting, d.greeting),
     homePage: flag(r.homePage, d.homePage),
+    homeLayout: choice(r.homeLayout, HOME_LAYOUTS, d.homeLayout),
+    homeGroups: flag(r.homeGroups, d.homeGroups),
+    homeLayoutChoice: flag(r.homeLayoutChoice, d.homeLayoutChoice),
     serverOverview: flag(r.serverOverview, d.serverOverview),
-    overviewSections: overviewSections(r.overviewSections, d.overviewSections),
-    overviewLayout: choice(r.overviewLayout, OVERVIEW_LAYOUTS, d.overviewLayout),
+    overviewGrid: overviewGrid(r, d.overviewGrid),
     overviewUsage: choice(r.overviewUsage, OVERVIEW_USAGE, d.overviewUsage),
     overviewActivityCount: int(
       r.overviewActivityCount,
@@ -807,6 +921,8 @@ export function normalizeTheme(raw: unknown, d: ZoronTheme = DEFAULT_THEME): Zor
     consoleMetrics: consoleMetrics(r.consoleMetrics, d.consoleMetrics),
     consoleGraphs: choice(r.consoleGraphs, CONSOLE_GRAPHS, d.consoleGraphs),
     consoleInspector: choice(r.consoleInspector, CONSOLE_INSPECTORS, d.consoleInspector),
+    ...consoleBars(r, d),
+    consoleChips: choice(r.consoleChips, CONSOLE_CHIPS, d.consoleChips),
     consoleInspectorOpen: flag(r.consoleInspectorOpen, d.consoleInspectorOpen),
     consoleDensity: choice(r.consoleDensity, DENSITIES, d.consoleDensity),
     consoleQuickCommands: flag(r.consoleQuickCommands, d.consoleQuickCommands),

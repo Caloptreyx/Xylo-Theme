@@ -1245,31 +1245,33 @@ html[data-zoron] .zoron-meter[data-level="danger"] .zoron-meter-fill {
 
 /* ---------- the server overview (elements/server) ---------- */
 
-/* a row of blocks (overview.ts's overviewRows): one stack across, the activity card beside a narrower stack on
-   either side, or equal columns; one column on narrow pages, in the theme's order */
+/* the blocks on the theme's snap grid (lib/grid.ts): each cell carries its column, span, row and row span as whole
+   numbers, and rows are as tall as their content. Narrow pages show one column, the cells in reading order. Every
+   card grows to fill its cell, so neighbours share their edges. */
 html[data-zoron] .zoron-ov-grid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
-  align-items: start;
+}
+
+html[data-zoron] .zoron-ov-cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+html[data-zoron] .zoron-ov-cell > * {
+  flex-grow: 1;
 }
 
 @media (min-width: 64rem) {
-  html[data-zoron] .zoron-ov-grid[data-kind="mainSide"] {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  html[data-zoron] .zoron-ov-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
   }
 
-  html[data-zoron] .zoron-ov-grid[data-kind="sideMain"] {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-  }
-
-  /* side by side cards of the 'wide' layout share a height */
-  html[data-zoron] .zoron-ov-grid[data-kind="even"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: stretch;
-  }
-
-  html[data-zoron] .zoron-ov-grid[data-kind="even"] .zoron-ov-section {
-    flex-grow: 1;
+  html[data-zoron] .zoron-ov-cell {
+    grid-column: var(--zoron-col) / span var(--zoron-span);
+    grid-row: var(--zoron-row) / span var(--zoron-rows);
   }
 }
 
@@ -1508,12 +1510,14 @@ html[data-zoron-terminal="custom"] .zoron-con {
   --zoron-hairline: color-mix(in srgb, var(--zoron-term-fg) 12%, transparent);
 }
 
-/* the command bar: who and how the server is, its live figures, power and the inspector toggle in one row; two rows
-   when the workspace is too narrow for that. Without figures (`consoleMetrics` empty) the second row goes */
+/* the command bars: who and how the server is, its live figures, power and the inspector toggle, in the theme's
+   order, above the terminal (`consoleBar`) and under it (`consoleFooter`). Console.tsx writes each bar's grid from
+   console.ts's barLayout() as custom properties of fixed area names: one row; under 60rem of workspace the figures on
+   a row of their own under the rest; on phones (below) a row per piece */
 html[data-zoron] .zoron-con-bar {
   display: grid;
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto auto;
-  grid-template-areas: "id meters power toggle";
+  grid-template-columns: var(--zoron-bar-cols);
+  grid-template-areas: var(--zoron-bar-areas);
   align-items: center;
   gap: 10px var(--zoron-con-gap);
   padding: var(--zoron-con-bar-y) 12px var(--zoron-con-bar-y) var(--zoron-con-edge);
@@ -1521,38 +1525,21 @@ html[data-zoron] .zoron-con-bar {
   background: var(--zoron-con-step);
 }
 
+/* the bar under the terminal draws its hairline on top */
+html[data-zoron] .zoron-con-bar[data-place="bottom"] {
+  border-top: 1px solid var(--zoron-con-line);
+  border-bottom: 0;
+}
+
 /* core's Tooltip wraps the inspector toggle in a box of its own, which takes the toggle's area */
 html[data-zoron] .zoron-con-bar > :has(.zoron-con-toggle) {
   grid-area: toggle;
 }
 
-/* no inspector toggle with `consoleInspector: 'off'`: power ends the row */
-html[data-zoron] .zoron-con-bar:not(:has(.zoron-con-toggle)) {
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
-  grid-template-areas: "id meters power";
-}
-
 @container zoron-con (width < 60rem) {
   html[data-zoron] .zoron-con-bar {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas:
-      "id power toggle"
-      "meters meters meters";
-  }
-
-  html[data-zoron] .zoron-con-bar:not(:has(> .zoron-con-meters)) {
-    grid-template-areas: "id power toggle";
-  }
-
-  html[data-zoron] .zoron-con-bar:not(:has(.zoron-con-toggle)) {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "id power"
-      "meters meters";
-  }
-
-  html[data-zoron] .zoron-con-bar:not(:has(.zoron-con-toggle)):not(:has(> .zoron-con-meters)) {
-    grid-template-areas: "id power";
+    grid-template-columns: var(--zoron-bar-cols-narrow);
+    grid-template-areas: var(--zoron-bar-areas-narrow);
   }
 
   html[data-zoron] .zoron-con-meter {
@@ -1754,7 +1741,8 @@ html[data-zoron] .zoron-con-main {
 }
 
 /* core's terminal fills the middle; its card dissolves (`display: contents`), so its header, output and input row
-   lay out in this column: the header a slim toolbar, the input the prompt along the bottom, the chips above it */
+   lay out in this column: the header a slim toolbar, the input the prompt along the bottom, the chips above it or
+   under the toolbar */
 html[data-zoron] .zoron-con-term {
   position: relative;
   isolation: isolate;
@@ -1808,9 +1796,17 @@ html[data-zoron] .zoron-con-term > .mantine-Card-root > span {
   margin: 0 var(--zoron-con-edge) 8px;
 }
 
-/* core's jump to the bottom, clear of the chips and the prompt */
+/* core's jump to the bottom, clear of the prompt, and of the chips while they sit above it */
 html[data-zoron] .zoron-con-term > .mantine-Card-root > [class~="z-90"] {
   right: 1.25rem;
+  bottom: calc(var(--zoron-con-prompt) + 1.25rem);
+}
+
+html[data-zoron]
+  .zoron-con[data-chips="prompt"]
+  .zoron-con-term:has(> .zoron-con-chips)
+  > .mantine-Card-root
+  > [class~="z-90"] {
   bottom: calc(var(--zoron-con-prompt) + var(--zoron-con-chip) + 2 * var(--zoron-con-chips-y) + 1.25rem);
 }
 
@@ -1875,7 +1871,8 @@ html[data-zoron] .zoron-con-term > .mantine-Card-root > :last-child .mantine-Inp
   background: transparent;
 }
 
-/* quick commands: one row of chips just above the prompt, a click sends one; the last opens the inspector at them */
+/* quick commands: one row of chips just above the prompt (`consoleChips`, `data-chips` on the workspace), a click
+   sends one; the last opens the inspector at them */
 html[data-zoron] .zoron-con-chips {
   display: flex;
   order: 1;
@@ -1885,6 +1882,24 @@ html[data-zoron] .zoron-con-chips {
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
+}
+
+/* 'toolbar': the row straight under the terminal's toolbar, both ordered before the output, which closes up to it */
+html[data-zoron] .zoron-con[data-chips="toolbar"] .zoron-con-term > .mantine-Card-root > :first-child {
+  order: -2;
+}
+
+html[data-zoron] .zoron-con[data-chips="toolbar"] .zoron-con-chips {
+  order: -1;
+  padding-top: calc(var(--zoron-con-chips-y) + 2px);
+}
+
+html[data-zoron]
+  .zoron-con[data-chips="toolbar"]
+  .zoron-con-term:has(> .zoron-con-chips)
+  > .mantine-Card-root
+  > .flex-1 {
+  margin-top: 4px;
 }
 
 html[data-zoron] .zoron-con-chip {
@@ -2159,9 +2174,9 @@ html[data-zoron] .zoron-con-command:disabled {
 
 /*
  * Phones (Console.tsx's `usePageSize` sets data-phone under 64rem, measured as the shell's container query is): the
- * workspace out to the canvas's edges (core's `px-4` and `mb-4`), the bar as identity and the inspector button, the
- * power buttons as a full width row, the figures as one line scrolling sideways; touch targets 40px or more. With
- * the keyboard up only the identity, the terminal and the prompt stay.
+ * workspace out to the canvas's edges (core's `px-4` and `mb-4`), each bar a row per piece (identity beside the
+ * inspector button, the power buttons as a full width row, the figures as one line scrolling sideways); touch
+ * targets 40px or more. With the keyboard up only the identity, the terminal and the prompt stay.
  */
 html[data-zoron] .zoron-con[data-phone] {
   --zoron-con-fill: calc(100dvh - var(--zoron-con-top, 10rem) - 8px);
@@ -2172,19 +2187,23 @@ html[data-zoron] .zoron-con[data-phone] {
 }
 
 html[data-zoron] .zoron-con[data-phone] .zoron-con-bar {
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "id toggle"
-    "power power"
-    "meters meters";
+  grid-template-columns: var(--zoron-bar-cols-phone);
+  grid-template-areas: var(--zoron-bar-areas-phone);
   gap: 10px 12px;
   padding: 8px 8px 10px 16px;
 }
 
-html[data-zoron] .zoron-con[data-phone] .zoron-con-bar:not(:has(> .zoron-con-meters)) {
-  grid-template-areas:
-    "id toggle"
-    "power power";
+/* a bar under the terminal is the workspace's bottom edge: it keeps clear of the home indicator, not the prompt */
+html[data-zoron] .zoron-con[data-phone] .zoron-con-bar[data-place="bottom"] {
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+}
+
+html[data-zoron]
+  .zoron-con[data-phone]:has(> .zoron-con-bar[data-place="bottom"])
+  .zoron-con-term
+  > .mantine-Card-root
+  > :last-child {
+  padding-bottom: 4px;
 }
 
 html[data-zoron] .zoron-con[data-phone] .zoron-con-id {
@@ -2231,6 +2250,11 @@ html[data-zoron] .zoron-con[data-phone][data-keyboard] :is(.zoron-con-power, .zo
   display: none;
 }
 
+/* a bar the keyboard left nothing in goes too */
+html[data-zoron] .zoron-con[data-phone][data-keyboard] .zoron-con-bar:not(:has(.zoron-con-id, .zoron-con-toggle)) {
+  display: none;
+}
+
 html[data-zoron] .zoron-con[data-phone] .zoron-con-term > .mantine-Card-root > :first-child {
   padding: 0 4px 0 16px;
 }
@@ -2252,6 +2276,14 @@ html[data-zoron] .zoron-con[data-phone] .zoron-con-term > .mantine-Card-root > .
 }
 
 html[data-zoron] .zoron-con[data-phone] .zoron-con-term > .mantine-Card-root > [class~="z-90"] {
+  bottom: 4.25rem;
+}
+
+html[data-zoron]
+  .zoron-con[data-phone][data-chips="prompt"]
+  .zoron-con-term:has(> .zoron-con-chips)
+  > .mantine-Card-root
+  > [class~="z-90"] {
   bottom: 7.5rem;
 }
 
@@ -2356,19 +2388,34 @@ html[data-zoron][data-zoron-term-skin="window"] .mantine-Card-root:has(.xterm):n
   pointer-events: none;
 }
 
-/* the workspace's window: the command bar is the title bar, a shade stronger, the dots at its left */
-html[data-zoron][data-zoron-term-skin="window"] .zoron-con-bar {
+/* the workspace's window: the top bar is the title bar, a shade stronger, the dots at its start whatever piece comes
+   first: a column of their own in its grid (barLayout()'s `dots` variant), which the other rows stretch across. With
+   no top bar there are none */
+html[data-zoron][data-zoron-term-skin="window"] .zoron-con-bar[data-place="top"] {
+  grid-template-columns: var(--zoron-bar-cols-dots);
+  grid-template-areas: var(--zoron-bar-areas-dots);
   background: color-mix(in srgb, var(--zoron-con-fg) 6%, transparent);
 }
 
-html[data-zoron][data-zoron-term-skin="window"] .zoron-con-id::before {
+@container zoron-con (width < 60rem) {
+  html[data-zoron][data-zoron-term-skin="window"] .zoron-con-bar[data-place="top"] {
+    grid-template-columns: var(--zoron-bar-cols-narrow-dots);
+    grid-template-areas: var(--zoron-bar-areas-narrow-dots);
+  }
+}
+
+html[data-zoron][data-zoron-term-skin="window"] .zoron-con[data-phone] .zoron-con-bar[data-place="top"] {
+  grid-template-columns: var(--zoron-bar-cols-phone-dots);
+  grid-template-areas: var(--zoron-bar-areas-phone-dots);
+}
+
+html[data-zoron][data-zoron-term-skin="window"] .zoron-con-bar[data-place="top"]::before {
   --zoron-term-dot: color-mix(in srgb, currentColor 26%, transparent);
   content: "";
-  flex-shrink: 0;
+  grid-area: dots;
   align-self: center;
   width: 42px;
   height: 10px;
-  margin-right: 6px;
   background:
     radial-gradient(circle closest-side, var(--zoron-term-dot) 80%, transparent) left 0 center / 10px 10px no-repeat,
     radial-gradient(circle closest-side, var(--zoron-term-dot) 80%, transparent) left 16px center / 10px 10px no-repeat,
@@ -2614,6 +2661,12 @@ html[data-zoron] .zoron-home-grid {
   gap: 14px;
 }
 
+/* the compact layout: a denser grid of small cards */
+html[data-zoron] .zoron-home-grid[data-layout="compact"] {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+  gap: 10px;
+}
+
 /* a server card: the name's link stretches over it, the controls sit above that */
 html[data-zoron] .zoron-home-card {
   display: flex;
@@ -2628,6 +2681,27 @@ html[data-zoron] .zoron-home-card[data-selected] {
   box-shadow:
     0 0 0 1px var(--zoron-accent),
     var(--zoron-shadow);
+}
+
+/* a compact card: the tile, the name over the game and the state, the menu (which holds the power actions) */
+html[data-zoron] .zoron-home-card[data-layout="compact"] {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+}
+
+html[data-zoron] .zoron-home-card[data-layout="compact"] .zoron-home-card-link {
+  font-size: 0.9375rem;
+}
+
+/* loading placeholders as tall as the cards they stand for */
+html[data-zoron] .zoron-home-card[data-skeleton] {
+  height: 168px;
+}
+
+html[data-zoron] .zoron-home-card[data-skeleton][data-layout="compact"] {
+  height: 82px;
 }
 
 html[data-zoron] .zoron-home-card-link {
@@ -2707,6 +2781,168 @@ html[data-zoron] .zoron-home-tile[aria-pressed="true"] .zoron-home-tile-check {
   opacity: 1;
   background: var(--zoron-gradient);
   color: var(--zoron-accent-ink);
+}
+
+/* the smaller tile of a compact card and a list row */
+html[data-zoron] :is(.zoron-home-card[data-layout="compact"], .zoron-home-row) .zoron-home-tile {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+}
+
+/*
+ * The list layout: one surface (its own container, so narrow lists drop columns wherever the page puts them) with a
+ * row per server between hairlines. The rows are subgrids of one grid, so every row's cells share its columns: tile,
+ * name, status, address, uptime, power, menu.
+ */
+html[data-zoron] .zoron-home-list {
+  container: zoron-home-list / inline-size;
+  padding: 0;
+  overflow: clip;
+}
+
+html[data-zoron] .zoron-home-rows {
+  display: grid;
+  grid-template-columns: auto minmax(8rem, 1fr) auto fit-content(16rem) auto auto auto;
+  column-gap: 14px;
+}
+
+html[data-zoron] .zoron-home-row {
+  position: relative;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  padding: 10px 14px;
+  transition: background-color 140ms ease;
+}
+
+html[data-zoron] :is(.zoron-home-row, .zoron-home-row-skeleton) + :is(.zoron-home-row, .zoron-home-row-skeleton) {
+  border-top: 1px solid var(--zoron-hairline);
+}
+
+@media (hover: hover) {
+  html[data-zoron] .zoron-home-row:hover {
+    background-color: color-mix(in srgb, var(--mantine-color-text) 4%, transparent);
+  }
+}
+
+html[data-zoron] .zoron-home-row[data-selected] {
+  background-color: color-mix(in srgb, var(--zoron-accent) 10%, transparent);
+}
+
+html[data-zoron] .zoron-home-row .zoron-home-card-link {
+  font-size: 0.9375rem;
+}
+
+html[data-zoron] .zoron-home-row-address {
+  display: flex;
+  min-width: 0;
+}
+
+html[data-zoron] .zoron-home-row-uptime {
+  color: var(--mantine-color-dimmed);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+html[data-zoron] .zoron-home-row-power {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* narrower lists drop the address and uptime, then the power buttons (the menu still holds them) */
+@container zoron-home-list (width < 46rem) {
+  html[data-zoron] .zoron-home-rows {
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  }
+
+  html[data-zoron] :is(.zoron-home-row-address, .zoron-home-row-uptime) {
+    display: none;
+  }
+}
+
+@container zoron-home-list (width < 28rem) {
+  html[data-zoron] .zoron-home-rows {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+  }
+
+  html[data-zoron] .zoron-home-row-power {
+    display: none;
+  }
+}
+
+html[data-zoron] .zoron-home-row-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px;
+}
+
+/* a section per server group (`homeGroups`): the folder's colour, its name and how many of its servers show */
+html[data-zoron] .zoron-home-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+html[data-zoron] .zoron-home-section > .zoron-chip-dot {
+  flex-shrink: 0;
+}
+
+html[data-zoron] .zoron-home-section-count {
+  color: var(--mantine-color-dimmed);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* the visitor's layout switch: three icon buttons as one segmented control, as tall as the search beside it */
+html[data-zoron] .zoron-home-views {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 2px;
+  height: 2.25rem;
+  padding: 3px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--zoron-control-radius, 8px);
+  background-color: var(--mantine-color-default);
+}
+
+html[data-zoron] .zoron-home-view {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 100%;
+  border-radius: max(0px, calc(var(--zoron-control-radius, 8px) - 3px));
+  color: var(--mantine-color-dimmed);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+@media (hover: hover) {
+  html[data-zoron] .zoron-home-view:hover {
+    color: var(--mantine-color-text);
+  }
+}
+
+html[data-zoron] .zoron-home-view[aria-pressed="true"] {
+  background-color: color-mix(in srgb, var(--zoron-accent) 16%, transparent);
+  color: color-mix(in srgb, var(--zoron-accent) 70%, var(--mantine-color-text));
+}
+
+html[data-zoron] .zoron-home-view:focus-visible {
+  outline: 2px solid var(--zoron-accent);
+  outline-offset: 1px;
 }
 
 /* a server's tile on its own (the overview, the console's bar, the tile editor's preview), the user's look */
@@ -2798,7 +3034,7 @@ html[data-zoron] :is(.zoron-server-tile-pick, .zoron-server-tile-swatch):focus-v
   outline-offset: 2px;
 }
 
-/* status: a dot in the server's state colour (Zoron's status colours), pulsing while it runs */
+/* status: a dot in the server's state colour (Zoron's status colours), still, on a tint of it */
 html[data-zoron] .zoron-status {
   --zoron-status: var(--color-server-status-offline, var(--mantine-color-red-filled));
   display: inline-flex;
@@ -2844,6 +3080,14 @@ html[data-zoron] .zoron-status-dot {
   height: 7px;
   border-radius: 50%;
   background-color: var(--zoron-status);
+}
+
+/* the compact card's state: the dot and the word, no pill */
+html[data-zoron] .zoron-status[data-bare] {
+  align-self: flex-start;
+  padding: 0;
+  background-color: transparent;
+  font-weight: 500;
 }
 
 @media (prefers-reduced-motion: no-preference) {

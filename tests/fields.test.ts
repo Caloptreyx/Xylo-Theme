@@ -55,8 +55,7 @@ describe('withSection', () => {
     const theme = {
       ...DEFAULT_THEME,
       serverOverview: false,
-      overviewSections: ['glance' as const],
-      overviewLayout: 'wide' as const,
+      overviewGrid: [{ block: 'glance' as const, x: 0, y: 0, w: 12, h: 1 }],
       overviewUsage: 'graphs' as const,
       overviewActivityCount: 15,
       overviewHeader: 'banner' as const,
@@ -66,7 +65,7 @@ describe('withSection', () => {
     assert.equal(sectionChanged('server', theme, DEFAULT_THEME), true);
     const reset = withSection(theme, 'server', DEFAULT_THEME);
     assert.equal(sectionChanged('server', reset, DEFAULT_THEME), false);
-    assert.deepEqual(reset.overviewSections, DEFAULT_THEME.overviewSections);
+    assert.deepEqual(reset.overviewGrid, DEFAULT_THEME.overviewGrid);
     assert.equal(reset.serverOverview, true);
     assert.equal(reset.homePage, false);
   });

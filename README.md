@@ -25,18 +25,23 @@ console workspace, a server page of its own, and **Zoron Studio**, a live theme 
 - **Server tiles**: everyone can give a server their own tile, an icon (44 to pick from, or initials), a colour and
   a name only they see, from the rail tile's or the server card's menu or the server page header. It follows their
   account to every device and shows on the rail, the servers page, the server page and the console.
-- **Servers page**: search, status and group filters, sorting, and cards with status, uptime, a copyable address
-  and power controls; select several for bulk power actions. Can be switched back to the panel's own list.
+- **Servers page**: search, status and group filters, sorting, and servers as cards, compact tiles or a list, with
+  status, uptime, a copyable address and power controls; optional sections per server group; select several for
+  bulk power actions. Studio picks the layout and whether visitors may switch it; it can also be switched back to the
+  panel's own list.
 - **Server page**: a server opens on its status, live CPU, memory, disk and network, recent activity, how to
   connect (address, SFTP, ID) and its backups, schedules and addresses at a glance; the console is the next link.
-  Studio picks the blocks and their order, the layout, bars, live graphs or plain figures for usage, how much
-  activity, a plain or banner header and the description, or switches it off.
+  In Studio you arrange its blocks on a snap grid by dragging them (move, resize, hide, add back, or start from a
+  template), and pick bars, live graphs or plain figures for usage, how much activity, a plain or banner header and
+  the description, or switch it off.
 - **Console**: one full height workspace: a command bar with the server's state and live figures with sparklines,
   the terminal with a prompt line, quick command chips, and an inspector with the connect details, the commands and
   other extensions' cards (docked, sliding in, or a sheet on a phone). Clear the console or download its log from
   the terminal's header.
-  - In Studio: which figures show and their graph style (area, line, bars or none), the inspector on the right, the
-    left or off and whether it starts open, spacing, quick commands on or off, and commands for everyone.
+  - In Studio: drag the pieces into place on a drawing of the workspace (name and state, figures, power into a top
+    or bottom bar, quick command chips under the toolbar or above the prompt, the inspector left or right, or hide
+    any), reorder the figures and pick their graph style (area, line, bars or none), whether the inspector starts
+    open, spacing, quick commands on or off, and commands for everyone.
   - **Terminal looks**: 18 colour schemes (the theme's own, the panel's, One Dark, Dracula, Nord, Gruvbox, Tokyo
     Night, Catppuccin, Solarized and GitHub in dark and light, Monokai, Rosé Pine, Everforest, Kanagawa, and green
     and amber phosphor screens) and six frames (card, window, flush, glass, CRT, neon), line height, and tinted

@@ -1,4 +1,12 @@
-import { faArrowDownWideShort, faCheck, faMagnifyingGlass, faServer } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowDownWideShort,
+  faCheck,
+  faList,
+  faMagnifyingGlass,
+  faServer,
+  faTableCells,
+  faTableCellsLarge,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { type ComponentProps, cloneElement, type ReactElement, type ReactNode, useEffect, useState } from 'react';
@@ -12,6 +20,7 @@ import {
   Menu,
   Switch,
   TextInput,
+  Tooltip,
   useAdminCan,
   useAuth,
   useBulkPowerActions,
@@ -19,11 +28,23 @@ import {
   useUserStore,
 } from '../../lib/core.ts';
 import { useGroupServers, useLoadServerGroups } from '../../lib/groups.ts';
-import { useZoronTheme } from '../../lib/store.ts';
+import { inPreviewFrame, useZoronTheme } from '../../lib/store.ts';
+import { HOME_LAYOUTS, type HomeLayout } from '../../lib/theme.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { folderColor } from '../shell/folders.ts';
 import { useServerTiles } from '../tiles/useTiles.ts';
-import { SORTS, type Sort, STATUS_FILTERS, type StatusFilter, statusCounts, visibleServers } from './home.ts';
+import {
+  homeLayoutOf,
+  type LayoutPick,
+  parseLayoutPick,
+  SORTS,
+  type Sort,
+  STATUS_FILTERS,
+  type StatusFilter,
+  sectionsOf,
+  statusCounts,
+  visibleServers,
+} from './home.ts';
 import ServerCard from './ServerCard.tsx';
 
 type ContainerProps = ComponentProps<typeof AccountContentContainer>;
@@ -41,6 +62,8 @@ export function HomeSwitch({ element }: ContainerProps & { element: ReactElement
 
 /** The chosen sort, per browser. */
 const SORT_KEY = 'zoron:home-sort';
+/** The visitor's own layout, per browser, while the site lets visitors pick (`homeLayoutChoice`). */
+const LAYOUT_KEY = 'zoron:home-layout';
 /** Pages of core's server list (26 servers each) loaded at most; past that, the page says how many it shows. */
 const MAX_PAGES = 10;
 
@@ -55,6 +78,15 @@ const SORT_LABEL = {
   name: 'home.sortName',
   status: 'home.sortStatus',
 } as const satisfies Record<Sort, string>;
+const LAYOUT_LABEL = {
+  cards: 'home.layoutCards',
+  compact: 'home.layoutCompact',
+  list: 'home.layoutList',
+} as const satisfies Record<HomeLayout, string>;
+const LAYOUT_ICON = { cards: faTableCellsLarge, compact: faTableCells, list: faList } satisfies Record<
+  HomeLayout,
+  typeof faList
+>;
 
 /** Every server the user can list (or, for an admin who asks, other users' servers), up to MAX_PAGES pages. */
 async function loadServers(others: boolean): Promise<{ servers: CoreServer[]; total: number }> {
@@ -101,11 +133,38 @@ function Empty({ title, hint, action }: { title: string; hint: string; action?: 
   );
 }
 
+/** Placeholders shaped like the layout's servers while the list loads. */
+function Skeleton({ layout }: { layout: HomeLayout }) {
+  if (layout === 'list') {
+    return (
+      <Card className='zoron-home-list'>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className='zoron-home-row-skeleton'>
+            <div className='zoron-skeleton size-[34px] rounded-[10px] bg-(--mantine-color-default)' />
+            <div className='zoron-skeleton h-3 w-40 max-w-[50%] rounded bg-(--mantine-color-default)' />
+          </div>
+        ))}
+      </Card>
+    );
+  }
+  return (
+    <div className='zoron-home-grid' data-layout={layout}>
+      {[0, 1, 2].map((i) => (
+        <Card key={i} className='zoron-home-card zoron-skeleton' data-layout={layout} data-skeleton />
+      ))}
+    </div>
+  );
+}
+
 /**
- * Zoron's servers page (`homePage` on), in place of both of core's lists: a stat strip summing the shown servers'
- * live usage, a search, status chips with counts, a chip per server group (the rail's folders), a sort, and a grid
- * of server cards. Selecting cards brings up core's bulk power bar. Live usage comes from core's store, polled per
- * node while the page is open.
+ * Zoron's servers page (`homePage` on), in place of both of core's lists: a search, status chips with counts, a chip
+ * per server group (the rail's folders), a sort, then the servers in the theme's layout (`homeLayout`): 'cards', a
+ * grid of server cards with address, uptime and power buttons; 'compact', a denser grid of small cards (tile, name,
+ * game, state; power stays in the menu); 'list', one surface with a row per server in shared columns. With
+ * `homeLayoutChoice` a switch beside the sort lets each visitor pick their own (`zoron:home-layout`), except in
+ * Studio's preview, which shows the draft's. With `homeGroups` and no group chip picked, the servers come in a
+ * section per group, the ungrouped last. Selecting servers brings up core's bulk power bar. Live state comes from
+ * core's store, polled per node while the page is open.
  */
 export default function Home() {
   const { t } = useExtTranslations();
@@ -119,6 +178,7 @@ export default function Home() {
   const { handleBulkPowerAction, bulkActionLoading } = useBulkPowerActions();
   const tiles = useServerTiles();
   useLoadServerGroups();
+  const theme = useZoronTheme();
 
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
@@ -132,6 +192,16 @@ export default function Home() {
       return 'default';
     }
   });
+  // Studio's preview frame shares the editor's storage, so it neither reads nor keeps a pick: the draft decides
+  const [pick, setPick] = useState<LayoutPick | null>(() => {
+    if (inPreviewFrame) return null;
+    try {
+      return parseLayoutPick(localStorage.getItem(LAYOUT_KEY));
+    } catch {
+      return null;
+    }
+  });
+  const layout = homeLayoutOf(theme, pick);
 
   const all = useQuery({
     queryKey: ['zoron', 'home-servers', user?.uuid, others],
@@ -160,6 +230,9 @@ export default function Home() {
   const filtered = query.trim() !== '' || status !== 'all' || group !== null;
   const shownUuids = shown.map((server) => server.uuid);
   const allShownSelected = shownUuids.length > 0 && shownUuids.every((uuid) => selected.includes(uuid));
+  // sections by group only over the user's own servers as a whole, and only once some shown server is in a group
+  const sections = theme.homeGroups && !group && !others ? sectionsOf(shown, shownGroups, sort) : [];
+  const sectioned = sections.some((section) => section.group !== null);
 
   const chooseSort = (next: Sort) => {
     setSort(next);
@@ -169,12 +242,44 @@ export default function Home() {
       // storage blocked: the sort lasts until the next load
     }
   };
+  const chooseLayout = (next: HomeLayout) => {
+    setPick({ layout: next, over: inPreviewFrame ? theme.homeLayout : null });
+    if (inPreviewFrame) return;
+    try {
+      localStorage.setItem(LAYOUT_KEY, next);
+    } catch {
+      // storage blocked: the layout lasts until the next load
+    }
+  };
   const toggle = (uuid: string, on: boolean) =>
     setSelected((current) => (on ? [...current, uuid] : current.filter((other) => other !== uuid)));
   const clearFilters = () => {
     setQuery('');
     setStatus('all');
     setGroupUuid(null);
+  };
+  const serverList = (list: typeof shown) => {
+    const cards = list.map((server) => (
+      <ServerCard
+        key={server.uuid}
+        server={server}
+        usage={usage[server.uuid]}
+        layout={layout}
+        selected={selected.includes(server.uuid)}
+        selecting={selected.length > 0}
+        onSelect={(on) => toggle(server.uuid, on)}
+      />
+    ));
+    // the list is one surface, its rows sharing the columns of one grid
+    return layout === 'list' ? (
+      <Card className='zoron-home-list'>
+        <div className='zoron-home-rows'>{cards}</div>
+      </Card>
+    ) : (
+      <div className='zoron-home-grid' data-layout={layout}>
+        {cards}
+      </div>
+    );
   };
 
   return (
@@ -196,9 +301,9 @@ export default function Home() {
               }}
             />
           )}
-          <div className='flex w-full gap-2 sm:w-auto'>
+          <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap'>
             <TextInput
-              className='min-w-0 flex-1 sm:w-72 sm:flex-none'
+              className='min-w-48 flex-1 sm:w-72 sm:flex-none'
               placeholder={t('home.search', {})}
               leftSection={<FontAwesomeIcon icon={faMagnifyingGlass} />}
               value={query}
@@ -223,6 +328,23 @@ export default function Home() {
                 ))}
               </Menu.Dropdown>
             </Menu>
+            {theme.homeLayoutChoice && (
+              <div className='zoron-home-views' role='group' aria-label={t('home.layout', {})}>
+                {HOME_LAYOUTS.map((option) => (
+                  <Tooltip key={option} label={t(LAYOUT_LABEL[option], {})}>
+                    <button
+                      type='button'
+                      className='zoron-home-view'
+                      aria-pressed={layout === option}
+                      aria-label={t(LAYOUT_LABEL[option], {})}
+                      onClick={() => chooseLayout(option)}
+                    >
+                      <FontAwesomeIcon icon={LAYOUT_ICON[option]} />
+                    </button>
+                  </Tooltip>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -272,11 +394,7 @@ export default function Home() {
       </div>
 
       {loading ? (
-        <div className='zoron-home-grid'>
-          {[0, 1, 2].map((i) => (
-            <Card key={i} className='zoron-home-card zoron-skeleton' />
-          ))}
-        </div>
+        <Skeleton layout={layout} />
       ) : pool.length === 0 ? (
         <Empty title={t('home.noServers', {})} hint={t('home.noServersHint', {})} />
       ) : shown.length === 0 ? (
@@ -291,19 +409,21 @@ export default function Home() {
             )
           }
         />
+      ) : sectioned ? (
+        sections.map((section) => (
+          <section key={section.group?.uuid ?? 'other'} className='flex flex-col gap-3'>
+            <h3 className='zoron-home-section'>
+              {section.group && (
+                <span className='zoron-chip-dot' style={{ background: folderColor(section.group.name) }} />
+              )}
+              <span className='truncate'>{section.group?.name ?? t('home.otherServers', {})}</span>
+              <span className='zoron-home-section-count'>{section.servers.length}</span>
+            </h3>
+            {serverList(section.servers)}
+          </section>
+        ))
       ) : (
-        <div className='zoron-home-grid'>
-          {shown.map((server) => (
-            <ServerCard
-              key={server.uuid}
-              server={server}
-              usage={usage[server.uuid]}
-              selected={selected.includes(server.uuid)}
-              selecting={selected.length > 0}
-              onSelect={(on) => toggle(server.uuid, on)}
-            />
-          ))}
-        </div>
+        serverList(shown)
       )}
 
       {!group && all.data && all.data.total > all.data.servers.length && (

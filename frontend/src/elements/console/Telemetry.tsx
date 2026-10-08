@@ -91,8 +91,8 @@ function Meter({
 }
 
 /**
- * The command bar's live figures, those of `metrics` (the theme's, in CONSOLE_METRICS order): CPU, memory, disk,
- * and the network's traffic each way as a rate, each with a sparkline of its last minute in the `graph` style
+ * A command bar's live figures, those of `metrics` in its order (the theme's `consoleMetrics`, of CPU, memory, disk,
+ * and the network's traffic each way as a rate), each with a sparkline of its last minute in the `graph` style
  * against the server's limit where it has one. A stopped server's figures read zero (the disk excepted) over a flat,
  * muted line.
  */

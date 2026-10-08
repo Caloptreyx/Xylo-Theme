@@ -175,28 +175,31 @@ export function ToggleField({
   );
 }
 
-/** A row of chips, any number of them on; `onChange` gets the picked values in the order `options` lists them. */
+/**
+ * A row of chips, any number of them on; `onChange` gets the picked values in the order `options` lists them, or with
+ * `keepOrder` in the order `value` has them, one switched on joining the end (a list ordered elsewhere).
+ */
 export function ToggleChips<T extends string>({
   field,
   label,
   value,
   options,
+  keepOrder = false,
   onChange,
 }: {
   field: keyof ZoronTheme;
   label: string;
   value: readonly T[];
   options: { value: T; label: string }[];
+  keepOrder?: boolean;
   onChange: (value: T[]) => void;
 }) {
+  const listed = options.map((option) => option.value);
+  const order = keepOrder ? [...new Set([...value, ...listed])] : listed;
   return (
     <div className='flex flex-col gap-1.5' data-zoron-setting={field}>
       <span className='text-sm'>{label}</span>
-      <Chip.Group
-        multiple
-        value={[...value]}
-        onChange={(next) => onChange(options.map((option) => option.value).filter((v) => next.includes(v)))}
-      >
+      <Chip.Group multiple value={[...value]} onChange={(next) => onChange(order.filter((v) => next.includes(v)))}>
         <div className='flex flex-wrap gap-1.5' role='group' aria-label={label}>
           {options.map((option) => (
             <Chip key={option.value} value={option.value} size='xs' variant='outline'>

@@ -1,7 +1,16 @@
 import { faCircleInfo, faTableColumns } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Drawer } from '@mantine/core';
-import { type CSSProperties, type FC, type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  type FC,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActionIcon,
   CoreTerminal,
@@ -15,9 +24,11 @@ import {
   useVisualViewportBottomInset,
 } from '../../lib/core.ts';
 import { useZoronTheme } from '../../lib/store.ts';
+import type { ConsoleBarItem } from '../../lib/theme.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { phaseOf } from '../home/home.ts';
 import { TileHeading } from '../tiles/TileFace.tsx';
+import { barLayout, shownBarItems, toggleBar } from './console.ts';
 import { Inspector, type InspectorTab } from './Inspector.tsx';
 import { CommandChips } from './QuickCommands.tsx';
 import { Telemetry } from './Telemetry.tsx';
@@ -106,15 +117,64 @@ function readPanel(): boolean | null {
 }
 
 /**
+ * One of the workspace's bars, the top one (`header`) or the one under the terminal (`footer`): `children` are its
+ * pieces in the order of `items`, the inspector toggle last with `toggle`. Its grid at each size comes from
+ * barLayout() as custom properties app.css reads (area names only, never theme text); the top one also carries the
+ * window frame's grid, with its dots first.
+ */
+function CommandBar({
+  place,
+  items,
+  toggle,
+  children,
+}: {
+  place: 'top' | 'bottom';
+  items: readonly ConsoleBarItem[];
+  toggle: boolean;
+  children: ReactNode;
+}) {
+  const grid = barLayout(items, toggle);
+  const vars: Record<string, string> = {
+    '--zoron-bar-areas': grid.wide.areas,
+    '--zoron-bar-cols': grid.wide.columns,
+    '--zoron-bar-areas-narrow': grid.narrow.areas,
+    '--zoron-bar-cols-narrow': grid.narrow.columns,
+    '--zoron-bar-areas-phone': grid.phone.areas,
+    '--zoron-bar-cols-phone': grid.phone.columns,
+  };
+  if (place === 'bottom') {
+    return (
+      <footer className='zoron-con-bar' data-place='bottom' style={vars as CSSProperties}>
+        {children}
+      </footer>
+    );
+  }
+  const dotted = barLayout(items, toggle, true);
+  vars['--zoron-bar-areas-dots'] = dotted.wide.areas;
+  vars['--zoron-bar-cols-dots'] = dotted.wide.columns;
+  vars['--zoron-bar-areas-narrow-dots'] = dotted.narrow.areas;
+  vars['--zoron-bar-cols-narrow-dots'] = dotted.narrow.columns;
+  vars['--zoron-bar-areas-phone-dots'] = dotted.phone.areas;
+  vars['--zoron-bar-cols-phone-dots'] = dotted.phone.columns;
+  return (
+    <header className='zoron-con-bar' data-place='top' style={vars as CSSProperties}>
+      {children}
+    </header>
+  );
+}
+
+/**
  * Zoron's console page: one workspace from where it starts down to the viewport's bottom, painted in the terminal
- * scheme and worn by the terminal frame (app.css). Along its top the command bar: the server's name, state and
- * uptime, live telemetry with sparklines (the theme's figures and graph style), core's power controls and the
- * inspector toggle. Under it core's own terminal (search, history, SSH, popout, its features and input row slots),
- * its card dissolved into the workspace: its header a toolbar, its input the prompt along the bottom, the quick
- * command chips just above that, all spaced by `consoleDensity`. The inspector (connect details, quick commands,
- * other extensions' stat cards) docks on the theme's side of wide pages, slides over the terminal from that side on
- * narrower ones and is a sheet on phones; `consoleInspector: 'off'` leaves it and its toggle out. Core's three
- * charts are left out. The theme is read here, so Studio's drafts change it live.
+ * scheme and worn by the terminal frame (app.css). Its bars hold the theme's pieces in the theme's order, the top one
+ * (`consoleBar`) above the terminal and another (`consoleFooter`) under it: the server's name, state and uptime, live
+ * telemetry with sparklines (the theme's figures, in its order, and graph style), core's power controls; the
+ * inspector toggle ends the top bar, or the bottom one when only that has pieces, and a bar with nothing in it is
+ * left out. Between them core's own terminal (search, history, SSH, popout, its features and input row slots), its
+ * card dissolved into the workspace: its header a toolbar, its input the prompt along the bottom, the quick command
+ * chips just above that or just under the toolbar (`consoleChips`), all spaced by `consoleDensity`. The inspector
+ * (connect details, quick commands, other extensions' stat cards) docks on the theme's side of wide pages, slides over
+ * the terminal from that side on narrower ones and is a sheet on phones; `consoleInspector: 'off'` leaves it and its
+ * toggle out. Core's three charts are left out. The theme is read here, so Studio's drafts change it live.
  */
 function ConsolePage() {
   const { t } = useExtTranslations();
@@ -184,6 +244,63 @@ function ConsolePage() {
   const phase = phaseOf(server, { state });
   const live = phase === 'running' || phase === 'starting';
   const toggleLabel = open ? t('console.hidePanel', {}) : t('console.showPanel', {});
+  const top = shownBarItems(theme.consoleBar, theme.consoleMetrics);
+  const bottom = shownBarItems(theme.consoleFooter, theme.consoleMetrics);
+  const togglePlace = toggleBar(top, bottom, inspector);
+
+  const piece = (item: ConsoleBarItem) => {
+    if (item === 'identity') {
+      return (
+        <div key='identity' className='zoron-con-id'>
+          <TileHeading server={server} size={22} className='zoron-con-name' />
+          <span className='zoron-con-state' data-phase={phase}>
+            {t(`home.${phase}`, {})}
+          </span>
+          {live && uptime > 0 && (
+            <span className='zoron-con-uptime'>
+              {t('overview.uptime', { time: formatMilliseconds(uptime, true, false) })}
+            </span>
+          )}
+        </div>
+      );
+    }
+    if (item === 'metrics') {
+      // keyed by the server too, so another server starts its own minute of samples
+      return (
+        <Telemetry
+          key={`metrics:${server.uuid}`}
+          live={live}
+          metrics={theme.consoleMetrics}
+          graph={theme.consoleGraphs}
+        />
+      );
+    }
+    return (
+      <ServerCan key='power' action={['control.start', 'control.stop', 'control.restart']} matchAny>
+        <div className='zoron-con-power'>
+          <ServerPowerControls />
+        </div>
+      </ServerCan>
+    );
+  };
+
+  const toggle = (
+    <Tooltip label={toggleLabel}>
+      <ActionIcon
+        className='zoron-con-toggle'
+        variant={open && !phone ? 'light' : 'subtle'}
+        color='gray'
+        size={phone ? 'xl' : 'lg'}
+        data-zoron-inspector-toggle
+        aria-label={toggleLabel}
+        aria-expanded={open}
+        aria-haspopup={phone ? 'dialog' : undefined}
+        onClick={() => setOpen(!open)}
+      >
+        <FontAwesomeIcon icon={phone ? faCircleInfo : faTableColumns} />
+      </ActionIcon>
+    </Tooltip>
+  );
 
   return (
     <ServerContentContainer
@@ -198,47 +315,16 @@ function ConsolePage() {
         data-inspector={phone || !inspector ? undefined : wide ? 'docked' : 'over'}
         data-side={theme.consoleInspector === 'left' ? 'left' : undefined}
         data-density={theme.consoleDensity}
+        data-chips={theme.consoleChips}
         data-keyboard={keyboardInset > 0 || undefined}
         style={{ '--zoron-con-inset': `${keyboardInset}px` } as CSSProperties}
       >
-        <header className='zoron-con-bar'>
-          <div className='zoron-con-id'>
-            <TileHeading server={server} size={22} className='zoron-con-name' />
-            <span className='zoron-con-state' data-phase={phase}>
-              {t(`home.${phase}`, {})}
-            </span>
-            {live && uptime > 0 && (
-              <span className='zoron-con-uptime'>
-                {t('overview.uptime', { time: formatMilliseconds(uptime, true, false) })}
-              </span>
-            )}
-          </div>
-          {theme.consoleMetrics.length > 0 && (
-            <Telemetry key={server.uuid} live={live} metrics={theme.consoleMetrics} graph={theme.consoleGraphs} />
-          )}
-          <ServerCan action={['control.start', 'control.stop', 'control.restart']} matchAny>
-            <div className='zoron-con-power'>
-              <ServerPowerControls />
-            </div>
-          </ServerCan>
-          {inspector && (
-            <Tooltip label={toggleLabel}>
-              <ActionIcon
-                className='zoron-con-toggle'
-                variant={open && !phone ? 'light' : 'subtle'}
-                color='gray'
-                size={phone ? 'xl' : 'lg'}
-                data-zoron-inspector-toggle
-                aria-label={toggleLabel}
-                aria-expanded={open}
-                aria-haspopup={phone ? 'dialog' : undefined}
-                onClick={() => setOpen(!open)}
-              >
-                <FontAwesomeIcon icon={phone ? faCircleInfo : faTableColumns} />
-              </ActionIcon>
-            </Tooltip>
-          )}
-        </header>
+        {(top.length > 0 || togglePlace === 'top') && (
+          <CommandBar place='top' items={top} toggle={togglePlace === 'top'}>
+            {top.map(piece)}
+            {togglePlace === 'top' && toggle}
+          </CommandBar>
+        )}
 
         <div className='zoron-con-main'>
           <div className='zoron-con-term'>
@@ -258,6 +344,13 @@ function ConsolePage() {
             </aside>
           )}
         </div>
+
+        {(bottom.length > 0 || togglePlace === 'bottom') && (
+          <CommandBar place='bottom' items={bottom} toggle={togglePlace === 'bottom'}>
+            {bottom.map(piece)}
+            {togglePlace === 'bottom' && toggle}
+          </CommandBar>
+        )}
 
         {phone && inspector && (
           <Drawer

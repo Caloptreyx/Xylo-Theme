@@ -1,16 +1,16 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { alpha, mix } from '../../lib/color.ts';
+import { GRID_COLUMNS, gridRows } from '../../lib/grid.ts';
 import {
   type Backdrop,
   type ButtonStyle,
   type ConsoleGraph,
-  type ConsoleInspector,
   FONT_STACKS,
   type Font,
+  type HomeLayout,
   type NavStyle,
   type OverviewHeader,
-  type OverviewLayout,
-  type OverviewSection,
+  type OverviewItem,
   type OverviewUsage,
   type Pattern,
   type PresetLook,
@@ -23,7 +23,6 @@ import {
 } from '../../lib/theme.ts';
 import { serverTile } from '../../lib/tiles.ts';
 import { sparkBars, sparkPath } from '../console/telemetry.ts';
-import { overviewRows } from '../server/overview.ts';
 
 /**
  * Small drawings of each option, painted with the draft's own colours, so a choice shows what it does before it is
@@ -187,6 +186,81 @@ export function SidebarMock({ look, sidebar }: { look: Look; sidebar: Sidebar })
   );
 }
 
+/** A few made up servers in their default tiles, for the servers page drawings. */
+const HOME_TILES = ['Survival', 'Creative', 'Lobby', 'Modded', 'Skyblock', 'Proxy', 'Factions', 'Hub', 'Events'].map(
+  (name) => ({ name, background: serverTile(name).background }),
+);
+
+/**
+ * The servers page's layout (`homeLayout`): a grid of cards (tile, name and game, a power button), a denser grid of
+ * small cards (tile and name), or one surface with a row per server between hairlines (tile, name, status, address,
+ * a power button).
+ */
+export function HomeLayoutMock({ look, layout }: { look: Look; layout: HomeLayout }) {
+  const radius = Math.max(2, (look.radius ?? 16) / 5);
+  const edge = `1px solid ${alpha(look.text, 0.12)}`;
+  const surface = { borderRadius: radius, background: alpha(look.surface, 0.85), border: edge };
+  const line = (width: string, strength = 0.45) => (
+    <div className='h-1 shrink-0 rounded-sm' style={{ width, background: alpha(look.text, strength) }} />
+  );
+  if (layout === 'list') {
+    return frame(
+      look,
+      'spotlight',
+      <div className='absolute inset-1.5 flex flex-col overflow-hidden' style={surface}>
+        {HOME_TILES.slice(0, 4).map((tile, i) => (
+          <div
+            key={tile.name}
+            className='flex min-h-0 flex-1 items-center gap-[3px] px-[3px]'
+            style={{ borderTop: i > 0 ? edge : undefined }}
+          >
+            <div className='size-1.5 shrink-0 rounded-[2px]' style={{ background: tile.background }} />
+            {line('28%')}
+            <div
+              className='ml-auto h-1 w-2 shrink-0 rounded-full'
+              style={{ background: alpha(i === 2 ? look.text : '#22c55e', 0.5) }}
+            />
+            {line('18%', 0.2)}
+            <div className='h-1 w-1.5 shrink-0 rounded-sm' style={{ background: look.accent }} />
+          </div>
+        ))}
+      </div>,
+    );
+  }
+  if (layout === 'compact') {
+    return frame(
+      look,
+      'spotlight',
+      <div className='absolute inset-1.5 grid grid-cols-3 grid-rows-3 gap-[3px]'>
+        {HOME_TILES.map((tile) => (
+          <div key={tile.name} className='flex min-w-0 items-center gap-[2px] px-[2px]' style={surface}>
+            <div className='size-1.5 shrink-0 rounded-[2px]' style={{ background: tile.background }} />
+            {line('55%')}
+          </div>
+        ))}
+      </div>,
+    );
+  }
+  return frame(
+    look,
+    'spotlight',
+    <div className='absolute inset-1.5 grid grid-cols-2 grid-rows-2 gap-[3px]'>
+      {HOME_TILES.slice(0, 4).map((tile) => (
+        <div key={tile.name} className='flex min-w-0 flex-col justify-between p-[3px]' style={surface}>
+          <div className='flex items-center gap-[3px]'>
+            <div className='size-2 shrink-0 rounded-[2px]' style={{ background: tile.background }} />
+            <div className='flex min-w-0 flex-1 flex-col gap-[2px]'>
+              {line('80%')}
+              {line('50%', 0.2)}
+            </div>
+          </div>
+          <div className='h-1 w-2.5 self-end rounded-sm' style={{ background: look.accent }} />
+        </div>
+      ))}
+    </div>,
+  );
+}
+
 function navActive(t: Look, nav: NavStyle): CSSProperties {
   if (nav === 'pill') return { background: gradient(t), boxShadow: `0 3px 10px -4px ${alpha(t.accent, 0.7)}` };
   if (nav === 'glow')
@@ -273,7 +347,7 @@ const PANEL_TERMINAL = {
 };
 
 /** The colours the drawings use from a scheme; core's own for 'panel'. */
-const terminalInk = (palette: TerminalPalette | null) =>
+export const terminalInk = (palette: TerminalPalette | null) =>
   palette
     ? {
         foreground: palette.foreground,
@@ -455,64 +529,6 @@ export function ConsoleGraphMock({
   );
 }
 
-/**
- * The console workspace's layout (`consoleInspector`) on the page's canvas: the command bar along the top, the
- * terminal's lines, and the inspector's column on the right, on the left, or none.
- */
-export function ConsoleInspectorMock({
-  look,
-  palette,
-  side,
-}: {
-  look: Look;
-  palette: TerminalPalette | null;
-  side: ConsoleInspector;
-}) {
-  const c = terminalInk(palette);
-  const line = alpha(c.foreground, 0.14);
-  const step = alpha(c.foreground, 0.06);
-  const column = (
-    <div
-      className='flex w-[30%] shrink-0 flex-col gap-1 p-1'
-      style={{
-        background: step,
-        borderLeft: side === 'left' ? undefined : `1px solid ${line}`,
-        borderRight: side === 'left' ? `1px solid ${line}` : undefined,
-        order: side === 'left' ? -1 : 0,
-      }}
-    >
-      <div className='h-1 w-3/4 rounded-sm' style={{ background: alpha(c.foreground, 0.4) }} />
-      <div className='h-1 w-1/2 rounded-sm' style={{ background: alpha(c.foreground, 0.2) }} />
-    </div>
-  );
-  return frame(
-    look,
-    'spotlight',
-    <div
-      className='absolute flex flex-col overflow-hidden'
-      style={{
-        inset: '14% 10%',
-        borderRadius: Math.max(3, (look.radius ?? 16) / 3),
-        border: `1px solid ${alpha(look.text, 0.14)}`,
-        background: palette?.background ?? look.surface,
-      }}
-    >
-      <div className='flex h-[22%] shrink-0 items-center gap-1 px-1.5' style={{ background: step }}>
-        <div className='h-1 w-4 rounded-sm' style={{ background: alpha(c.foreground, 0.55) }} />
-        <div className='h-1 w-2 rounded-sm' style={{ background: c.green }} />
-      </div>
-      <div className='flex min-h-0 flex-1' style={{ borderTop: `1px solid ${line}` }}>
-        <div className='flex min-w-0 flex-1 flex-col justify-center gap-1 px-1.5'>
-          {inkBar(c.foreground, '70%')}
-          {inkBar(c.green, '45%')}
-          {inkBar(c.dim, '60%')}
-        </div>
-        {side !== 'off' && column}
-      </div>
-    </div>,
-  );
-}
-
 /** A whole preset at a glance: backdrop, sidebar, a card and a button. */
 export function PresetMock({ look }: { look: PresetLook }) {
   const fill =
@@ -562,57 +578,37 @@ export function PresetMock({ look }: { look: PresetLook }) {
   );
 }
 
-/** How tall each overview block draws, relative to the others. */
-const BLOCK_HEIGHT: Record<OverviewSection, number> = { usage: 1, activity: 3, connect: 2, glance: 1.5 };
-
 /**
- * The overview's layout (`overviewLayout`) with the blocks the draft lists, in its order, laid out by the overview's
- * own rules (overviewRows): the header's line, then the usage strip (a faint accent) and the cards.
+ * An overview grid (`overviewGrid`, or a template Studio offers to start from): the header's line, then each block
+ * at its place on the twelve columns, every row the same height; the usage strip a faint accent, the others cards.
  */
-export function OverviewLayoutMock({
-  look,
-  layout,
-  blocks,
-}: {
-  look: Look;
-  layout: OverviewLayout;
-  blocks: readonly OverviewSection[];
-}) {
+export function OverviewLayoutMock({ look, grid }: { look: Look; grid: readonly OverviewItem[] }) {
   const radius = Math.max(2, (look.radius ?? 16) / 5);
   return frame(
     look,
     'spotlight',
     <div className='absolute inset-1.5 flex flex-col gap-[3px]'>
       <div className='h-1.5 w-1/3 shrink-0 rounded-sm' style={{ background: alpha(look.text, 0.45) }} />
-      {overviewRows(blocks, layout).map((row) => (
-        <div
-          key={row.columns.flat().join()}
-          className='flex min-h-0 gap-[3px]'
-          style={{
-            flex: `${Math.max(...row.columns.map((column) => column.reduce((sum, b) => sum + BLOCK_HEIGHT[b], 0)))} 1 0`,
-          }}
-        >
-          {row.columns.map((column) => (
-            <div
-              key={column.join()}
-              className='flex min-w-0 flex-col gap-[3px]'
-              style={{ flex: `${row.kind === 'even' || !column.includes('activity') ? 2 : 3} 1 0` }}
-            >
-              {column.map((block) => (
-                <div
-                  key={block}
-                  style={{
-                    flex: `${BLOCK_HEIGHT[block]} 1 0`,
-                    borderRadius: radius,
-                    background: block === 'usage' ? alpha(look.accent, 0.22) : alpha(look.surface, 0.85),
-                    border: `1px solid ${alpha(look.text, 0.12)}`,
-                  }}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      ))}
+      <div
+        className='grid min-h-0 flex-1 gap-[3px]'
+        style={{
+          gridTemplateColumns: `repeat(${GRID_COLUMNS}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${Math.max(1, gridRows(grid))}, minmax(0, 1fr))`,
+        }}
+      >
+        {grid.map((item) => (
+          <div
+            key={item.block}
+            style={{
+              gridColumn: `${item.x + 1} / span ${item.w}`,
+              gridRow: `${item.y + 1} / span ${item.h}`,
+              borderRadius: radius,
+              background: item.block === 'usage' ? alpha(look.accent, 0.22) : alpha(look.surface, 0.85),
+              border: `1px solid ${alpha(look.text, 0.12)}`,
+            }}
+          />
+        ))}
+      </div>
     </div>,
   );
 }

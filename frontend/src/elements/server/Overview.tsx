@@ -1,7 +1,7 @@
 import { faChevronRight, faClock, faGamepad, faServer, faTerminal } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useQuery } from '@tanstack/react-query';
-import { type FC, Fragment, type ReactNode, useEffect, useState } from 'react';
+import { type CSSProperties, type FC, type ReactNode, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
   Avatar,
@@ -18,13 +18,14 @@ import {
   useServerCan,
   useServerStore,
 } from '../../lib/core.ts';
+import { sortGrid } from '../../lib/grid.ts';
 import { useZoronTheme } from '../../lib/store.ts';
 import type { OverviewSection } from '../../lib/theme.ts';
 import { useExtTranslations } from '../../translations.ts';
 import { addressOf, phaseOf } from '../home/home.ts';
 import { TileButton } from '../tiles/TileEditor.tsx';
 import { useServerTile } from '../tiles/useTiles.ts';
-import { eventLabel, newest, overviewRows, timeAgo } from './overview.ts';
+import { eventLabel, newest, timeAgo, visibleGrid } from './overview.ts';
 import { ConnectDetails, Section, StatusChip, UsageStrip } from './parts.tsx';
 
 /**
@@ -70,9 +71,9 @@ function GlanceRow({ to, label, value, detail }: { to: string | null; label: str
 /**
  * Zoron's server overview: the server's name, status, game, node and uptime with core's own power controls and a way
  * to the console; live CPU, memory, disk and network from the server's websocket; recent activity; how to connect
- * (address, SFTP, the ID); and backups, schedules and addresses at a glance. The theme picks the blocks, their order
- * and layout, the usage style, how much activity, the head and the description. Each block needs the permission its
- * page needs and is left out without it.
+ * (address, SFTP, the ID); and backups, schedules and addresses at a glance. The theme places the blocks on a snap
+ * grid and picks the usage style, how much activity, the head and the description. Each block needs the permission
+ * its page needs and is left out without it; the blocks beside it then close the gap.
  */
 function Overview() {
   const { t, language } = useExtTranslations();
@@ -89,14 +90,15 @@ function Overview() {
   const keys = queryKeys.server(server.uuid);
   const base = `/server/${server.uuidShort}`;
 
-  // the blocks the theme lists and the visitor may see, in the theme's order
+  // the theme's grid without the blocks the visitor may not see, its neighbours widened over the hole that leaves
   const allowed: Record<OverviewSection, boolean> = {
     usage: true,
     activity: canActivity,
     connect: true,
     glance: canBackups || canSchedules || canAllocations,
   };
-  const blocks = theme.overviewSections.filter((block) => allowed[block]);
+  const grid = sortGrid(visibleGrid(theme.overviewGrid, allowed));
+  const blocks = grid.map((item) => item.block);
   const glance = blocks.includes('glance');
 
   // under core's keys, so what core's own pages change (a new backup, a deleted schedule) refreshes these too
@@ -273,20 +275,28 @@ function Overview() {
 
   return (
     <ServerContentContainer title={t('overview.title', {})} hideTitleComponent>
-      <div className='zoron-ov flex flex-col gap-5' data-layout={theme.overviewLayout}>
+      <div className='zoron-ov flex flex-col gap-5'>
         {banner ? <Card className='zoron-ov-banner'>{header}</Card> : header}
 
-        {overviewRows(blocks, theme.overviewLayout).map((row) => (
-          <div key={row.columns.flat().join()} className='zoron-ov-grid' data-kind={row.kind}>
-            {row.columns.map((column) => (
-              <div key={column.join()} className='flex min-w-0 flex-col gap-4'>
-                {column.map((block) => (
-                  <Fragment key={block}>{content[block]}</Fragment>
-                ))}
-              </div>
-            ))}
-          </div>
-        ))}
+        {/* in reading order, so the one column a narrow page shows follows the grid row by row */}
+        <div className='zoron-ov-grid'>
+          {grid.map((item) => (
+            <div
+              key={item.block}
+              className='zoron-ov-cell'
+              style={
+                {
+                  '--zoron-col': item.x + 1,
+                  '--zoron-span': item.w,
+                  '--zoron-row': item.y + 1,
+                  '--zoron-rows': item.h,
+                } as CSSProperties
+              }
+            >
+              {content[item.block]}
+            </div>
+          ))}
+        </div>
       </div>
     </ServerContentContainer>
   );

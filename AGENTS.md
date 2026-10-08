@@ -19,11 +19,13 @@ frontend/src/lib/store.ts         paints the theme (with the visitor's terminal 
                                   bridge, useZoronTheme()
 frontend/src/lib/core.ts          every core (`@/`) import, in one place
 frontend/src/lib/groups.ts        the server group queries the rail and the servers page share
+frontend/src/lib/grid.ts          the overview's snap grid: settle, move, resize, place, remove, fill gaps (pure)
 frontend/src/lib/tiles.ts         server tiles: the default look, each user's own look (normalizeTiles(), pure)
 frontend/src/app.css              static CSS keyed off html's data-zoron-* attributes, fonts
 frontend/src/pages/ThemeEditor.tsx  Zoron Studio
 frontend/src/elements/editor/     sections (one per editor tab), controls, mocks (the option drawings), fields.ts (each
-                                  section's theme fields and their search labels)
+                                  section's theme fields and their search labels), OverviewArrange.tsx and
+                                  ConsoleArrange.tsx (the drag and drop canvases of the Server page and Console tabs)
 frontend/src/elements/shell/      the rail layout: Shell.tsx (context panel, phone top bar and drawer), Rail.tsx (the
                                   rail, folders, drag and drop), nav.ts (core's sidebar nodes), folders.ts (pure rules)
 frontend/src/elements/home/       the servers page: Home.tsx (page, HomeSwitch), ServerCard.tsx, home.ts (pure rules)
@@ -41,8 +43,8 @@ frontend/src/elements/Greeting.tsx  the greeting above the servers list
 frontend/src/elements/LoginLinks.tsx  `loginLinks`: chips at the top of every sign in page (core's `pages.auth` slot,
                                   above the logo), e.g. a demo's shared login; edited in Studio's Layout tab
 frontend/src/translations.ts      every user facing string (English)
-tests/*.test.ts                   node:test cases for lib/theme.ts, lib/color.ts, lib/terminal.ts, lib/tiles.ts,
-                                  shell/folders.ts, home/home.ts, server/overview.ts, console/console.ts,
+tests/*.test.ts                   node:test cases for lib/theme.ts, lib/grid.ts, lib/color.ts, lib/terminal.ts,
+                                  lib/tiles.ts, shell/folders.ts, home/home.ts, server/overview.ts, console/console.ts,
                                   console/telemetry.ts, editor/fields.ts (not shipped)
 scripts/package.py                builds dist/dev_caloptreyx_zoron.c7s.zip
 ```
@@ -155,14 +157,27 @@ its first page; that is the cost of not owning the route.
   (`serverResourceUsage`); the page subscribes to every node its servers live on while it is open. No resource
   usage on this page, by request: that lives on the server overview.
 - home.ts: `phaseOf` (suspended, failed, installing, restoring, transferring outrank the power state; no usage reads
-  offline), the status filters and their counts, and the sorts (`zoron:home-sort`).
-- ServerCard: the name is the link, stretched over the card (`::after`), so the controls above it (`.zoron-home-raise`)
-  stay real buttons. A name of the user's own (server tiles, above) is the title, the real one quiet before the game;
-  the search matches both and the name sort uses the shown one. Power buttons follow core's rules: the server's
-  permissions plus the role's, nothing while installing, restoring, transferring, suspended or in node maintenance;
-  kill only while stopping, confirmed. Power goes through core's `useBulkPowerActions` (its toasts), add to group
-  through core's `ServerAddGroupModal`. The tile turns into a check box; any selection brings up core's
-  `BulkActionBar`.
+  offline), the status filters and their counts, the sorts (`zoron:home-sort`), `parseLayoutPick`/`homeLayoutOf`
+  (the layout shown) and `sectionsOf` (the group sections).
+- Layouts (`homeLayout`): 'cards' (the card grid), 'compact' (a denser grid of small cards from 13rem: tile, name,
+  game, the state as a dot and text; power only in the menu) and 'list' (one card, a container `zoron-home-list`, with
+  a subgrid row per server in columns shared across rows: tile, name, status, address, uptime, power, menu; under
+  46rem of its width the address and uptime drop, under 28rem the power buttons too). With `homeLayoutChoice` (on by
+  default) a segmented switch beside the sort lets each visitor pick their own, kept in `zoron:home-layout`
+  (`parseLayoutPick`); `homeLayoutOf(theme, pick)` decides. Studio's preview frame neither reads nor writes the pick:
+  one made there stays in memory and gives way as soon as the draft's `homeLayout` changes.
+- Sections (`homeGroups`, off by default): with no group chip picked, not showing other users' servers, and some
+  shown server in a group, `sectionsOf(shown, groups, sort)` splits the shown servers into one section per group in
+  the groups' order (a folder colour dot, the name, a count), then "Other servers" for the ungrouped. With the
+  default sort a group follows its `serverOrder`, other sorts apply within each section; a server in several groups
+  shows in each; empty sections are left out.
+- ServerCard (a `layout` prop; every layout shares one set of power rules, menu and dialogs): the name is the link,
+  stretched over the card (`::after`), so the controls above it (`.zoron-home-raise`) stay real buttons. A name of the
+  user's own (server tiles, above) is the title, the real one quiet before the game; the search matches both and the
+  name sort uses the shown one. Power buttons follow core's rules: the server's permissions plus the role's, nothing
+  while installing, restoring, transferring, suspended or in node maintenance; kill only while stopping, confirmed.
+  Power goes through core's `useBulkPowerActions` (its toasts), add to group through core's `ServerAddGroupModal`.
+  The tile turns into a check box; any selection brings up core's `BulkActionBar`.
 
 ## The server overview
 
@@ -180,40 +195,56 @@ once the admin adds `/terminal` to that order (core's editor lists it, since it 
   and its part is left out without it, and nothing is fetched for a block the theme hides. Databases are not
   fetched (core's list includes passwords).
 - Power is core's own `ServerPowerControls` (websocket, kill confirmation, other extensions' power buttons).
-- The theme shapes the page, read with `useZoronTheme()` so Studio's preview follows each draft:
-  `overviewSections` (the blocks usage, activity, connect and glance, in order; one left out is hidden; allow listed
-  and de-duplicated, order kept), `overviewLayout` (`overviewRows` in overview.ts: 'split', today's, gives usage a
-  row and sets activity beside a narrower stack of the blocks listed next to it, on the side it was listed; 'stacked'
-  is one block a row; 'wide' gives usage and activity rows and pairs neighbouring connect and glance cards at equal
-  widths; every row is one column under 64rem), `overviewUsage` ('bars' against the limits; 'graphs', sparklines of
-  the last minute from the console's `useTelemetry` and `sparkPath`, the network then as rates; 'numbers', the
-  figures alone and larger), `overviewActivityCount` (3 to 20 of the 25 core's first page holds),
-  `overviewHeader` ('plain', or 'banner': the head in a card tinted with the accent and a larger tile; the tint runs
-  between the two accents only with gradient buttons) and `overviewDescription`.
+- The blocks sit on a snap grid, `overviewGrid` (lib/grid.ts): `{ block, x, y, w, h }` per shown block (usage,
+  activity, connect, glance; one not on it is hidden) on 12 columns, `w` 3 to 12, `h` 1 to 4 rows, rows as tall as
+  their cards. normalizeTheme() allow lists, de-duplicates, clamps and settles it (`settleGrid`: no overlaps, every
+  block as high as it fits, so no empty rows). Themes saved before the grid had `overviewSections` and
+  `overviewLayout`; normalizeTheme() turns those into the grid they drew (`overviewTemplate`, the same templates
+  Studio offers: 'split', usage across and activity 7 columns wide beside a column of the blocks listed next to it;
+  'stacked'; 'wide'). The page renders `visibleGrid(grid, allowed)` (overview.ts: a block the visitor may not see is
+  dropped and its neighbours widen over the gap, `fillGaps`) as one `.zoron-ov-grid` of `.zoron-ov-cell`s in reading
+  order, each with whole number custom properties (`--zoron-col`, `--zoron-span`, `--zoron-row`, `--zoron-rows`)
+  that app.css uses from 64rem; below, one column in reading order. Cards stretch to fill their cell, so neighbours
+  share edges.
+- The rest of the theme shapes it too, read with `useZoronTheme()` so Studio's preview follows each draft:
+  `overviewUsage` ('bars' against the limits; 'graphs', sparklines of the last minute from the console's
+  `useTelemetry` and `sparkPath`, the network then as rates; 'numbers', the figures alone and larger),
+  `overviewActivityCount` (3 to 20 of the 25 core's first page holds), `overviewHeader` ('plain', or 'banner': the
+  head in a card tinted with the accent and a larger tile; the tint runs between the two accents only with gradient
+  buttons) and `overviewDescription`.
 - overview.ts: `eventLabel` (`server:power.start` reads "Power start"), `timeAgo`, `percentOf`/`levelOf` for the
-  bars, `newest`, `overviewRows`.
+  bars, `newest`, `visibleGrid`, and the arrange canvas's geometry: `BLOCK_SIZE` (a block added from the tray),
+  `snapCell`, `snapSize`, `dropGrid`, `nudgeItem`.
 
 ## The console
 
 `consolePage` (on by default) replaces core's console page wherever core shows it: `/terminal`, and `/` when the
 overview is off. The route interceptor in index.ts gives both a `ConsoleSwitch` around core's element, read with the
 theme hook so Studio switches it live; `/console/popout` stays core's. The page's own settings (`consoleMetrics`,
-`consoleGraphs`, `consoleInspector`, `consoleInspectorOpen`, `consoleDensity`, `consoleQuickCommands`,
-`consoleCommands`) are read with `useZoronTheme()` in the components, so Studio's preview follows each draft.
+`consoleGraphs`, `consoleBar`, `consoleFooter`, `consoleChips`, `consoleInspector`, `consoleInspectorOpen`,
+`consoleDensity`, `consoleQuickCommands`, `consoleCommands`) are read with `useZoronTheme()` in the components, so
+Studio's preview follows each draft.
 
 - The page is one workspace: a single surface (`.zoron-con`) from where it starts (`--zoron-con-top`, measured when the
   page's height or the window changes) to the viewport's bottom, at least 24rem, shrinking above the on-screen
   keyboard as core's terminal does (`useVisualViewportBottomInset`); no cards around or inside it. It is wrapped in
   `ServerContentContainer` with core's title and container registry, so other extensions' container slots stay.
   Core's three charts are dropped.
-- The command bar (its top strip): the name (truncated), the state as text in its status colour (`phaseOf`, the
-  status chip's colours) and the uptime while it runs; the telemetry (Telemetry.tsx: the figures of
-  `consoleMetrics`, of CPU, memory, disk, network in and out as rates, in `CONSOLE_METRICS` order, each a dimmed
-  label, a tabular value and a sparkline of the last 60 samples, limits and totals in the title; flat and muted
-  while offline; none leaves the telemetry out and the bar closes up); core's `ServerPowerControls` (in core's
-  `ServerCan`) restyled as one segmented group by CSS on core's markup; the inspector toggle. One row, two (figures
-  under) when the workspace is under 60rem (`@container zoron-con`; the grid drops the missing figures or toggle by
-  `:has`). The sparkline style is `consoleGraphs` (`data-graph` on the figures): 'area' (the line over a faint
+- The bars: `consoleBar` (the bar above the terminal, `data-place="top"`) and `consoleFooter` (one under it,
+  `data-place="bottom"`, its hairline on top) list the pieces in order, each piece in one bar at most (normalizeTheme()
+  keeps it in the top bar), one in neither hidden: identity (the name, truncated, the state as text in its status
+  colour, `phaseOf` and the status chip's colours, and the uptime while it runs), metrics (the telemetry, below) and
+  power (core's `ServerPowerControls`, in core's `ServerCan`, restyled as one segmented group by CSS on core's
+  markup). The inspector toggle ends the top bar, or the bottom one when only that has pieces, or sits alone in the
+  top bar when both are empty (`toggleBar`); a bar with nothing in it is not rendered. `barLayout(items, toggle,
+  dots)` (console.ts) builds each bar's `grid-template-areas` and columns for three sizes: one row; two (figures
+  under) when the workspace is under 60rem (`@container zoron-con`); and phones (identity with the toggle, power,
+  figures last, a row each). They are inline custom properties (`--zoron-bar-areas`, `--zoron-bar-cols`, their
+  `-narrow`, `-phone` and `-dots` forms), safe since every area name is a fixed one, which app.css reads. The
+  telemetry (Telemetry.tsx) shows the figures of `consoleMetrics` in its order (CPU, memory, disk, network in and
+  out as rates), each a dimmed label, a tabular value and a sparkline of the last 60 samples, limits and totals in
+  the title; flat and muted while offline; none leaves the telemetry out (`shownBarItems`). The sparkline style is
+  `consoleGraphs` (`data-graph` on the figures): 'area' (the line over a faint
   fill, the default), 'line', 'bars' (thin columns) or 'none' (label over value only). `useTelemetry` subscribes
   to core's server store (`useServerStoreApi`) and feeds telemetry.ts: `pushSample` (a 60 sample window), `ratesOf`
   (bytes per second from the running totals, none across a restart), `withReading` (an offline reading starts the
@@ -227,7 +258,10 @@ theme hook so Studio switches it live; `/console/popout` stays core's. The page'
   middle. Its card is `display: contents` inside `.zoron-con-term`, so its children lay out in that column: the header
   is a slim toolbar (its connection dot small and still), the output inset, the input row (`order: 2`) a prompt along
   the bottom edge (a `›` cue, or core's prefix button where the panel has one, 1.2.4; mono, no box, focus lights its
-  edge), and the quick command chips (`order: 1`) just above it. xterm.ts and TerminalButtons still find the card.
+  edge), and the quick command chips where `consoleChips` puts them (`data-chips` on the workspace): 'prompt' just
+  above it (`order: 1`), 'toolbar' just under the toolbar (toolbar `order: -2`, chips `-1`), or 'off'. The
+  scroll-to-bottom button clears the prompt, plus the chips when they sit above it. xterm.ts and TerminalButtons
+  still find the card.
 - The workspace paints the scheme (`--zoron-term-bg`, the solid card colour with 'panel') and, with a named scheme,
   sets Mantine's text, dimmed, default and border colours and `--zoron-hairline` from it, so a dark scheme in light
   mode (or the reverse) reads; the bar and the inspector sit a step off it (the scheme's text mixed in).
@@ -242,12 +276,14 @@ theme hook so Studio switches it live; `/console/popout` stays core's. The page'
   its side's edge (transform and opacity; none with the motion setting off or reduced motion), opens on demand only,
   and closes on Escape and a press outside it (toggles and portals excepted).
 - Phones (`data-phone` under 64rem, the shell's top bar width): the workspace bleeds to the canvas's edges (core's
-  `px-4` and `mb-4`), the bar is identity and the inspector button, power a full width segmented row, the figures
-  one sideways scrolling line with smaller sparklines (power and figures hide while the keyboard is up); the
+  `px-4` and `mb-4`), the bar rows as `barLayout` gives them, power a full width segmented row, the figures one
+  sideways scrolling line with smaller sparklines (power and figures hide while the keyboard is up, and a bar left
+  with only those hides too; a bottom bar takes the safe area padding); the
   toolbar's buttons 40px scrolling sideways; the prompt at 16px so the browser doesn't zoom. The inspector is a
   Mantine `Drawer` from the bottom (at most 85dvh, safe area padded) with the same tabs, on either side setting.
   Touch targets are at least 40px; nothing depends on hover.
-- Quick commands (`consoleQuickCommands`, on by default; off hides the chip row and the Commands tab): the site's
+- Quick commands (`consoleQuickCommands`, on by default; off hides the chip row and the Commands tab, while
+  `consoleChips: 'off'` hides only the row): the site's
   (`consoleCommands`, set in Studio: control characters dropped, trimmed, 1 to 200 characters, unique, at most 12,
   by normalizeTheme()'s `siteCommand()`) first, then the visitor's own, per server and browser
   (`zoron:commands:<uuid>`), at most 20 of 200 characters, one line each, validated on read (console.ts); an own one
@@ -274,7 +310,8 @@ theme hook so Studio switches it live; `/console/popout` stays core's. The page'
   `.xterm` on core's console and the popout, and the whole workspace on Zoron's page (the card rules that would draw
   around the dissolved card skip `.zoron-con-term > *`): card (plain), window (core's card: a title bar of `::before`
   dots, core's header moved down by a margin, since core's `p-2!` is a layered `!important`; the workspace: the dots
-  at the left of the command bar, which turns title bar), flush (no surface: 'theme' and 'panel' on the canvas, a
+  are a `dots` column at the start of the top bar (`barLayout(…, true)`), none without a top bar, and that bar turns
+  title bar), flush (no surface: 'theme' and 'panel' on the canvas, a
   named scheme on its own background, `--zoron-term-flush`), glass (the scheme's background translucent,
   `--zoron-blur`), crt (scanlines and vignette in a `::after` that clicks pass through, over the workspace's terminal
   column; text glow on the DOM renderer's row spans, still; `--zoron-term-scan/vignette/glow` from buildCss are faint
@@ -314,16 +351,36 @@ in the draft; the preview and drawings use the last valid normalized draft.
   so every visitor's theme JSON carries them; they hold looks only. "Reset to the default look" keeps them.
 - The preview's page picker lists the first server's overview and console (`/terminal` while the overview is on,
   otherwise the console is the server's own page).
-- The Server page tab: Page (`serverOverview`, moved here from Layout), then, only while the overview is on, Blocks
-  (`BlockList` in sections.tsx: a switch and move up and down buttons per block, those on in order, then those off;
-  one switched on joins the end), Layout (each tile an `OverviewLayoutMock` of the draft's blocks laid out by
-  `overviewRows`), Usage figures (`OverviewUsageMock`, the graphs drawn with telemetry.ts's `sparkPath`) with the
-  activity entries slider, and Header (`OverviewHeaderMock`) with the description switch.
-- The Console tab: Page (Zoron's console page, and with it its spacing), then, only while that page is on, Command
-  bar (the figures as toggle chips, `ToggleChips`; the graph style, each tile a `ConsoleGraphMock` drawn with
-  telemetry.ts's builders), Inspector (the side, each tile a `ConsoleInspectorMock` of the workspace's layout; open
-  by default unless 'off') and Quick commands (the switch, and the site's commands as an editable list: add with
-  Enter or the button, move up and down, remove, with normalizeTheme()'s limits and a count); then the terminal
+- The Server page tab: Page (`serverOverview`, moved here from Layout), then, only while the overview is on, Arrange
+  (OverviewArrange.tsx, `overviewGrid`): a canvas of the 12 columns, rows drawn 44px tall, a fixed header strip on top.
+  Drag a block to move it (the target cell is where its corner would be, rounded: `snapCell`; a dashed ghost marks
+  it while the others reflow as `moveItem` leaves them), its corner to resize it (`snapSize`, `resizeItem`), its ×
+  or a drop on the "Hidden blocks" tray to hide it; drag a tray chip onto the canvas to place it there at its
+  `BLOCK_SIZE`, or press it to add it at the bottom. Raw pointer events with capture (mouse and touch alike), a 5px
+  move before a press drags, Escape cancels; the dragged block's element stays mounted as its ghost, since it holds
+  the capture, and the canvas only fills its spare row during a drag, so the tray stays put. Keyboard: arrows move a
+  block, Shift and the arrows resize it, Delete hides it, announced in a polite live region. Each gesture is one
+  `set()`, so one undo step. "Start from" tiles (`OverviewLayoutMock` of each template) lay the shown blocks out as
+  `overviewTemplate` does; one reads as picked while the grid equals it. Then Usage figures (`OverviewUsageMock`, the
+  graphs drawn with telemetry.ts's `sparkPath`) with the activity entries slider, and Header (`OverviewHeaderMock`)
+  with the description switch.
+- The Layout tab's Pages group: the servers page switch, then while it is on `homeLayout` (each tile a
+  `HomeLayoutMock`), `homeGroups` and `homeLayoutChoice`.
+- The Console tab: Page (Zoron's console page, and with it its spacing), then, only while that page is on, Arrange
+  (ConsoleArrange.tsx): a drawing of the workspace with a top and a bottom bar, the terminal in the scheme's colours
+  with a chip slot under its toolbar and one above its prompt, a side slot left and right, and a "Hidden" tray; each
+  zone carries its field (`consoleBar` on the wrapper, `consoleFooter`, `consoleChips`, `consoleInspector`). The
+  pieces (name and state, figures, power, quick commands, inspector) drag between the zones that take them (bar
+  pieces snap between the items of either bar, marked by an accent bar; chips to either slot; the inspector to
+  either side; any to the tray to hide it); the zones that take a piece are tinted while it drags, the rest dimmed,
+  and a drop elsewhere or Escape puts it back. A click, Enter or Space on a piece opens a menu of where it can go
+  (the keyboard and touch path). The figures piece shows the picked figures as chips that drag sideways (or move
+  with the arrows) to reorder `consoleMetrics`. `placeBarItem` and `placed` (console.ts) do the moves; each gesture
+  is one `set()`. Then Command bar (the figures as toggle chips, `ToggleChips` with `keepOrder`, so a figure switched
+  on joins the end; the graph style, each tile a `ConsoleGraphMock` drawn with telemetry.ts's builders), Inspector
+  (open by default, while it is not off) and Quick commands (the switch, and the site's commands as an editable
+  list: add with Enter or the button, move up and down, remove, with normalizeTheme()'s limits and a count); then
+  the terminal
   scheme in groups (matched to the panel, dark, light, retro; each tile a `TerminalMock` of `terminalPalette()` in
   dark mode; Panel drawn as core's, on the surface), the frame (`TerminalSkinMock`, the draft's scheme in each
   frame), whether visitors may pick their own, line height and log highlighting. The code font stays under Type.
