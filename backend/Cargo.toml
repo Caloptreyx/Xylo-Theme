@@ -2,7 +2,7 @@
 name = "dev_caloptreyx_zoron"
 description = "A Calagopus Panel theme with an icon rail, a console workspace and a live theme editor."
 authors = ["Caloptreyx"]
-version = "1.0.0"
+version = "1.0.1"
 edition = { workspace = true }
 
 [dependencies]
