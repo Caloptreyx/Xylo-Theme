@@ -422,4 +422,6 @@ The public demo (https://zoron-demo.caloptreyx.com, `/root/zoron-demo` on the VM
 newest release every 15 minutes (`update.sh`, systemd `zoron-demo-update.timer`) and resets to its clean snapshot
 every hour (`reset.sh`). Its sign in links (the demo login, Get Zoron Theme, Discord) are part of its saved theme and
 its welcome banner (with the Discord link) is a panel announcement; change either on a clean reset, then
-`reset.sh snapshot`, or the next reset drops it.
+`reset.sh snapshot`, or the next reset drops it. Its logo (rail, sign in page, favicon) is core's `app.icon` setting,
+`/assets/branding/zoron-logo.png`: `docs/logo.png` uploaded through `PUT /api/admin/assets` into `./data`, which the
+reset leaves alone; the Mint demo does the same with Mint's leaf (`mint-logo.png`).

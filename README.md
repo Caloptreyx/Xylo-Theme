@@ -16,7 +16,7 @@ console workspace, a server page of its own, and **Zoron Studio**, a live theme 
 [![Discord](https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white)](https://discord.gg/4qjMWU7S8x)
 [![Built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-D97757?logo=claude&logoColor=white)](https://claude.com/claude-code)
 
-<img src="docs/console.png" alt="Zoron Theme's console workspace" width="100%">
+<img src="docs/cover.png" alt="Zoron Theme for Calagopus Panel" width="100%">
 
 **[Try the demo](https://zoron-demo.caloptreyx.com)** · sign in as `demo` / `zorondemo`
 
@@ -75,6 +75,8 @@ Open Studio from **Admin → Zoron Studio** or the extension's card on **Admin �
 `settings.update` or the extension's own `zoron-theme.update` admin permission.
 
 ## Screenshots
+
+![Console workspace](docs/console.png)
 
 | Servers | Server page |
 | --- | --- |
